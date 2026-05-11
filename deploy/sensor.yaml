@@ -4,6 +4,7 @@ metadata:
   name: automata-sensor
   namespace: skunkworks
 spec:
+  eventBusName: automata-bus
   dependencies:
     - name: github-dep
       eventSourceName: automata-github
