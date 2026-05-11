@@ -130,7 +130,7 @@ mod tests {
         let a = load("automations/jira-lifecycle-atlascli.yaml");
         assert_eq!(a.name, "jira-lifecycle-atlascli");
         assert_eq!(a.given.trigger, "github");
-        assert_eq!(a.given.repos.len(), 3);
+        assert_eq!(a.given.repos.len(), 1);
         assert_eq!(a.when.len(), 1);
         assert_eq!(a.when[0].event.as_deref(), Some("pull_request"));
         assert_eq!(a.then.len(), 3);

@@ -3,8 +3,9 @@ description: Sync GitHub issue lifecycle to Jira for AtlasCLI repos.
 given:
   trigger: github
   repos:
-    - mongodb/mongodb-atlas-cli
-    - mongodb/atlas-github-action
+    - mongodb-labs/automata
+    # - mongodb/mongodb-atlas-cli
+    # - mongodb/atlas-github-action
 when:
   - event: issues
     action: [opened, closed, reopened]

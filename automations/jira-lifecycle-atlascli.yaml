@@ -3,9 +3,10 @@ description: Open a Jira ticket when a PR is opened.
 given:
   trigger: github
   repos:
-    - mongodb/mongodb-atlas-cli
-    - mongodb/atlas-github-action
-    - mongodb-labs/cobra2snooty
+    - mongodb-labs/automata
+    # - mongodb/mongodb-atlas-cli
+    # - mongodb/atlas-github-action
+    # - mongodb-labs/cobra2snooty
 when:
   - event: pull_request
     action: opened
