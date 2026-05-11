@@ -46,8 +46,11 @@ Sensor — http trigger  ← no k8s rate limit
   │  POST full payload
   ▼
 automata  (axum HTTP server, mongodb/web-app)
-  ├── POST /run     — receives event from Sensor, matches automations, executes steps
-  └── GET  /doctor  — checks ApixBot installation status across all configured repos
+  ├── POST /webhook/github    — GitHub App events (HMAC-SHA256 validated)
+  ├── POST /webhook/slack     — future: Slack events
+  ├── POST /webhook/jira      — future: Jira webhooks
+  ├── POST /webhook/evergreen — future: Evergreen CI events
+  └── GET  /doctor            — ApixBot installation status across all configured repos
   │
   │  loads automations/*.yaml, matches when: conditions, executes then: steps
   ▼
@@ -72,7 +75,7 @@ Built-in function library (Rust)
 ### Automation files (`automations/*.yaml`)
 
 One YAML file = one automation. Each file declares:
-- `given:` — static context: trigger source and repo list
+- `given:` — static context: trigger source (`github`, `slack`, `jira`, `evergreen`) and repo list
 - `when:` — list of condition groups; items are OR'd, keys within an item are AND'd
 - `then:` — sequential steps, each calling a built-in function or a named reusable `uses:`
 
@@ -435,7 +438,7 @@ spec:
     - template:
         name: call-automata
         http:
-          url: http://automata.skunkworks.svc.cluster.local/run
+          url: http://automata.skunkworks.svc.cluster.local/webhook/github
           method: POST
           headers:
             - name: Content-Type
