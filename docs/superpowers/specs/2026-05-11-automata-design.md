@@ -13,20 +13,20 @@ Automation logic (Jira lifecycle, issue sync, Dependabot auto-merge) is duplicat
 
 ## Goal
 
-A single Kanopy-hosted automation hub (`automata`) that:
+A declarative, Kanopy-hosted CI platform (`automata`) that:
 
 1. Receives GitHub App webhook events from any repo in the org
-2. Routes each event to the appropriate automation logic
-3. Executes that logic as an observable, retriable Argo Workflow
-4. Replaces the duplicated GitHub Actions patterns across the estate
+2. Matches events against a set of **automation YAML files** (one per automation, inspired by GitHub Actions workflow files and Evergreen CI's function system)
+3. Executes each matching automation as an observable, retriable Argo Workflow
+4. Lets anyone add or modify an automation by editing a YAML file and opening a PR — no Rust required for common cases
 
 ---
 
 ## Non-goals
 
 - Replacing CI/CD pipelines (lint, test, build, release) — those stay as GitHub Actions in each repo
-- Real-time latency requirements — webhook-to-action in seconds is fine; sub-second is not needed
-- Hosting a UI — Argo Workflows UI and Splunk are sufficient for observability
+- Real-time latency requirements — webhook-to-action in seconds is fine
+- Hosting a UI — Argo Workflows UI and Splunk cover observability
 
 ---
 
@@ -37,28 +37,286 @@ GitHub Repos (any repo in the org)
   │
   │  webhook (HMAC-signed, github well-known source)
   ▼
-Argo Events EventSource  ← self-service, no ENTSEC approval needed
+Argo Events EventSource  ← self-service, no ENTSEC approval
   │
-EventBus (NATS JetStream)  ← mongodb/argo-eventbus helm chart
+EventBus (NATS JetStream)
   │
-Sensors (one per event type)  ← raw k8s manifests, kubectl-applied by Drone
-  │  filter + route
+Sensor (one, routes all events)
+  │
+  ▼  event payload as parameter
+Engine WorkflowTemplate  ←  automata engine --event '<json>'
+  │
+  │  reads automations/*.yaml, matches trigger, fans out
   ▼
-Argo WorkflowTemplates  ← mongodb/argo-workflow-catalog helm chart
+Per-automation WorkflowTemplates (generated at build time from YAML files)
   │
-  │  container step(s)
+  │  one container step per fn: call
   ▼
-automata binary (Rust)
-  ├── GitHub API  via ApixBot installation token
-  └── Jira API    via Jira REST API token
+automata fn <name> --inputs '<json>'  ← Rust function library
+  ├── GitHub API  (ApixBot installation token)
+  └── Jira API
 ```
 
 ### Why Argo Events + Argo Workflows
 
-- GitHub is a **well-known source** in Kanopy: self-service webhook setup, no approval process
-- Argo Events handles signature validation and fan-out over NATS
-- Argo Workflows gives per-step observability in the UI (`workflows.staging.corp.mongodb.com`), built-in Prometheus metrics, and native retry/parallelism
-- Both are available in all Kanopy clusters (beta status — not suitable for hard SLA requirements, acceptable for internal automation)
+- GitHub is a **well-known source** in Kanopy — self-service, no ENTSEC ticket
+- Argo Events handles webhook signature validation and NATS fan-out
+- Argo Workflows gives per-step observability (`workflows.staging.corp.mongodb.com`), Prometheus metrics, and native retry/parallelism
+- Both available in all Kanopy clusters (beta — acceptable for internal automation)
+
+---
+
+## Platform Concepts
+
+### Automation files (`automations/*.yaml`)
+
+Inspired by **GitHub Actions** workflow files. One YAML file = one automation. Each file declares:
+- `on:` — when to run (GHA-style event trigger with filters)
+- `repos:` — which repos this automation applies to
+- `jobs:` — one or more parallel jobs (v1: single job, parallelism deferred)
+- `steps:` — sequential steps within a job, each calling a built-in `fn:` or a named reusable `uses:`
+
+### Functions (`functions/*.yaml`)
+
+Inspired by **Evergreen CI** named functions. Reusable step sequences that can be called from any automation with `uses:`. Avoids copy-pasting steps across automations.
+
+### Repo config (`config/repos.yaml`)
+
+Per-repo values (Jira project, component, team field) available as `${{ config.* }}` expressions inside automation steps. Kept separate from automation logic so a new repo can be onboarded without touching the automations.
+
+### Expression syntax
+
+`${{ }}` — same as GitHub Actions. Evaluated at runtime by the engine. Available contexts:
+
+| Context | Content |
+|---|---|
+| `${{ event.* }}` | Raw GitHub webhook payload |
+| `${{ config.* }}` | Resolved repo config from `config/repos.yaml` |
+| `${{ steps.<id>.outputs.* }}` | Output from a previous step |
+| `${{ inputs.* }}` | Inputs passed to a named function via `uses:` |
+| `${{ env.* }}` | Environment variables |
+
+---
+
+## Automation YAML Format
+
+```yaml
+# automations/jira-lifecycle.yaml
+name: jira-lifecycle
+description: Open a Jira ticket when a PR is opened; resolve it when merged.
+
+on:
+  pull_request:
+    types: [opened]
+    filters:
+      actor:
+        exclude: [dependabot[bot]]
+
+repos:
+  - mongodb/mongodb-atlas-cli
+  - mongodb/mongodb-atlas-local
+  - mongodb/atlas-github-action
+  - mongodb-labs/cobra2snooty
+  - mongodb/openapi
+
+jobs:
+  open-ticket:
+    steps:
+      - fn: jira.create_story
+        id: ticket
+        with:
+          project: "${{ config.jira.project }}"
+          component: "${{ config.jira.component }}"
+          team_field: "${{ config.jira.team_custom_field }}"
+          team_value: "${{ config.jira.team_value }}"
+          summary: "[${{ event.repository.name }}] ${{ event.pull_request.title }}"
+
+      - fn: github.post_comment
+        with:
+          body: "Jira ticket: ${{ steps.ticket.outputs.url }}"
+
+      - fn: github.add_label
+        with:
+          label: auto_close_jira
+
+---
+# automations/jira-lifecycle-close.yaml
+name: jira-lifecycle-close
+description: Resolve the Jira ticket when a labeled PR is merged.
+
+on:
+  pull_request:
+    types: [closed]
+    filters:
+      merged: true
+      labels:
+        include: [auto_close_jira]
+
+repos:
+  - mongodb/mongodb-atlas-cli
+  - mongodb/mongodb-atlas-local
+  - mongodb/atlas-github-action
+  - mongodb-labs/cobra2snooty
+  - mongodb/openapi
+
+jobs:
+  close-ticket:
+    steps:
+      - fn: jira.find_key
+        id: find
+        with:
+          branch: "${{ event.pull_request.head.ref }}"
+          comments_url: "${{ event.pull_request.comments_url }}"
+          pattern: "${{ config.jira.project }}-\\d+"
+
+      - fn: jira.transition
+        with:
+          key: "${{ steps.find.outputs.key }}"
+          transition_id: "1381"
+
+---
+# automations/issue-sync.yaml
+name: issue-sync
+description: Sync GitHub issue lifecycle to Jira.
+
+on:
+  issues:
+    types: [opened, closed, reopened]
+
+repos:
+  - mongodb/mongodb-atlas-cli
+  - mongodb-js/mongodb-mcp-server
+  - mongodb/atlas-github-action
+
+jobs:
+  sync:
+    steps:
+      - fn: jira.create_story
+        id: ticket
+        if: "${{ event.action == 'opened' }}"
+        with:
+          project: "${{ config.jira.project }}"
+          component: "${{ config.jira.component }}"
+          summary: "[${{ event.repository.name }}] ${{ event.issue.title }}"
+
+      - fn: github.post_comment
+        if: "${{ event.action == 'opened' }}"
+        with:
+          body: "Jira ticket: ${{ steps.ticket.outputs.url }}"
+
+      - fn: jira.find_key
+        id: find
+        if: "${{ event.action != 'opened' }}"
+        with:
+          comments_url: "${{ event.issue.comments_url }}"
+          pattern: "${{ config.jira.project }}-\\d+"
+
+      - fn: jira.transition
+        if: "${{ event.action == 'closed' }}"
+        with:
+          key: "${{ steps.find.outputs.key }}"
+          transition_id: "1381"
+
+      - fn: jira.transition
+        if: "${{ event.action == 'reopened' }}"
+        with:
+          key: "${{ steps.find.outputs.key }}"
+          transition_id: "1351"
+
+---
+# automations/dependabot-merge.yaml
+name: dependabot-merge
+description: Auto-approve and merge Dependabot PRs.
+
+on:
+  pull_request:
+    types: [opened]
+    filters:
+      actor:
+        include: [dependabot[bot]]
+
+repos:
+  - mongodb/mongodb-atlas-cli
+  - mongodb/mongodb-atlas-local
+  - mongodb/apix-action
+  - 10gen/apix-bot
+  - mongodb/atlas-local-lib
+  - mongodb-js/atlas-local-lib-js
+
+jobs:
+  auto-merge:
+    steps:
+      - fn: github.approve_pr
+
+      - fn: github.enable_auto_merge
+        with:
+          strategy: squash
+```
+
+---
+
+## Named Functions Format
+
+Inspired by **Evergreen CI** named functions — reusable step sequences called via `uses:` from any automation.
+
+```yaml
+# functions/notify-slack.yaml
+name: notify-slack
+description: Post a message to a Slack channel.
+inputs:
+  - name: channel
+    required: true
+  - name: message
+    required: true
+
+steps:
+  - fn: slack.post_message
+    with:
+      channel: "${{ inputs.channel }}"
+      text: "${{ inputs.message }}"
+```
+
+Called from an automation:
+
+```yaml
+steps:
+  - fn: jira.create_story
+    id: ticket
+    with: ...
+
+  - uses: notify-slack
+    with:
+      channel: "${{ env.SLACK_CHANNEL_ID }}"
+      message: "New ticket ${{ steps.ticket.outputs.key }}"
+```
+
+---
+
+## Built-in Function Library (Rust)
+
+These are the primitive operations implemented in Rust. New functions are added to the library and become available to all automations.
+
+| Function | Inputs | Outputs |
+|---|---|---|
+| `jira.create_story` | `project`, `component`, `summary`, `team_field`, `team_value` | `key`, `url` |
+| `jira.transition` | `key`, `transition_id` | — |
+| `jira.find_key` | `comments_url` or `branch`, `pattern` | `key` |
+| `github.post_comment` | `body` | `comment_id` |
+| `github.add_label` | `label` | — |
+| `github.approve_pr` | — | `review_id` |
+| `github.enable_auto_merge` | `strategy` | — |
+| `slack.post_message` | `channel`, `text` | `ts` |
+
+Functions are invoked by the engine as container steps:
+
+```
+automata fn jira.create_story \
+  --inputs '{"project":"CLOUDP","component":"AtlasCLI",...}' \
+  --event  '{"repository":{"full_name":"mongodb/mongodb-atlas-cli"},...}' \
+  --config '{"jira":{"project":"CLOUDP",...}}'
+```
+
+Output JSON is written to stdout and captured by Argo as a step output parameter.
 
 ---
 
@@ -66,281 +324,60 @@ automata binary (Rust)
 
 ```
 automata/
-├── .drone.yml                        # build image → deploy all helm/k8s resources
-├── Dockerfile                        # multi-stage: cargo build → distroless/static
-├── Cargo.toml                        # workspace root
+├── .drone.yml
+├── Dockerfile                         # multi-stage: cargo build → distroless/static
+├── Cargo.toml
 ├── src/
-│   ├── main.rs                       # clap CLI, subcommands dispatch to handlers
-│   ├── config.rs                     # load + merge config/repos.yaml
-│   ├── github.rs                     # GitHub App auth (installation token) + API client
-│   ├── jira.rs                       # Jira REST client
-│   └── handlers/
-│       ├── jira_lifecycle.rs         # PR opened/merged ↔ Jira create/resolve
-│       ├── issue_sync.rs             # issue opened/closed/reopened ↔ Jira
-│       └── dependabot.rs             # Dependabot PR → approve + auto-merge
+│   ├── main.rs                        # clap: `automata fn` and `automata generate`
+│   ├── engine.rs                      # loads automations/*.yaml, matches triggers
+│   ├── config.rs                      # loads config/repos.yaml, resolves per-repo config
+│   ├── expr.rs                        # ${{ }} expression evaluator
+│   ├── github.rs                      # GitHub App auth + API client
+│   ├── jira.rs                        # Jira REST client
+│   └── functions/
+│       ├── mod.rs                     # function registry + dispatch
+│       ├── jira.rs                    # jira.* built-ins
+│       ├── github.rs                  # github.* built-ins
+│       └── slack.rs                   # slack.* built-ins
+├── automations/                       # declarative automation files
+│   ├── jira-lifecycle.yaml
+│   ├── jira-lifecycle-close.yaml
+│   ├── issue-sync.yaml
+│   └── dependabot-merge.yaml
+├── functions/                         # reusable named step sequences
+│   └── notify-slack.yaml
 ├── config/
-│   └── repos.yaml                    # per-repo Jira + handler config, baked into image
+│   └── repos.yaml                     # per-repo Jira config, baked into image
 ├── k8s/
-│   ├── eventsource.yaml              # GitHub EventSource (raw manifest)
-│   ├── sensor-jira-lifecycle.yaml
-│   ├── sensor-issue-sync.yaml
-│   └── sensor-dependabot.yaml
+│   ├── eventsource.yaml               # GitHub EventSource (hand-written)
+│   └── generated/                     # output of `automata generate`, committed
+│       ├── sensor.yaml
+│       └── workflow-templates.yaml
 └── deploy/
-    ├── eventbus-values.yaml          # mongodb/argo-eventbus chart values
-    └── workflows-values.yaml         # mongodb/argo-workflow-catalog chart values
+    └── eventbus-values.yaml           # mongodb/argo-eventbus chart values
 ```
 
 ---
 
-## Rust Binary
+## Build-time Generation
 
-The binary is a CLI built with `clap`. Each subcommand maps to one automation. Argo Workflow steps call it as a container command, passing the raw GitHub webhook payload via `--payload`.
+During the Drone build, `automata generate` reads all `automations/*.yaml` files and emits the k8s manifests needed to run them:
 
-```
-automata <subcommand> --payload '<json>'
-```
+1. **One Sensor** with dependency filters covering all event types across all automations
+2. **One WorkflowTemplate per automation** — each step in the template calls `automata fn <name> --inputs ...`
 
-| Subcommand | Trigger |
-|---|---|
-| `jira-lifecycle-open` | PR opened, actor ≠ dependabot |
-| `jira-lifecycle-close` | PR merged, labeled `auto_close_jira` |
-| `issue-sync-open` | Issue opened |
-| `issue-sync-close` | Issue closed |
-| `issue-sync-reopen` | Issue reopened |
-| `dependabot-merge` | PR opened, actor = `dependabot[bot]` |
-
-All configuration is injected via environment variables from the `automata-secrets` k8s secret:
-
-| Variable | Purpose |
-|---|---|
-| `GITHUB_APP_ID` | ApixBot App ID |
-| `GITHUB_APP_PRIVATE_KEY` | ApixBot PEM private key |
-| `GITHUB_WEBHOOK_SECRET` | HMAC secret for EventSource signature validation |
-| `JIRA_BASE_URL` | e.g. `https://jira.mongodb.org` |
-| `JIRA_USER` | Service account email |
-| `JIRA_API_TOKEN` | Jira REST API token |
-
----
-
-## Handlers
-
-### `jira-lifecycle-open` — PR opened → create Jira
-
-**Input**: `pull_request` event, `action: opened`, actor ≠ `dependabot[bot]`
-
-Steps:
-1. Mint GitHub App installation token for the repo's installation
-2. Create CLOUDP Jira Story with:
-   - Summary: `[<repo>] <PR title>`
-   - `customfield_12751`: `vars.JIRA_TEAM_APIX_2`
-   - Component: derived from repo (e.g. `AtlasCLI`)
-   - `fixVersions`: current version from Jira (or omit if not applicable)
-3. Post PR comment: `Jira ticket: <URL>`
-4. Add label `auto_close_jira` to the PR
-
-**Output**: Jira ticket URL logged to stdout (captured in Argo Workflow archive)
-
----
-
-### `jira-lifecycle-close` — PR merged → resolve Jira
-
-**Input**: `pull_request` event, `action: closed`, `merged: true`, label `auto_close_jira` present
-
-Steps:
-1. Find Jira ticket key:
-   - If branch name matches `CLOUDP-\d+` → use that
-   - Otherwise, fetch PR comments and grep for `CLOUDP-\d+` pattern
-2. Transition ticket to Resolved/Fixed (transition ID `1381`)
-
----
-
-### `issue-sync-open` — Issue opened → create Jira
-
-**Input**: `issues` event, `action: opened`
-
-Steps:
-1. Create Jira Story (same field mapping as jira-lifecycle-open)
-2. Post issue comment: `Jira ticket: <URL>`
-
----
-
-### `issue-sync-close` — Issue closed → close Jira
-
-**Input**: `issues` event, `action: closed`
-
-Steps:
-1. Find Jira ticket key from issue comments (grep `CLOUDP-\d+`)
-2. Transition ticket — use `1381` (Resolved/Fixed) for normal closes; `1371` (Won't Fix) reserved for explicit won't-fix flows not yet in scope
-
----
-
-### `issue-sync-reopen` — Issue reopened → reopen Jira
-
-**Input**: `issues` event, `action: reopened`
-
-Steps:
-1. Find Jira ticket key from issue comments
-2. Transition ticket (reopen, transition ID `1351`)
-
----
-
-### `dependabot-merge` — Dependabot PR → auto-merge
-
-**Input**: `pull_request` event, `action: opened`, actor = `dependabot[bot]`
-
-Steps:
-1. Mint GitHub App installation token
-2. Approve the PR (submit review with `APPROVE`)
-3. Enable auto-merge (squash strategy) via GitHub API
-
----
-
-## Argo Events Configuration
-
-### EventBus
-
-Managed by `mongodb/argo-eventbus` chart (NATS JetStream). One per namespace.
-
-```yaml
-# deploy/eventbus-values.yaml
-name: automata-bus
-```
-
-### EventSource
-
-Raw k8s manifest (`k8s/eventsource.yaml`). GitHub well-known source — self-service, no ENTSEC ticket.
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: EventSource
-metadata:
-  name: automata-github
-  namespace: skunkworks
-  annotations:
-    v1alpha1.argoslower.kanopy-platform/known-source: "github"
-spec:
-  eventBusName: automata-bus
-  github:
-    automata:
-      repositories:
-        - owner: mongodb
-          names: ["mongodb-atlas-cli", "mongodb-atlas-local", ...]
-        - owner: mongodb-js
-          names: ["mongodb-mcp-server"]
-        - owner: 10gen
-          names: ["apix-bot"]
-      webhook:
-        endpoint: /github
-        port: "12000"
-        method: POST
-      webhookSecret:
-        name: automata-secrets
-        key: GITHUB_WEBHOOK_SECRET
-      events:
-        - pull_request
-        - issues
-      insecure: false
-      active: true
-      contentType: json
-```
-
-Webhook URL (staging):
-```
-https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
-```
-
-### Sensors
-
-One Sensor per automation. Each filters the EventSource payload and submits the matching WorkflowTemplate.
-
-Routing between `jira-lifecycle-open` and `dependabot-merge` is done at the Sensor layer via `body.sender.login` — not in the binary — so only one WorkflowTemplate fires per event:
-- `sensor-jira-lifecycle-open`: `action=opened` AND `sender.login != dependabot[bot]`
-- `sensor-dependabot`: `action=opened` AND `sender.login = dependabot[bot]`
-
-Example — `k8s/sensor-jira-lifecycle.yaml`:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Sensor
-metadata:
-  name: sensor-jira-lifecycle-open
-spec:
-  dependencies:
-    - name: github-dep
-      eventSourceName: automata-github
-      eventName: automata
-      filters:
-        data:
-          - path: body.action
-            type: string
-            value: ["opened"]
-          - path: body.sender.login
-            type: string
-            comparator: "!="
-            value: ["dependabot[bot]"]
-  triggers:
-    - template:
-        name: trigger-jira-lifecycle-open
-        argoWorkflow:
-          operation: submit
-          source:
-            resource:
-              apiVersion: argoproj.io/v1alpha1
-              kind: WorkflowTemplate
-              name: jira-lifecycle-open
-          parameters:
-            - src:
-                dependencyName: github-dep
-                dataKey: body
-              dest: spec.arguments.parameters.0.value
-      rateLimit:
-        unit: Second
-        requestsPerUnit: 1
-```
-
----
-
-## Argo WorkflowTemplates
-
-Managed by `mongodb/argo-workflow-catalog` chart. Defined in `deploy/workflows-values.yaml`.
-
-Each WorkflowTemplate is a single-step workflow that runs the `automata` container:
-
-```yaml
-# deploy/workflows-values.yaml
-workflowTemplates:
-  - name: jira-lifecycle-open
-    serviceAccountName: automata-sa
-    arguments:
-      parameters:
-        - name: payload
-    templates:
-      - name: run
-        container:
-          image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/skunkworks/automata:latest
-          command: ["automata"]
-          args: ["jira-lifecycle-open", "--payload", "{{inputs.parameters.payload}}"]
-          envFrom:
-            - secretRef:
-                name: automata-secrets
-  # ... one entry per subcommand
-```
-
----
-
-## Drone Pipeline
+The generated manifests are committed to `k8s/generated/` so they can be reviewed in PRs like any other code change.
 
 ```yaml
 # .drone.yml (abbreviated)
-kind: pipeline
-type: kubernetes
-name: default
-platform:
-  arch: arm64
-trigger:
-  branch: [main]
-
 steps:
+  - name: generate
+    image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/skunkworks/automata:git-${DRONE_COMMIT_SHA:0:7}
+    commands:
+      - automata generate --automations automations/ --functions functions/ --output k8s/generated/
+    when:
+      event: [push]
+
   - name: build-and-push
     image: plugins/kaniko-ecr
     settings:
@@ -352,14 +389,12 @@ steps:
         from_secret: ecr_access_key
       secret_key:
         from_secret: ecr_secret_key
-    when:
-      event: [push]
 
   - name: deploy-eventbus
     image: public.ecr.aws/kanopy/drone-helm:v3
     settings:
       chart: mongodb/argo-eventbus
-      chart_version: TBD  # look up latest at https://github.com/10gen/helm-charts/tree/master/charts/argo-eventbus
+      chart_version: TBD
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: skunkworks
       release: automata-eventbus
@@ -368,115 +403,31 @@ steps:
       kubernetes_token:
         from_secret: staging_kubernetes_token
 
-  - name: deploy-workflows
-    image: public.ecr.aws/kanopy/drone-helm:v3
-    settings:
-      chart: mongodb/argo-workflow-catalog
-      chart_version: TBD  # look up latest at https://github.com/10gen/helm-charts/tree/master/charts/argo-workflow-catalog
-      add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: skunkworks
-      release: automata-workflows
-      values_files: ["deploy/workflows-values.yaml"]
-      api_server: https://api.staging.corp.mongodb.com
-      kubernetes_token:
-        from_secret: staging_kubernetes_token
-
-  - name: apply-eventsource-and-sensors
+  - name: apply-k8s
     image: bitnami/kubectl
     environment:
       KUBE_TOKEN:
         from_secret: staging_kubernetes_token
     commands:
       - kubectl apply -f k8s/eventsource.yaml
-      - kubectl apply -f k8s/sensor-jira-lifecycle.yaml
-      - kubectl apply -f k8s/sensor-issue-sync.yaml
-      - kubectl apply -f k8s/sensor-dependabot.yaml
-    when:
-      event: [push]
+      - kubectl apply -f k8s/generated/
 ```
 
 ---
 
-## Secrets Setup
+## Repo Config (`config/repos.yaml`)
 
-All secrets stored as a single k8s secret via `helm ksec`:
-
-```bash
-helm ksec set automata-secrets \
-  GITHUB_APP_ID=<apixbot-app-id> \
-  GITHUB_APP_PRIVATE_KEY=<pem-contents> \
-  GITHUB_WEBHOOK_SECRET=<min-12-chars> \
-  JIRA_BASE_URL=https://jira.mongodb.org \
-  JIRA_USER=<service-account-email> \
-  JIRA_API_TOKEN=<token>
-```
-
-Drone secrets (for ECR + k8s deployment):
-
-```bash
-drone secret add <repo> --name=ecr_access_key --data=<value>
-drone secret add <repo> --name=ecr_secret_key --data=<value>
-drone secret add <repo> --name=staging_kubernetes_token --data=<value>
-```
-
----
-
-## Observability
-
-| Signal | Where |
-|---|---|
-| Workflow success/failure | Argo UI (`workflows.staging.corp.mongodb.com`) |
-| Step logs | Argo UI (during run) → Splunk after GC (`index=skunkworks-staging`) |
-| Run count / duration / status | Prometheus → Grafana (`argo_workflows_skunkworks_*`) |
-| Webhook delivery | GitHub App webhook deliveries page |
-
----
-
-## Repo Onboarding
-
-To add a new repo to `automata`:
-
-1. Add it to the `repositories` list in `k8s/eventsource.yaml`
-2. Register the webhook in the repo settings pointing to `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`, with the same `GITHUB_WEBHOOK_SECRET`
-3. Push to `main` — Drone re-applies the EventSource
-
-No code changes needed to add a new repo — add an entry to `config/repos.yaml` and push.
-
----
-
-## Configuration System
-
-### Location and loading
-
-`config/repos.yaml` lives in this repo and is baked into the container image at build time (`COPY config/ /app/config/`). The binary loads it once at startup via `serde_yaml`. Changing a mapping requires a PR + Drone rebuild, which provides a full audit trail and keeps config in sync with the binary.
-
-### Schema
+Per-repo values available as `${{ config.* }}` in automations. Uses defaults + per-repo overrides.
 
 ```yaml
-# config/repos.yaml
-
 defaults:
   jira:
     project: CLOUDP
     team_custom_field: customfield_12751
-    team_value: "<JIRA_TEAM_APIX_2>"   # confirm value before implementation
-  handlers:
-    - jira_lifecycle
-    - issue_sync
-    - dependabot_merge
+    team_value: "<JIRA_TEAM_APIX_2>"
 
 repos:
   mongodb/mongodb-atlas-cli:
-    jira:
-      component: AtlasCLI
-
-  mongodb/atlas-cli-core:
-    jira:
-      component: AtlasCLI
-    handlers:
-      - dependabot_merge   # no Jira integration in this repo
-
-  mongodb/atlas-github-action:
     jira:
       component: AtlasCLI
 
@@ -498,94 +449,183 @@ repos:
 
   mongodb-js/mongodb-mcp-server:
     jira:
-      project: TBD   # confirm MCP project key
+      project: TBD
       component: MCP
       team_value: TBD
 
-  10gen/apix-bot:
+  mongodb/atlas-github-action:
     jira:
-      component: ApixBot
-    handlers:
-      - dependabot_merge
-
-  mongodb/apix-action:
-    handlers:
-      - dependabot_merge
+      component: AtlasCLI
 
   mongodb/openapi:
     jira:
       component: OpenAPI
-      team_value: "<JIRA_TEAM_ID_APIX_PLATFORM>"   # different team field
+      team_value: "<JIRA_TEAM_ID_APIX_PLATFORM>"
 
-  mongodb-forks/chocolatey-packages:
-    handlers:
-      - dependabot_merge
+  10gen/apix-bot:
+    jira:
+      component: ApixBot
 
-  mongodb-forks/digest:
-    handlers:
-      - dependabot_merge
+  mongodb/apix-action:
+    jira:
+      component: ApixAction
 
   mongodb-labs/cobra2snooty:
     jira:
       component: AtlasCLI
+
+  mongodb-forks/chocolatey-packages: {}
+  mongodb-forks/digest: {}
+  mongodb/atlas-cli-core: {}
 ```
 
-### Merge semantics
+---
 
-Repo-level fields override defaults field-by-field. If `handlers` is absent in a repo entry, the default handler list applies. If `jira` is absent entirely, the repo uses all Jira defaults. A repo with `handlers: [dependabot_merge]` only runs that one automation — Jira handlers are skipped.
+## Argo Events Configuration
 
-### Rust types
+### EventSource (`k8s/eventsource.yaml`)
 
-```rust
-// src/config.rs
-#[derive(Deserialize)]
-pub struct Config {
-    pub defaults: Defaults,
-    pub repos: HashMap<String, RepoOverride>,
-}
+Single EventSource listening to all configured repos. GitHub well-known source — self-service.
 
-#[derive(Deserialize)]
-pub struct Defaults {
-    pub jira: JiraDefaults,
-    pub handlers: Vec<Handler>,
-}
-
-#[derive(Deserialize)]
-pub struct JiraDefaults {
-    pub project: String,
-    pub team_custom_field: String,
-    pub team_value: String,
-}
-
-#[derive(Deserialize, Default)]
-pub struct RepoOverride {
-    pub jira: Option<JiraOverride>,
-    pub handlers: Option<Vec<Handler>>,
-}
-
-#[derive(Deserialize, Default)]
-pub struct JiraOverride {
-    pub project: Option<String>,
-    pub component: Option<String>,
-    pub team_value: Option<String>,
-}
-
-#[derive(Deserialize, PartialEq, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum Handler {
-    JiraLifecycle,
-    IssueSync,
-    DependabotMerge,
-}
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: automata-github
+  namespace: skunkworks
+  annotations:
+    v1alpha1.argoslower.kanopy-platform/known-source: "github"
+spec:
+  eventBusName: automata-bus
+  github:
+    automata:
+      repositories:
+        - owner: mongodb
+          names: [mongodb-atlas-cli, mongodb-atlas-local, apix-action, atlas-github-action,
+                  atlas-local-lib, atlas-local-cli, openapi]
+        - owner: mongodb-js
+          names: [mongodb-mcp-server, atlas-local-lib-js]
+        - owner: 10gen
+          names: [apix-bot]
+        - owner: mongodb-labs
+          names: [cobra2snooty]
+        - owner: mongodb-forks
+          names: [chocolatey-packages, digest]
+      webhook:
+        endpoint: /github
+        port: "12000"
+        method: POST
+      webhookSecret:
+        name: automata-secrets
+        key: GITHUB_WEBHOOK_SECRET
+      events: ["*"]
+      insecure: false
+      active: true
+      contentType: json
 ```
 
-`Config::resolve(repo_full_name)` returns a merged `RepoConfig` by layering repo overrides on top of defaults. Unknown repos (not yet listed) fall back to defaults — opt-in exclusion rather than opt-in inclusion.
+Webhook URL:
+```
+https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
+```
+
+### Sensor (generated)
+
+`automata generate` emits a single Sensor that routes all events to the engine WorkflowTemplate, passing the full payload as a parameter. The engine then does trigger matching in Rust.
+
+```yaml
+# k8s/generated/sensor.yaml (example of generated output)
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: automata-sensor
+  namespace: skunkworks
+spec:
+  dependencies:
+    - name: github-dep
+      eventSourceName: automata-github
+      eventName: automata
+  triggers:
+    - template:
+        name: run-engine
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: WorkflowTemplate
+              name: automata-engine
+          parameters:
+            - src:
+                dependencyName: github-dep
+                dataKey: body
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: github-dep
+                dataKey: body.repository.full_name
+              dest: spec.arguments.parameters.1.value
+      rateLimit:
+        unit: Second
+        requestsPerUnit: 1
+```
+
+---
+
+## Secrets Setup
+
+```bash
+helm ksec set automata-secrets \
+  GITHUB_APP_ID=<apixbot-app-id> \
+  GITHUB_APP_PRIVATE_KEY=<pem> \
+  GITHUB_WEBHOOK_SECRET=<min-12-chars> \
+  JIRA_BASE_URL=https://jira.mongodb.org \
+  JIRA_USER=<email> \
+  JIRA_API_TOKEN=<token> \
+  SLACK_BEARER_TOKEN=<token>
+```
+
+Drone secrets:
+```bash
+drone secret add <repo> --name=ecr_access_key        --data=<value>
+drone secret add <repo> --name=ecr_secret_key        --data=<value>
+drone secret add <repo> --name=staging_kubernetes_token --data=<value>
+```
+
+---
+
+## Observability
+
+| Signal | Where |
+|---|---|
+| Workflow success/failure per automation | Argo UI (`workflows.staging.corp.mongodb.com`) |
+| Step logs | Argo UI live → Splunk after GC (`index=skunkworks-staging`) |
+| Run count / duration / status | Prometheus → Grafana (`argo_workflows_skunkworks_*`) |
+| Webhook delivery | GitHub App webhook deliveries page |
+
+---
+
+## Onboarding a New Repo
+
+1. Add the repo to `k8s/eventsource.yaml` repositories list
+2. Add a `config/repos.yaml` entry (or rely on defaults)
+3. Add the repo to the `repos:` list in whichever `automations/*.yaml` apply
+4. Register the webhook in the repo settings: `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`
+5. Open a PR — Drone rebuilds and redeploys everything
+
+---
+
+## Adding a New Automation
+
+1. Create `automations/my-automation.yaml` with `on:`, `repos:`, and `steps:`
+2. If it needs a new built-in function, add it to `src/functions/` in Rust and register it in `src/functions/mod.rs`
+3. Open a PR — `automata generate` runs in CI, the generated manifests are committed, Drone deploys
 
 ---
 
 ## Open Questions
 
-- **Staging only**: `skunkworks` namespace is staging-only. If this moves to production in the future, a new namespace + prod cluster deployment will be needed.
+- **Staging only**: `skunkworks` namespace is staging-only. Production deployment needs a separate namespace and prod cluster credentials.
 - **Jira project per repo**: `mongodb-mcp-server` and `openapi` use different projects/team values — confirm exact keys before filling `config/repos.yaml` TBDs
 - **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
 - **Rate limit exception**: if Dependabot opens many PRs simultaneously, the default 1/s Sensor rate limit may need a KANOPY ticket exception
+- **`automata generate` bootstrap**: the first build needs the binary to exist before it can generate manifests — solve with a two-step pipeline or commit initial generated output manually
