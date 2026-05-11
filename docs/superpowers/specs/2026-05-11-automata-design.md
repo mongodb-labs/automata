@@ -121,8 +121,8 @@ then:
       id: ticket
       project: CLOUDP
       component: AtlasCLI
-      team_field: customfield_12751
-      team_value: "<JIRA_TEAM_APIX_2>"
+      custom_fields:
+        customfield_12751: "<JIRA_TEAM_APIX_2>"
       summary: "[{repo}] {title}"
       param:
         repo: event.repository.name
@@ -263,7 +263,7 @@ These are the primitive operations implemented in Rust. New functions are added 
 
 | Function | Inputs | Outputs |
 |---|---|---|
-| `jira.create_story` | `project`, `component`, `summary`, `team_field`, `team_value` | `key`, `url` |
+| `jira.create_story` | `project`, `component`, `summary`, `custom_fields` (map) | `key`, `url` |
 | `jira.transition` | `key`, `transition_id` | — |
 | `jira.find_key` | `comments_url` or `branch`, `pattern` | `key` |
 | `github.post_comment` | `body` | `comment_id` |
