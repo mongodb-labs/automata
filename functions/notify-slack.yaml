@@ -1,0 +1,11 @@
+name: notify-slack
+description: Post a message to a Slack channel.
+inputs:
+  - name: channel
+    required: true
+  - name: message
+    required: true
+steps:
+  - slack.post_message:
+      channel: "{inputs.channel}"
+      text: "{inputs.message}"

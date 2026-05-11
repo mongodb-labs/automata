@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub async fn post_comment(
     client: &GitHubClient,
-    inputs: &HashMap<String, Value>,
+    inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
     let body_tpl = inputs["body"].as_str().context("body must be a string")?;
@@ -19,7 +19,7 @@ pub async fn post_comment(
 
 pub async fn add_label(
     client: &GitHubClient,
-    inputs: &HashMap<String, Value>,
+    inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
     let label_tpl = inputs["label"].as_str().context("label must be a string")?;
@@ -31,7 +31,7 @@ pub async fn add_label(
 
 pub async fn approve_pr(
     client: &GitHubClient,
-    _inputs: &HashMap<String, Value>,
+    _inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
     let pr_number = pr_number_from_ctx(ctx)?;
@@ -41,7 +41,7 @@ pub async fn approve_pr(
 
 pub async fn enable_auto_merge(
     client: &GitHubClient,
-    inputs: &HashMap<String, Value>,
+    inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
     let strategy = inputs

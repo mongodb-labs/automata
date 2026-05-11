@@ -1,3 +1,5 @@
+use crate::context::ExecutionContext;
+use crate::functions::Clients;
 use crate::types::{Automation, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
@@ -102,6 +104,19 @@ pub fn eval_if(cond: &str, payload: &Value) -> bool {
             false
         }
     }
+}
+
+pub async fn run_automation(
+    automation: &Automation,
+    payload: &Value,
+    clients: &Clients,
+) -> anyhow::Result<()> {
+    let mut ctx = ExecutionContext::new(payload.clone());
+    for raw_step in &automation.then {
+        let step = crate::types::Step::from_yaml(raw_step)?;
+        crate::functions::execute_step(&step, &mut ctx, clients).await?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
