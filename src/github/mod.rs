@@ -1,1 +1,93 @@
 pub mod api;
+
+use anyhow::Context as _;
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[derive(Debug, Serialize)]
+struct AppClaims {
+    iat: u64,
+    exp: u64,
+    iss: String,
+}
+
+/// Generate a GitHub App JWT valid for 60 seconds.
+pub fn app_jwt(app_id: u64, private_key_pem: &str) -> anyhow::Result<String> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)?
+        .as_secs();
+    let claims = AppClaims {
+        iat: now - 60, // backdate 60s to account for clock skew
+        exp: now + 60,
+        iss: app_id.to_string(),
+    };
+    let key = EncodingKey::from_rsa_pem(private_key_pem.as_bytes())
+        .context("invalid RSA private key")?;
+    encode(&Header::new(Algorithm::RS256), &claims, &key)
+        .context("failed to encode JWT")
+}
+
+#[derive(Debug, Deserialize)]
+struct Installation {
+    id: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct InstallationToken {
+    pub token: String,
+}
+
+/// Exchange a GitHub App JWT for an installation access token for the given repo.
+pub async fn installation_token(
+    client: &reqwest::Client,
+    jwt: &str,
+    owner: &str,
+    repo: &str,
+) -> anyhow::Result<String> {
+    // Find installation ID for the repo
+    let install: Installation = client
+        .get(format!("https://api.github.com/repos/{owner}/{repo}/installation"))
+        .bearer_auth(jwt)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    // Exchange for a token
+    let token: InstallationToken = client
+        .post(format!("https://api.github.com/app/installations/{}/access_tokens", install.id))
+        .bearer_auth(jwt)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    Ok(token.token)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn app_jwt_rejects_invalid_key() {
+        let result = app_jwt(12345, "not-a-valid-pem");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn app_jwt_structure_with_valid_key() {
+        // Use a test RSA key (2048-bit, generated for testing only)
+        let pem = include_str!("../../tests/fixtures/test_rsa_key.pem");
+        let token = app_jwt(12345, pem).unwrap();
+        // JWT has 3 dot-separated parts
+        assert_eq!(token.split('.').count(), 3);
+    }
+}
