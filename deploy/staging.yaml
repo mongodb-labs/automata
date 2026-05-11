@@ -1,0 +1,19 @@
+image:
+  repository: 795250896452.dkr.ecr.us-east-1.amazonaws.com/skunkworks/automata
+  tag: latest
+
+replicaCount: 1
+
+service:
+  port: 8080
+
+envFrom:
+  - secretRef:
+      name: automata-secrets
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi

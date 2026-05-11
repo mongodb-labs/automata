@@ -1,0 +1,79 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+platform:
+  arch: arm64
+trigger:
+  branch:
+    - main
+
+steps:
+  - name: test
+    image: rust:1.78-slim
+    commands:
+      - cargo test
+    when:
+      event: [push, pull_request]
+
+  - name: build-and-push
+    image: plugins/kaniko-ecr
+    settings:
+      registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com
+      repo: skunkworks/automata
+      tags:
+        - git-${DRONE_COMMIT_SHA:0:7}
+        - latest
+      create_repository: true
+      access_key:
+        from_secret: ecr_access_key
+      secret_key:
+        from_secret: ecr_secret_key
+    when:
+      event: [push]
+
+  - name: deploy-service
+    image: public.ecr.aws/kanopy/drone-helm:v3
+    settings:
+      chart: mongodb/web-app
+      chart_version: 4.25.0
+      add_repos: [mongodb=https://10gen.github.io/helm-charts]
+      namespace: skunkworks
+      release: automata
+      values_files: ["deploy/staging.yaml"]
+      values: image.tag=git-${DRONE_COMMIT_SHA:0:7}
+      api_server: https://api.staging.corp.mongodb.com
+      kubernetes_token:
+        from_secret: staging_kubernetes_token
+    when:
+      event: [push]
+
+  - name: deploy-eventbus
+    image: public.ecr.aws/kanopy/drone-helm:v3
+    settings:
+      chart: mongodb/argo-eventbus
+      chart_version: 1.0.0
+      add_repos: [mongodb=https://10gen.github.io/helm-charts]
+      namespace: skunkworks
+      release: automata-eventbus
+      values_files: ["deploy/eventbus-values.yaml"]
+      api_server: https://api.staging.corp.mongodb.com
+      kubernetes_token:
+        from_secret: staging_kubernetes_token
+    when:
+      event: [push]
+
+  - name: apply-k8s
+    image: bitnami/kubectl
+    environment:
+      KUBE_TOKEN:
+        from_secret: staging_kubernetes_token
+    commands:
+      - kubectl config set-credentials cicd --token=$KUBE_TOKEN
+      - kubectl config set-cluster staging --server=https://api.staging.corp.mongodb.com
+      - kubectl config set-context default --cluster=staging --user=cicd --namespace=skunkworks
+      - kubectl config use-context default
+      - kubectl apply -f k8s/eventsource.yaml
+      - kubectl apply -f k8s/sensor.yaml
+    when:
+      event: [push]

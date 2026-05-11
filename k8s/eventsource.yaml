@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: automata-github
+  namespace: skunkworks
+  annotations:
+    v1alpha1.argoslower.kanopy-platform/known-source: "github"
+spec:
+  eventBusName: automata-bus
+  github:
+    automata:
+      repositories:
+        - owner: mongodb
+          names:
+            - mongodb-atlas-cli
+            - mongodb-atlas-local
+            - apix-action
+            - atlas-github-action
+            - atlas-local-lib
+            - atlas-local-cli
+            - openapi
+        - owner: mongodb-js
+          names:
+            - mongodb-mcp-server
+            - atlas-local-lib-js
+        - owner: 10gen
+          names:
+            - apix-bot
+        - owner: mongodb-labs
+          names:
+            - cobra2snooty
+        - owner: mongodb-forks
+          names:
+            - chocolatey-packages
+            - digest
+      webhook:
+        endpoint: /github
+        port: "12000"
+        method: POST
+      webhookSecret:
+        name: automata-secrets
+        key: GITHUB_WEBHOOK_SECRET
+      events:
+        - "*"
+      insecure: false
+      active: true
+      contentType: json
