@@ -17,7 +17,7 @@ A declarative, Kanopy-hosted CI platform (`automata`) that:
 
 1. Receives GitHub App webhook events from any repo in the org
 2. Matches events against a set of **automation YAML files** (one per automation, inspired by GitHub Actions workflow files and Evergreen CI's function system)
-3. Executes each matching automation as an observable, retriable Argo Workflow
+3. Executes each matching automation as sequential API calls with structured logging
 4. Lets anyone add or modify an automation by editing a YAML file and opening a PR — no Rust required for common cases
 
 ---
@@ -26,7 +26,7 @@ A declarative, Kanopy-hosted CI platform (`automata`) that:
 
 - Replacing CI/CD pipelines (lint, test, build, release) — those stay as GitHub Actions in each repo
 - Real-time latency requirements — webhook-to-action in seconds is fine
-- Hosting a UI — Argo Workflows UI and Splunk cover observability
+- Hosting a UI — Splunk covers log observability
 
 ---
 
@@ -41,28 +41,27 @@ Argo Events EventSource  ← self-service, no ENTSEC approval
   │
 EventBus (NATS JetStream)
   │
-Sensor (one, routes all events)
+Sensor — http trigger  ← no k8s rate limit
   │
-  ▼  event payload as parameter
-Engine WorkflowTemplate  ←  automata engine --event '<json>'
-  │
-  │  reads automations/*.yaml, matches trigger, fans out
+  │  POST full payload
   ▼
-Per-automation WorkflowTemplates (generated at build time from YAML files)
+automata  (axum HTTP server, mongodb/web-app)
   │
-  │  one container step per fn: call
+  │  loads automations/*.yaml, matches when: conditions, executes then: steps
   ▼
-automata fn <name> --inputs '<json>'  ← Rust function library
+Built-in function library (Rust)
   ├── GitHub API  (ApixBot installation token)
   └── Jira API
 ```
 
-### Why Argo Events + Argo Workflows
+### Why Argo Events + automata HTTP server
 
+- **Argo Events** and **Argo Workflows** are independent — Argo Events can trigger any HTTP endpoint, not just Argo Workflows
 - GitHub is a **well-known source** in Kanopy — self-service, no ENTSEC ticket
-- Argo Events handles webhook signature validation and NATS fan-out
-- Argo Workflows gives per-step observability (`workflows.staging.corp.mongodb.com`), Prometheus metrics, and native retry/parallelism
-- Both available in all Kanopy clusters (beta — acceptable for internal automation)
+- Argo Events handles webhook HMAC validation and NATS fan-out
+- Sensor `http` trigger POSTs directly to the automata service — no container-per-step overhead
+- The 1/s Kanopy rate limit applies to **k8s triggers only** — http triggers are not subject to it
+- automata deployed as a `mongodb/web-app` service — single pod, structured logs to Splunk, Prometheus metrics via `/metrics`
 
 ---
 
@@ -302,34 +301,20 @@ automata/
 │   └── notify-slack.yaml
 ├── k8s/
 │   ├── eventsource.yaml               # GitHub EventSource (hand-written)
-│   └── generated/                     # output of `automata generate`, committed
-│       ├── sensor.yaml
-│       └── workflow-templates.yaml
+│   └── sensor.yaml                    # Sensor with http trigger (hand-written)
 └── deploy/
     └── eventbus-values.yaml           # mongodb/argo-eventbus chart values
 ```
 
 ---
 
-## Build-time Generation
+## Drone Pipeline
 
-During the Drone build, `automata generate` reads all `automations/*.yaml` files and emits the k8s manifests needed to run them:
-
-1. **One Sensor** with dependency filters covering all event types across all automations
-2. **One WorkflowTemplate per automation** — each step in the template calls `automata fn <name> --inputs ...`
-
-The generated manifests are committed to `k8s/generated/` so they can be reviewed in PRs like any other code change.
+Build, push image, deploy web service and event infrastructure on every push to `main`.
 
 ```yaml
 # .drone.yml (abbreviated)
 steps:
-  - name: generate
-    image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/skunkworks/automata:git-${DRONE_COMMIT_SHA:0:7}
-    commands:
-      - automata generate --automations automations/ --functions functions/ --output k8s/generated/
-    when:
-      event: [push]
-
   - name: build-and-push
     image: plugins/kaniko-ecr
     settings:
@@ -341,6 +326,20 @@ steps:
         from_secret: ecr_access_key
       secret_key:
         from_secret: ecr_secret_key
+
+  - name: deploy-service
+    image: public.ecr.aws/kanopy/drone-helm:v3
+    settings:
+      chart: mongodb/web-app
+      chart_version: TBD
+      add_repos: [mongodb=https://10gen.github.io/helm-charts]
+      namespace: skunkworks
+      release: automata
+      values_files: ["deploy/staging.yaml"]
+      values: image.tag=git-${DRONE_COMMIT_SHA:0:7}
+      api_server: https://api.staging.corp.mongodb.com
+      kubernetes_token:
+        from_secret: staging_kubernetes_token
 
   - name: deploy-eventbus
     image: public.ecr.aws/kanopy/drone-helm:v3
@@ -362,7 +361,7 @@ steps:
         from_secret: staging_kubernetes_token
     commands:
       - kubectl apply -f k8s/eventsource.yaml
-      - kubectl apply -f k8s/generated/
+      - kubectl apply -f k8s/sensor.yaml
 ```
 
 ---
@@ -415,12 +414,11 @@ Webhook URL:
 https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
 ```
 
-### Sensor (generated)
+### Sensor (`k8s/sensor.yaml`)
 
-`automata generate` emits a single Sensor that routes all events to the engine WorkflowTemplate, passing the full payload as a parameter. The engine then does trigger matching in Rust.
+Single Sensor with an `http` trigger — POSTs the full GitHub payload to the automata web service. Trigger matching happens inside automata in Rust, not in the Sensor. The 1/s Kanopy rate limit applies to k8s triggers only; http triggers are not subject to it.
 
 ```yaml
-# k8s/generated/sensor.yaml (example of generated output)
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
@@ -433,26 +431,25 @@ spec:
       eventName: automata
   triggers:
     - template:
-        name: run-engine
-        argoWorkflow:
-          operation: submit
-          source:
-            resource:
-              apiVersion: argoproj.io/v1alpha1
-              kind: WorkflowTemplate
-              name: automata-engine
-          parameters:
+        name: call-automata
+        http:
+          url: http://automata.skunkworks.svc.cluster.local/run
+          method: POST
+          headers:
+            - name: Content-Type
+              value: application/json
+          payload:
             - src:
                 dependencyName: github-dep
                 dataKey: body
-              dest: spec.arguments.parameters.0.value
-            - src:
-                dependencyName: github-dep
-                dataKey: body.repository.full_name
-              dest: spec.arguments.parameters.1.value
-      rateLimit:
-        unit: Second
-        requestsPerUnit: 1
+              dest: body
+          secureHeaders:
+            - name: X-Automata-Token
+              valueFrom:
+                secretKeyRef:
+                  name: automata-secrets
+                  key: SENSOR_TOKEN
+          timeoutSeconds: 30
 ```
 
 ---
@@ -464,6 +461,7 @@ helm ksec set automata-secrets \
   GITHUB_APP_ID=<apixbot-app-id> \
   GITHUB_APP_PRIVATE_KEY=<pem> \
   GITHUB_WEBHOOK_SECRET=<min-12-chars> \
+  SENSOR_TOKEN=<min-12-chars> \
   JIRA_BASE_URL=https://jira.mongodb.org \
   JIRA_USER=<email> \
   JIRA_API_TOKEN=<token> \
@@ -483,10 +481,10 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 
 | Signal | Where |
 |---|---|
-| Workflow success/failure per automation | Argo UI (`workflows.staging.corp.mongodb.com`) |
-| Step logs | Argo UI live → Splunk after GC (`index=skunkworks-staging`) |
-| Run count / duration / status | Prometheus → Grafana (`argo_workflows_skunkworks_*`) |
+| Automation run logs | Splunk (`index=skunkworks-staging`) |
+| Run count / duration / error rate | Prometheus → Grafana (custom metrics from automata `/metrics`) |
 | Webhook delivery | GitHub App webhook deliveries page |
+| Sensor trigger history | Argo Events UI (`workflows.staging.corp.mongodb.com` → Event Flow) |
 
 ---
 
@@ -501,9 +499,9 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 
 ## Adding a New Automation
 
-1. Create `automations/my-automation.yaml` with `on:`, `repos:`, and `steps:`
+1. Create `automations/my-automation.yaml` with `given:`, `when:`, and `then:`
 2. If it needs a new built-in function, add it to `src/functions/` in Rust and register it in `src/functions/mod.rs`
-3. Open a PR — `automata generate` runs in CI, the generated manifests are committed, Drone deploys
+3. Open a PR — Drone builds and deploys the updated image; no manifest generation needed
 
 ---
 
@@ -511,5 +509,4 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 
 - **Staging only**: `skunkworks` namespace is staging-only. Production deployment needs a separate namespace and prod cluster credentials.
 - **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
-- **Rate limit exception**: if Dependabot opens many PRs simultaneously, the default 1/s Sensor rate limit may need a KANOPY ticket exception
-- **`automata generate` bootstrap**: the first build needs the binary to exist before it can generate manifests — solve with a two-step pipeline or commit initial generated output manually
+- **Sensor http trigger availability**: Kanopy doesn't explicitly document the `http` trigger type — verify it works in `skunkworks` before committing to the architecture

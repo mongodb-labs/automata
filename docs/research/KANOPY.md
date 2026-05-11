@@ -238,9 +238,9 @@ helm install automata-workflows mongodb/argo-workflow-catalog -f argo-workflow-c
 
 ## Argo Events (beta)
 
-> Part of the same Argo ecosystem; controller installed in all Kanopy clusters.
+> Part of the Argo ecosystem; controller installed in all Kanopy clusters. **Independent of Argo Workflows** — can trigger HTTP endpoints, k8s objects, or Argo Workflows.
 
-Event-driven automation framework: detect events from external sources → trigger Argo Workflows or k8s objects.
+Event-driven automation framework: detect events from external sources → trigger downstream actions.
 
 **3 objects to create per event flow:**
 
@@ -249,6 +249,14 @@ Event-driven automation framework: detect events from external sources → trigg
 | `EventBus` | `mongodb/argo-eventbus` | NATS JetStream message bus (one per namespace) |
 | `EventSource` | manual (chart on roadmap) | Receives events from external systems |
 | `Sensor` | manual (chart on roadmap) | Filters events and triggers downstream actions |
+
+**Sensor trigger types (relevant):**
+
+| Type | Use |
+|---|---|
+| `http` | POST to any HTTP endpoint — **not subject to the k8s rate limit** |
+| `argoWorkflow` | Submit an Argo Workflow |
+| `k8s` | Create/patch a k8s resource — max 1/s on Kanopy |
 
 ### GitHub as a well-known source
 
@@ -294,13 +302,14 @@ https://webhooks.prod.corp.mongodb.com/<namespace>/<eventsource-name>/<endpoint>
 - `WebhookSecret` must be ≥ 12 characters
 - GitHub type EventSources must include a WebhookSecret
 
-### Sensor (triggers Argo Workflow on event)
+### Sensor with http trigger (calls automata web service)
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
   name: automata-sensor
+  namespace: skunkworks
 spec:
   dependencies:
     - name: github-dep
@@ -308,23 +317,30 @@ spec:
       eventName: automata
   triggers:
     - template:
-        name: trigger-workflow
-        argoWorkflow:
-          operation: submit
-          source:
-            resource:
-              apiVersion: argoproj.io/v1alpha1
-              kind: WorkflowTemplate
-              name: handle-pr-event
-          parameters:
+        name: call-automata
+        http:
+          url: http://automata.skunkworks.svc.cluster.local/run
+          method: POST
+          headers:
+            - name: Content-Type
+              value: application/json
+          payload:
             - src:
                 dependencyName: github-dep
                 dataKey: body
-              dest: spec.arguments.parameters.0.value
-      rateLimit:
-        unit: Second
-        requestsPerUnit: 1   # Kanopy max; request exception if needed
+              dest: body
+          secureHeaders:
+            - name: X-Automata-Token
+              valueFrom:
+                secretKeyRef:
+                  name: automata-secrets
+                  key: SENSOR_TOKEN
+          timeoutSeconds: 30
 ```
+
+**Rate limits:**
+- `k8s` triggers: Kanopy enforces max 1/s; request exception via KANOPY ticket if needed
+- `http` triggers: **no Kanopy-enforced rate limit**
 
 ---
 
@@ -338,19 +354,26 @@ spec:
 
 ## Automation Hub Deployment Model
 
-For this monorepo, the expected pattern is:
+automata runs as a long-lived HTTP server deployed via `mongodb/web-app`. Argo Events delivers GitHub webhooks to it via a Sensor `http` trigger.
 
 ```
 automata/
-├── .drone.yml                   # top-level pipeline, path-filtered per automation
-├── environments/
-│   ├── staging.yaml             # Helm values for staging
-│   └── prod.yaml                # Helm values for production
-├── scripts/                     # automation scripts packaged into the container image
-├── Dockerfile                   # single image for all cron-based automations
-└── cronjobs.yml                 # Helm cronjobs chart values (one job per automation)
+├── .drone.yml                   # build image → deploy web-app + eventbus + k8s manifests
+├── Dockerfile                   # multi-stage: cargo build → distroless/static
+├── Cargo.toml
+├── src/                         # Rust source
+├── automations/                 # declarative automation YAML files
+├── functions/                   # reusable named step sequences
+├── k8s/
+│   ├── eventsource.yaml         # GitHub EventSource (well-known source, hand-written)
+│   └── sensor.yaml              # Sensor with http trigger (hand-written)
+└── deploy/
+    ├── staging.yaml             # mongodb/web-app Helm values for staging
+    └── eventbus-values.yaml     # mongodb/argo-eventbus Helm values
 ```
 
-Each automation becomes a separate `CronJob` entry in `cronjobs.yml`. The Drone pipeline rebuilds and redeploys on push to `main`, using path filters to avoid unnecessary builds.
+Helm releases in `skunkworks` namespace:
+- `automata` — the web service (`mongodb/web-app`)
+- `automata-eventbus` — the NATS event bus (`mongodb/argo-eventbus`)
 
-Helm release naming: use a single unique release name (e.g. `automata-cronjobs`) for all jobs — since this is a monorepo, there's only one Helm release per namespace, avoiding the multi-repo collision gotcha.
+EventSource and Sensor are applied via `kubectl apply` (no Helm chart available yet per Kanopy roadmap).
