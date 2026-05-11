@@ -87,14 +87,14 @@ Two forms, both evaluated at runtime by the engine:
 
 | Form | Used for | Example |
 |---|---|---|
-| `!ref path` | Standalone field value resolved from context | `branch: !ref event.pull_request.head.ref` |
+| `!ref path` | Standalone field value resolved from context | `branch: !ref payload.pull_request.head.ref` |
 | `"{text} {key}"` + `param:` | String interpolation — `{key}` replaced from `param:` bindings | `summary: "[{repo}] {title}"` |
 
 Available context paths for `!ref` and `param:` values:
 
 | Path | Content |
 |---|---|
-| `event.*` | Raw GitHub webhook payload |
+| `payload.*` | Raw GitHub webhook payload |
 | `<step-id>.<output>` | Output from a previous step, e.g. `ticket.url` |
 | `inputs.*` | Inputs passed to a named function via `uses:` |
 
@@ -127,8 +127,8 @@ then:
         customfield_12751: "<JIRA_TEAM_APIX_2>"
       summary: "[{repo}] {title}"
       param:
-        repo: event.repository.name
-        title: event.pull_request.title
+        repo: payload.repository.name
+        title: payload.pull_request.title
   - github.post_comment:
       body: "Jira ticket: {url}"
       param:
@@ -157,8 +157,8 @@ then:
   - jira.find_key:
       id: find
       pattern: "CLOUDP-\\d+"
-      branch: !ref event.pull_request.head.ref
-      comments_url: !ref event.pull_request.comments_url
+      branch: !ref payload.pull_request.head.ref
+      comments_url: !ref payload.pull_request.comments_url
   - jira.transition:
       key: !ref find.key
       transition_id: "1381"
@@ -183,8 +183,8 @@ then:
       component: AtlasCLI
       summary: "[{repo}] {title}"
       param:
-        repo: event.repository.name
-        title: event.issue.title
+        repo: payload.repository.name
+        title: payload.issue.title
   - github.post_comment:
       if: action_is_opened
       body: "Jira ticket: {url}"
@@ -194,7 +194,7 @@ then:
       id: find
       if: action_not_opened
       pattern: "CLOUDP-\\d+"
-      comments_url: !ref event.issue.comments_url
+      comments_url: !ref payload.issue.comments_url
   - jira.transition:
       if: action_is_closed
       key: !ref find.key
