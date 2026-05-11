@@ -1,6 +1,5 @@
 pub mod github;
 pub mod jira;
-pub mod named;
 
 use crate::context::ExecutionContext;
 use crate::engine::eval_if;
@@ -16,14 +15,12 @@ pub struct Clients {
     pub http: reqwest::Client,
 }
 
-/// Execute a single step, updating ctx.outputs if the step has an id.
 pub fn execute_step<'a>(
     step: &'a Step,
     ctx: &'a mut ExecutionContext,
     clients: &'a Clients,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send + 'a>> {
     Box::pin(async move {
-        // Evaluate if: condition
         if let Some(cond) = &step.if_cond {
             if !eval_if(cond, &ctx.payload) {
                 info!(cond, "step skipped");
@@ -31,15 +28,8 @@ pub fn execute_step<'a>(
             }
         }
 
-        let outputs = if let Some(func) = &step.func {
-            info!(func, "executing step");
-            dispatch(func, &step.inputs, ctx, clients).await?
-        } else if let Some(uses) = &step.uses {
-            info!(uses, "expanding named function");
-            named::run(uses, &step.inputs, ctx, clients).await?
-        } else {
-            anyhow::bail!("step has neither func nor uses");
-        };
+        info!(func = step.func, "executing step");
+        let outputs = dispatch(&step.func, &step.inputs, ctx, clients).await?;
 
         if let Some(id) = &step.id {
             ctx.outputs.insert(id.clone(), outputs);

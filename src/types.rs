@@ -46,18 +46,11 @@ impl ActionFilter {
     }
 }
 
-/// A parsed step extracted from the raw YAML value.
 #[derive(Debug, Clone)]
 pub struct Step {
-    /// The built-in function name (e.g. "jira.create_issue") or None if uses:.
-    pub func: Option<String>,
-    /// Named function to call via uses:.
-    pub uses: Option<String>,
-    /// Optional step ID for referencing outputs.
+    pub func: String,
     pub id: Option<String>,
-    /// Optional condition shorthand.
     pub if_cond: Option<String>,
-    /// All remaining key-value inputs (after extracting id/if/uses).
     pub inputs: HashMap<String, serde_yaml::Value>,
 }
 
@@ -67,23 +60,6 @@ impl Step {
             .as_mapping()
             .ok_or_else(|| anyhow::anyhow!("step must be a mapping"))?;
 
-        // uses: is a top-level key
-        if let Some(uses_val) = map.get("uses") {
-            let uses = uses_val
-                .as_str()
-                .ok_or_else(|| anyhow::anyhow!("uses must be a string"))?
-                .to_string();
-            let mut inputs = HashMap::new();
-            for (k, v) in map {
-                let key = k.as_str().unwrap_or_default();
-                if key != "uses" {
-                    inputs.insert(key.to_string(), v.clone());
-                }
-            }
-            return Ok(Step { func: None, uses: Some(uses), id: None, if_cond: None, inputs });
-        }
-
-        // Built-in: single key is the function name
         let (func_name, inner) = map
             .iter()
             .next()
@@ -94,12 +70,11 @@ impl Step {
             .ok_or_else(|| anyhow::anyhow!("function name must be a string"))?
             .to_string();
 
-        let inner_map = inner.as_mapping();
         let mut inputs = HashMap::new();
         let mut id = None;
         let mut if_cond = None;
 
-        if let Some(m) = inner_map {
+        if let Some(m) = inner.as_mapping() {
             for (k, v) in m {
                 let key = k.as_str().unwrap_or_default();
                 match key {
@@ -110,7 +85,7 @@ impl Step {
             }
         }
 
-        Ok(Step { func: Some(func), uses: None, id, if_cond, inputs })
+        Ok(Step { func, id, if_cond, inputs })
     }
 }
 
@@ -165,19 +140,9 @@ mod tests {
             "jira.create_issue:\n  id: ticket\n  issue_type: Story\n  project: CLOUDP\n  summary: test"
         ).unwrap();
         let step = Step::from_yaml(&yaml).unwrap();
-        assert_eq!(step.func.as_deref(), Some("jira.create_issue"));
+        assert_eq!(step.func, "jira.create_issue");
         assert_eq!(step.id.as_deref(), Some("ticket"));
         assert_eq!(step.inputs["project"].as_str(), Some("CLOUDP"));
         assert_eq!(step.inputs["issue_type"].as_str(), Some("Story"));
-    }
-
-    #[test]
-    fn step_from_yaml_uses() {
-        let yaml: serde_yaml::Value = serde_yaml::from_str(
-            "uses: notify-slack\nchannel: C123\nmessage: hello"
-        ).unwrap();
-        let step = Step::from_yaml(&yaml).unwrap();
-        assert_eq!(step.uses.as_deref(), Some("notify-slack"));
-        assert_eq!(step.inputs["channel"].as_str(), Some("C123"));
     }
 }
