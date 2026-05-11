@@ -1,0 +1,302 @@
+- generic [ref=e2]:
+  - region "Skip to main content":
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#__docusaurus_skipToContent_fallback"
+  - navigation "Main" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Kanopy logo Kanopy" [ref=e7] [cursor=pointer]:
+          - /url: /docs/
+          - img "Kanopy logo" [ref=e9]
+          - generic [ref=e10]: Kanopy
+        - link "Documentation" [ref=e11] [cursor=pointer]:
+          - /url: /docs/
+        - link "Tutorial" [ref=e12] [cursor=pointer]:
+          - /url: /docs/getting_started/
+        - link "Examples" [ref=e13] [cursor=pointer]:
+          - /url: /docs/examples/
+        - link "Advisories" [ref=e14] [cursor=pointer]:
+          - /url: /docs/advisories/
+        - link "FAQ" [ref=e15] [cursor=pointer]:
+          - /url: /docs/faq/
+      - generic [ref=e16]:
+        - link "GitHub" [ref=e17] [cursor=pointer]:
+          - /url: https://github.com/10gen/kanopy-docs
+          - text: GitHub
+          - img [ref=e18]
+        - button "Switch between dark and light mode (currently light mode)" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+        - generic [ref=e25]:
+          - textbox "Search" [ref=e26]
+          - generic:
+            - generic: ⌘
+            - generic: K
+  - generic [ref=e29]:
+    - complementary [ref=e30]:
+      - navigation "Docs sidebar" [ref=e33]:
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link "Introduction" [ref=e36] [cursor=pointer]:
+              - /url: /docs/
+          - listitem [ref=e37]:
+            - generic [ref=e38]:
+              - link "Onboarding" [ref=e39] [cursor=pointer]:
+                - /url: /docs/onboarding/
+              - button "Expand sidebar category 'Onboarding'" [ref=e40] [cursor=pointer]
+          - listitem [ref=e41]:
+            - generic [ref=e42]:
+              - link "Accessing Kanopy" [ref=e43] [cursor=pointer]:
+                - /url: /docs/access/
+              - button "Expand sidebar category 'Accessing Kanopy'" [ref=e44] [cursor=pointer]
+          - listitem [ref=e45]:
+            - generic [ref=e46]:
+              - link "Configuration" [ref=e47] [cursor=pointer]:
+                - /url: /docs/configuration/
+              - button "Expand sidebar category 'Configuration'" [ref=e48] [cursor=pointer]
+          - listitem [ref=e49]:
+            - generic [ref=e50]:
+              - link "Getting Started with Kanopy" [ref=e51] [cursor=pointer]:
+                - /url: /docs/getting_started/
+              - button "Expand sidebar category 'Getting Started with Kanopy'" [ref=e52] [cursor=pointer]
+          - listitem [ref=e53]:
+            - generic [ref=e54]:
+              - link "Development" [ref=e55] [cursor=pointer]:
+                - /url: /docs/development/
+              - button "Expand sidebar category 'Development'" [ref=e56] [cursor=pointer]
+          - listitem [ref=e57]:
+            - generic [ref=e58]:
+              - link "CI/CD" [ref=e59] [cursor=pointer]:
+                - /url: /docs/cicd/
+              - button "Collapse sidebar category 'CI/CD'" [expanded] [ref=e60] [cursor=pointer]
+            - list [ref=e61]:
+              - listitem [ref=e62]:
+                - link "Advanced Drone Pipeline Configuration" [ref=e63] [cursor=pointer]:
+                  - /url: /docs/cicd/advanced_drone/
+              - listitem [ref=e64]:
+                - link "Managing Drone Secrets" [ref=e65] [cursor=pointer]:
+                  - /url: /docs/cicd/drone_secrets/
+              - listitem [ref=e66]:
+                - link "drone.yml Explained" [ref=e67] [cursor=pointer]:
+                  - /url: /docs/cicd/drone_yml_explained/
+          - listitem [ref=e68]:
+            - generic [ref=e69]:
+              - link "Routing" [ref=e70] [cursor=pointer]:
+                - /url: /docs/routing/
+              - button "Expand sidebar category 'Routing'" [ref=e71] [cursor=pointer]
+          - listitem [ref=e72]:
+            - generic [ref=e73]:
+              - link "Kanopy Service Mesh" [ref=e74] [cursor=pointer]:
+                - /url: /docs/ingress/
+              - button "Expand sidebar category 'Kanopy Service Mesh'" [ref=e75] [cursor=pointer]
+          - listitem [ref=e76]:
+            - generic [ref=e77]:
+              - link "CorpSecure" [ref=e78] [cursor=pointer]:
+                - /url: /docs/corpsecure/
+              - button "Expand sidebar category 'CorpSecure'" [ref=e79] [cursor=pointer]
+          - listitem [ref=e80]:
+            - generic [ref=e81]:
+              - link "Observability" [ref=e82] [cursor=pointer]:
+                - /url: /docs/observability/
+              - button "Expand sidebar category 'Observability'" [ref=e83] [cursor=pointer]
+          - listitem [ref=e84]:
+            - generic [ref=e85]:
+              - link "Data Analytics" [ref=e86] [cursor=pointer]:
+                - /url: /docs/data-analytics/
+              - button "Expand sidebar category 'Data Analytics'" [ref=e87] [cursor=pointer]
+          - listitem [ref=e88]:
+            - generic [ref=e89]:
+              - link "Production" [ref=e90] [cursor=pointer]:
+                - /url: /docs/production/
+              - button "Expand sidebar category 'Production'" [ref=e91] [cursor=pointer]
+          - listitem [ref=e92]:
+            - generic [ref=e93]:
+              - link "Examples" [ref=e94] [cursor=pointer]:
+                - /url: /docs/examples/
+              - button "Expand sidebar category 'Examples'" [ref=e95] [cursor=pointer]
+          - listitem [ref=e96]:
+            - generic [ref=e97]:
+              - link "Security" [ref=e98] [cursor=pointer]:
+                - /url: /docs/security/
+              - button "Expand sidebar category 'Security'" [ref=e99] [cursor=pointer]
+          - listitem [ref=e100]:
+            - generic [ref=e101]:
+              - link "Advisories" [ref=e102] [cursor=pointer]:
+                - /url: /docs/advisories/
+              - button "Expand sidebar category 'Advisories'" [ref=e103] [cursor=pointer]
+          - listitem [ref=e104]:
+            - generic [ref=e105]:
+              - link "Policies" [ref=e106] [cursor=pointer]:
+                - /url: /docs/policies/
+              - button "Expand sidebar category 'Policies'" [ref=e107] [cursor=pointer]
+          - listitem [ref=e108]:
+            - generic [ref=e109]:
+              - link "Kanopy beta services" [ref=e110] [cursor=pointer]:
+                - /url: /docs/beta/
+              - button "Expand sidebar category 'Kanopy beta services'" [ref=e111] [cursor=pointer]
+          - listitem [ref=e112]:
+            - generic [ref=e113]:
+              - link "Kanopy alpha services" [ref=e114] [cursor=pointer]:
+                - /url: /docs/alpha/
+              - button "Expand sidebar category 'Kanopy alpha services'" [ref=e115] [cursor=pointer]
+          - listitem [ref=e116]:
+            - generic [ref=e117]:
+              - link "Other" [ref=e118] [cursor=pointer]:
+                - /url: /docs/other/
+              - button "Expand sidebar category 'Other'" [ref=e119] [cursor=pointer]
+          - listitem [ref=e120]:
+            - link "Kanopy Cheatsheet" [ref=e121] [cursor=pointer]:
+              - /url: /docs/cheatsheet/
+          - listitem [ref=e122]:
+            - link "Emergency Contact" [ref=e123] [cursor=pointer]:
+              - /url: /docs/emergency_contact/
+          - listitem [ref=e124]:
+            - link "FAQ" [ref=e125] [cursor=pointer]:
+              - /url: /docs/faq/
+          - listitem [ref=e126]:
+            - link "Glossary" [ref=e127] [cursor=pointer]:
+              - /url: /docs/glossary/
+          - listitem [ref=e128]:
+            - button "api" [ref=e130] [cursor=pointer]
+    - main [ref=e131]:
+      - generic [ref=e135]:
+        - article [ref=e136]:
+          - navigation "Breadcrumbs" [ref=e137]:
+            - list [ref=e138]:
+              - listitem [ref=e139]:
+                - link "Home page" [ref=e140] [cursor=pointer]:
+                  - /url: /docs/
+                  - img [ref=e141]
+              - listitem [ref=e143]:
+                - link "CI/CD" [ref=e144] [cursor=pointer]:
+                  - /url: /docs/cicd/
+              - listitem [ref=e145]:
+                - generic [ref=e146]: drone.yml Explained
+          - generic [ref=e147]:
+            - heading "drone.yml Explained" [level=1] [ref=e149]
+            - generic [ref=e151]:
+              - code [ref=e153]:
+                - generic [ref=e154]: "---"
+                - generic [ref=e155]: "# Drone object kind. Other types of objects are `secret` and `signature`."
+                - generic [ref=e156]: "kind: pipeline"
+                - generic [ref=e157]: "# Execute this pipeline inside a Kubernetes pod."
+                - generic [ref=e158]: "# see https://docs.drone.io/pipeline/kubernetes/overview/"
+                - generic [ref=e159]: "type: kubernetes"
+                - generic [ref=e160]: "# Name for this pipeline. Multiple pipelines can be defined for your project"
+                - generic [ref=e161]: "name: default"
+                - generic [ref=e162]: "# Target specific host architecture types. arm64 is recommended."
+                - generic [ref=e163]: "platform:"
+                - generic [ref=e164]: "arch: arm64 # 'amd64' is also an option"
+                - generic [ref=e165]: "# trigger this pipeline only when the Github webhook is for an event on the"
+                - generic [ref=e166]: "# main branch"
+                - generic [ref=e167]: "trigger:"
+                - generic [ref=e168]: "branch:"
+                - generic [ref=e169]: "- main"
+                - generic [ref=e170]: "# List of pipeline steps."
+                - generic [ref=e171]: "steps:"
+                - generic [ref=e172]: "# `name` is any string, in this case we are building and publishing a Docker image."
+                - generic [ref=e173]: "- name: publish"
+                - generic [ref=e174]: "# Drone plugin to use for this step. The kaniko-ecr plugin is a docker image that builds"
+                - generic [ref=e175]: "# and publishes container images to the AWS Elastic Container Registry (ECR)."
+                - generic [ref=e176]: "# see https://github.com/drone/drone-kaniko"
+                - generic [ref=e177]: "image: plugins/kaniko-ecr"
+                - generic [ref=e178]: "# Configuration for the drone-ecr plugin."
+                - generic [ref=e179]: "settings:"
+                - generic [ref=e180]: "# ECR repositories need to be created before they can be used."
+                - generic [ref=e181]: "# This setting ensures they are created."
+                - generic [ref=e182]: "create_repository: true"
+                - generic [ref=e183]: "# Hostname for the registry where this repository is hosted."
+                - generic [ref=e184]: "registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com"
+                - generic [ref=e185]: "# Repository path. This will be used to tag the resulting images."
+                - generic [ref=e186]: "# The last section is a Drone variable and refers to the name of this Git repository."
+                - generic [ref=e187]: "# AWS ECR does not accept uppercase letters in the repository name, to convert"
+                - generic [ref=e188]: "# to lowercase use ${DRONE_REPO_NAME,,}"
+                - generic [ref=e189]: "repo: my-namespace/${DRONE_REPO_NAME}"
+                - generic [ref=e190]: "# Docker image tags that will be applied to the resulting image."
+                - generic [ref=e191]: "# They will be prefixed with the repository name."
+                - generic [ref=e192]: "tags:"
+                - generic [ref=e193]: "- git-${DRONE_COMMIT_SHA:0:7}"
+                - generic [ref=e194]: "- latest"
+                - generic [ref=e195]: "# Plug-in variables for AWS IAM credentials to push to ECR. These are stored as"
+                - generic [ref=e196]: "# Drone secrets for each Git repo."
+                - generic [ref=e197]: "access_key:"
+                - generic [ref=e198]: "from_secret: ecr_access_key"
+                - generic [ref=e199]: "secret_key:"
+                - generic [ref=e200]: "from_secret: ecr_secret_key"
+                - generic [ref=e201]: "# Only execute this step when the Github webhook is for a push event."
+                - generic [ref=e202]: "when:"
+                - generic [ref=e203]: "event:"
+                - generic [ref=e204]: "- push"
+                - generic [ref=e205]: "- name: deploy-staging"
+                - generic [ref=e206]: "# Docker image for a Drone plugin that deploys to Kubernetes using Helm."
+                - generic [ref=e207]: "# This is a custom image built for Kanopy based on https://github.com/kanopy-platform/drone-helm3"
+                - generic [ref=e208]: "image: public.ecr.aws/kanopy/drone-helm:v3"
+                - generic [ref=e209]: "# Configuration for the drone-helm plugin."
+                - generic [ref=e210]: "settings:"
+                - generic [ref=e211]: "# Helm chart to use to deploy this workload. web-app is a Kanopy chart that"
+                - generic [ref=e212]: "# allows for creating Kubernetes Deployments."
+                - generic [ref=e213]: "# see the Glossary to understand Helm Charts"
+                - generic [ref=e214]: "chart: mongodb/web-app"
+                - generic [ref=e215]: "# Version of the chart. We should always try to use the latest, as shown in"
+                - generic [ref=e216]: "# the Changelog: https://github.com/10gen/helm-charts/blob/master/charts/web-app/CHANGELOG.md"
+                - generic [ref=e217]: "chart_version: 4.25.0"
+                - generic [ref=e218]: "# List of repositories to add, that should contain the above Helm chart. This link refers to"
+                - generic [ref=e219]: "# https://github.com/10gen/helm-charts/tree/master/docs"
+                - generic [ref=e220]: "add_repos: [mongodb=https://10gen.github.io/helm-charts]"
+                - generic [ref=e221]: "# Target namespace to deploy this workload to."
+                - generic [ref=e222]: "namespace: my-namespace"
+                - generic [ref=e223]: "# Name of the Helm release. All associated objects created by this release will"
+                - generic [ref=e224]: "# use this string as a prefix. e.g. Deployment, Service, Ingress objects"
+                - generic [ref=e225]: "release: my-app"
+                - generic [ref=e226]: "# Helm values/environment file that configures chart parameters."
+                - generic [ref=e227]: "# Refer to the helm-charts repository for all available options:"
+                - generic [ref=e228]: "# - web-app: https://github.com/10gen/helm-charts/tree/master/charts/web-app"
+                - generic [ref=e229]: "# - cronjobs: https://github.com/10gen/helm-charts/tree/master/charts/cronjobs"
+                - generic [ref=e230]: "values_files: [ \"environments/staging.yaml\" ]"
+                - generic [ref=e231]: "# These values will be passed from the drone-helm plugin to the chart as command-line"
+                - generic [ref=e232]: "# arguments. They will be merged (and overwrite) with the values in the environments file."
+                - generic [ref=e233]: "values: image.tag=git-${DRONE_COMMIT_SHA:0:7},image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/<NAMESPACE>/${DRONE_REPO_NAME},ingress.enabled=true,ingress.hosts[0]=my-app.namespace.staging.corp.mongodb.com"
+                - generic [ref=e234]: "# API server URL. Each Kanopy cluster has its own."
+                - generic [ref=e235]: "api_server: https://api.staging.corp.mongodb.com"
+                - generic [ref=e236]: "# Plugin variable to authenticate with the API server. It is stored as a Drone secret."
+                - generic [ref=e237]: "kubernetes_token:"
+                - generic [ref=e238]: "from_secret: staging_kubernetes_token"
+                - generic [ref=e239]: "when:"
+                - generic [ref=e240]: "event:"
+                - generic [ref=e241]: "- push"
+              - generic [ref=e242]:
+                - button "Toggle word wrap" [ref=e243] [cursor=pointer]:
+                  - img [ref=e244]
+                - button "Copy code to clipboard" [ref=e246] [cursor=pointer]:
+                  - generic [ref=e247]:
+                    - img [ref=e248]
+                    - img [ref=e250]
+        - navigation "Docs pages" [ref=e252]:
+          - link "Previous « Managing Drone Secrets" [ref=e253] [cursor=pointer]:
+            - /url: /docs/cicd/drone_secrets/
+            - generic [ref=e254]: Previous
+            - generic [ref=e255]: « Managing Drone Secrets
+          - link "Next Routing »" [ref=e256] [cursor=pointer]:
+            - /url: /docs/routing/
+            - generic [ref=e257]: Next
+            - generic [ref=e258]: Routing »
+  - contentinfo [ref=e259]:
+    - generic [ref=e260]:
+      - generic [ref=e261]:
+        - generic [ref=e262]:
+          - generic [ref=e263]: Docs
+          - list [ref=e264]:
+            - listitem [ref=e265]:
+              - link "Documentation" [ref=e266] [cursor=pointer]:
+                - /url: /docs/
+            - listitem [ref=e267]:
+              - link "Support" [ref=e268] [cursor=pointer]:
+                - /url: https://jira.mongodb.org/plugins/servlet/desk/portal/48
+        - generic [ref=e269]:
+          - generic [ref=e270]: More
+          - list [ref=e271]:
+            - listitem [ref=e272]:
+              - link "GitHub" [ref=e273] [cursor=pointer]:
+                - /url: https://github.com/10gen/kanopy-docs
+                - text: GitHub
+                - img [ref=e274]
+      - generic [ref=e277]: Copyright © 2026 MongoDB.

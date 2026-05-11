@@ -1,0 +1,543 @@
+- generic [ref=e2]:
+  - region "Skip to main content":
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#__docusaurus_skipToContent_fallback"
+  - navigation "Main" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Kanopy logo Kanopy" [ref=e7] [cursor=pointer]:
+          - /url: /docs/
+          - img "Kanopy logo" [ref=e9]
+          - generic [ref=e10]: Kanopy
+        - link "Documentation" [ref=e11] [cursor=pointer]:
+          - /url: /docs/
+        - link "Tutorial" [ref=e12] [cursor=pointer]:
+          - /url: /docs/getting_started/
+        - link "Examples" [ref=e13] [cursor=pointer]:
+          - /url: /docs/examples/
+        - link "Advisories" [ref=e14] [cursor=pointer]:
+          - /url: /docs/advisories/
+        - link "FAQ" [ref=e15] [cursor=pointer]:
+          - /url: /docs/faq/
+      - generic [ref=e16]:
+        - link "GitHub" [ref=e17] [cursor=pointer]:
+          - /url: https://github.com/10gen/kanopy-docs
+          - text: GitHub
+          - img [ref=e18]
+        - button "Switch between dark and light mode (currently light mode)" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+        - generic [ref=e25]:
+          - textbox "Search" [ref=e26]
+          - generic:
+            - generic: ⌘
+            - generic: K
+  - generic [ref=e29]:
+    - complementary [ref=e30]:
+      - navigation "Docs sidebar" [ref=e33]:
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link "Introduction" [ref=e36] [cursor=pointer]:
+              - /url: /docs/
+          - listitem [ref=e37]:
+            - generic [ref=e38]:
+              - link "Onboarding" [ref=e39] [cursor=pointer]:
+                - /url: /docs/onboarding/
+              - button "Expand sidebar category 'Onboarding'" [ref=e40] [cursor=pointer]
+          - listitem [ref=e41]:
+            - generic [ref=e42]:
+              - link "Accessing Kanopy" [ref=e43] [cursor=pointer]:
+                - /url: /docs/access/
+              - button "Expand sidebar category 'Accessing Kanopy'" [ref=e44] [cursor=pointer]
+          - listitem [ref=e45]:
+            - generic [ref=e46]:
+              - link "Configuration" [ref=e47] [cursor=pointer]:
+                - /url: /docs/configuration/
+              - button "Expand sidebar category 'Configuration'" [ref=e48] [cursor=pointer]
+          - listitem [ref=e49]:
+            - generic [ref=e50]:
+              - link "Getting Started with Kanopy" [ref=e51] [cursor=pointer]:
+                - /url: /docs/getting_started/
+              - button "Expand sidebar category 'Getting Started with Kanopy'" [ref=e52] [cursor=pointer]
+          - listitem [ref=e53]:
+            - generic [ref=e54]:
+              - link "Development" [ref=e55] [cursor=pointer]:
+                - /url: /docs/development/
+              - button "Expand sidebar category 'Development'" [ref=e56] [cursor=pointer]
+          - listitem [ref=e57]:
+            - generic [ref=e58]:
+              - link "CI/CD" [ref=e59] [cursor=pointer]:
+                - /url: /docs/cicd/
+              - button "Expand sidebar category 'CI/CD'" [ref=e60] [cursor=pointer]
+          - listitem [ref=e61]:
+            - generic [ref=e62]:
+              - link "Routing" [ref=e63] [cursor=pointer]:
+                - /url: /docs/routing/
+              - button "Expand sidebar category 'Routing'" [ref=e64] [cursor=pointer]
+          - listitem [ref=e65]:
+            - generic [ref=e66]:
+              - link "Kanopy Service Mesh" [ref=e67] [cursor=pointer]:
+                - /url: /docs/ingress/
+              - button "Expand sidebar category 'Kanopy Service Mesh'" [ref=e68] [cursor=pointer]
+          - listitem [ref=e69]:
+            - generic [ref=e70]:
+              - link "CorpSecure" [ref=e71] [cursor=pointer]:
+                - /url: /docs/corpsecure/
+              - button "Expand sidebar category 'CorpSecure'" [ref=e72] [cursor=pointer]
+          - listitem [ref=e73]:
+            - generic [ref=e74]:
+              - link "Observability" [ref=e75] [cursor=pointer]:
+                - /url: /docs/observability/
+              - button "Expand sidebar category 'Observability'" [ref=e76] [cursor=pointer]
+          - listitem [ref=e77]:
+            - generic [ref=e78]:
+              - link "Data Analytics" [ref=e79] [cursor=pointer]:
+                - /url: /docs/data-analytics/
+              - button "Expand sidebar category 'Data Analytics'" [ref=e80] [cursor=pointer]
+          - listitem [ref=e81]:
+            - generic [ref=e82]:
+              - link "Production" [ref=e83] [cursor=pointer]:
+                - /url: /docs/production/
+              - button "Expand sidebar category 'Production'" [ref=e84] [cursor=pointer]
+          - listitem [ref=e85]:
+            - generic [ref=e86]:
+              - link "Examples" [ref=e87] [cursor=pointer]:
+                - /url: /docs/examples/
+              - button "Expand sidebar category 'Examples'" [ref=e88] [cursor=pointer]
+          - listitem [ref=e89]:
+            - generic [ref=e90]:
+              - link "Security" [ref=e91] [cursor=pointer]:
+                - /url: /docs/security/
+              - button "Expand sidebar category 'Security'" [ref=e92] [cursor=pointer]
+          - listitem [ref=e93]:
+            - generic [ref=e94]:
+              - link "Advisories" [ref=e95] [cursor=pointer]:
+                - /url: /docs/advisories/
+              - button "Expand sidebar category 'Advisories'" [ref=e96] [cursor=pointer]
+          - listitem [ref=e97]:
+            - generic [ref=e98]:
+              - link "Policies" [ref=e99] [cursor=pointer]:
+                - /url: /docs/policies/
+              - button "Expand sidebar category 'Policies'" [ref=e100] [cursor=pointer]
+          - listitem [ref=e101]:
+            - generic [ref=e102]:
+              - link "Kanopy beta services" [ref=e103] [cursor=pointer]:
+                - /url: /docs/beta/
+              - button "Expand sidebar category 'Kanopy beta services'" [ref=e104] [cursor=pointer]
+          - listitem [ref=e105]:
+            - generic [ref=e106]:
+              - link "Kanopy alpha services" [ref=e107] [cursor=pointer]:
+                - /url: /docs/alpha/
+              - button "Expand sidebar category 'Kanopy alpha services'" [ref=e108] [cursor=pointer]
+          - listitem [ref=e109]:
+            - generic [ref=e110]:
+              - link "Other" [ref=e111] [cursor=pointer]:
+                - /url: /docs/other/
+              - button "Expand sidebar category 'Other'" [ref=e112] [cursor=pointer]
+          - listitem [ref=e113]:
+            - link "Kanopy Cheatsheet" [ref=e114] [cursor=pointer]:
+              - /url: /docs/cheatsheet/
+          - listitem [ref=e115]:
+            - link "Emergency Contact" [ref=e116] [cursor=pointer]:
+              - /url: /docs/emergency_contact/
+          - listitem [ref=e117]:
+            - link "FAQ" [ref=e118] [cursor=pointer]:
+              - /url: /docs/faq/
+          - listitem [ref=e119]:
+            - link "Glossary" [ref=e120] [cursor=pointer]:
+              - /url: /docs/glossary/
+          - listitem [ref=e121]:
+            - button "api" [ref=e123] [cursor=pointer]
+    - main [ref=e124]:
+      - generic [ref=e126]:
+        - generic [ref=e128]:
+          - article [ref=e129]:
+            - navigation "Breadcrumbs" [ref=e130]:
+              - list [ref=e131]:
+                - listitem [ref=e132]:
+                  - link "Home page" [ref=e133] [cursor=pointer]:
+                    - /url: /docs/
+                    - img [ref=e134]
+                - listitem [ref=e136]:
+                  - generic [ref=e137]: Introduction
+            - generic [ref=e138]:
+              - img [ref=e139]
+              - heading "Kanopy Documentation" [level=1] [ref=e141]
+              - paragraph [ref=e142]: Kanopy is the internal developer platform for MongoDB.
+              - paragraph [ref=e143]: It provides self-service developer tooling and infrastructure services that enable development teams to reliably deploy and operate their own services and products.
+              - paragraph [ref=e144]:
+                - text: Check out our
+                - link "onboarding documentation" [ref=e145] [cursor=pointer]:
+                  - /url: /docs/onboarding/
+                - text: for a overview of the requirements for deploying applications in Kanopy.
+              - heading "OverviewDirect link to Overview" [level=2] [ref=e146]:
+                - text: Overview
+                - link "Direct link to Overview" [ref=e147] [cursor=pointer]:
+                  - /url: "#overview"
+                  - text: "#"
+              - paragraph [ref=e148]: "Some of the key components of Kanopy include:"
+              - list [ref=e149]:
+                - listitem [ref=e150]:
+                  - img [ref=e151]
+                  - link "Kubernetes" [ref=e152] [cursor=pointer]:
+                    - /url: https://kubernetes.io/
+                  - text: (k8s) for container orchestration and scheduling.
+                - listitem [ref=e153]:
+                  - img [ref=e154]
+                  - link "ECR" [ref=e155] [cursor=pointer]:
+                    - /url: https://aws.amazon.com/ecr/
+                  - text: private registry for storing container images.
+                - listitem [ref=e156]:
+                  - img [ref=e157]
+                  - link "Helm" [ref=e158] [cursor=pointer]:
+                    - /url: https://helm.sh/
+                  - text: for packaging and release management of k8s applications.
+                - listitem [ref=e159]:
+                  - img [ref=e160]
+                  - link "Drone" [ref=e161] [cursor=pointer]:
+                    - /url: https://docs.drone.io/
+                  - text: for CI/CD.
+                - listitem [ref=e162]:
+                  - img [ref=e163]
+                  - link "Grafana" [ref=e164] [cursor=pointer]:
+                    - /url: https://grafana.com/
+                  - text: for analytics and dashboards.
+                - listitem [ref=e165]:
+                  - img [ref=e166]
+                  - link "Prometheus" [ref=e167] [cursor=pointer]:
+                    - /url: https://prometheus.io/
+                  - text: for monitoring and alerting.
+                - listitem [ref=e168]:
+                  - img [ref=e169]
+                  - link "Splunk" [ref=e170] [cursor=pointer]:
+                    - /url: https://www.splunk.com/
+                  - text: for logging analytics.
+              - heading "Quick LinksDirect link to Quick Links" [level=4] [ref=e171]:
+                - text: Quick Links
+                - link "Direct link to Quick Links" [ref=e172] [cursor=pointer]:
+                  - /url: "#quick-links"
+                  - text: "#"
+              - paragraph [ref=e173]: "(Note: Ensure you are on the VPN or office LAN.)"
+              - table [ref=e174]:
+                - rowgroup [ref=e175]:
+                  - row "Service Staging Production" [ref=e176]:
+                    - columnheader "Service" [ref=e177]
+                    - columnheader "Staging" [ref=e178]
+                    - columnheader "Production" [ref=e179]
+                - rowgroup [ref=e180]:
+                  - row "Drone (Requires VPN) (same as prod) drone.corp.mongodb.com" [ref=e181]:
+                    - cell "Drone (Requires VPN)" [ref=e182]
+                    - cell "(same as prod)" [ref=e183]
+                    - cell "drone.corp.mongodb.com" [ref=e184]:
+                      - link "drone.corp.mongodb.com" [ref=e185] [cursor=pointer]:
+                        - /url: https://drone.corp.mongodb.com/
+                  - row "Grafana grafana.staging.corp.mongodb.com grafana.corp.mongodb.com" [ref=e186]:
+                    - cell "Grafana" [ref=e187]
+                    - cell "grafana.staging.corp.mongodb.com" [ref=e188]:
+                      - link "grafana.staging.corp.mongodb.com" [ref=e189] [cursor=pointer]:
+                        - /url: https://grafana.staging.corp.mongodb.com
+                    - cell "grafana.corp.mongodb.com" [ref=e190]:
+                      - link "grafana.corp.mongodb.com" [ref=e191] [cursor=pointer]:
+                        - /url: https://grafana.corp.mongodb.com
+                  - row "Prometheus prometheus.staging.corp.mongodb.com prometheus.prod.corp.mongodb.com" [ref=e192]:
+                    - cell "Prometheus" [ref=e193]
+                    - cell "prometheus.staging.corp.mongodb.com" [ref=e194]:
+                      - link "prometheus.staging.corp.mongodb.com" [ref=e195] [cursor=pointer]:
+                        - /url: https://prometheus.staging.corp.mongodb.com
+                    - cell "prometheus.prod.corp.mongodb.com" [ref=e196]:
+                      - link "prometheus.prod.corp.mongodb.com" [ref=e197] [cursor=pointer]:
+                        - /url: https://prometheus.prod.corp.mongodb.com
+                  - row "Alertmanager alertmanager.staging.corp.mongodb.com alertmanager.prod.corp.mongodb.com" [ref=e198]:
+                    - cell "Alertmanager" [ref=e199]
+                    - cell "alertmanager.staging.corp.mongodb.com" [ref=e200]:
+                      - link "alertmanager.staging.corp.mongodb.com" [ref=e201] [cursor=pointer]:
+                        - /url: https://alertmanager.staging.corp.mongodb.com
+                    - cell "alertmanager.prod.corp.mongodb.com" [ref=e202]:
+                      - link "alertmanager.prod.corp.mongodb.com" [ref=e203] [cursor=pointer]:
+                        - /url: https://alertmanager.prod.corp.mongodb.com
+                  - row "Splunk (same as prod) mongodb.splunkcloud.com" [ref=e204]:
+                    - cell "Splunk" [ref=e205]
+                    - cell "(same as prod)" [ref=e206]
+                    - cell "mongodb.splunkcloud.com" [ref=e207]:
+                      - link "mongodb.splunkcloud.com" [ref=e208] [cursor=pointer]:
+                        - /url: https://mongodb.splunkcloud.com
+                  - row "Jaeger (beta) jaeger.staging.corp.mongodb.com jaeger.corp.mongodb.com" [ref=e209]:
+                    - cell "Jaeger (beta)" [ref=e210]
+                    - cell "jaeger.staging.corp.mongodb.com" [ref=e211]:
+                      - link "jaeger.staging.corp.mongodb.com" [ref=e212] [cursor=pointer]:
+                        - /url: https://jaeger.staging.corp.mongodb.com/search
+                    - cell "jaeger.corp.mongodb.com" [ref=e213]:
+                      - link "jaeger.corp.mongodb.com" [ref=e214] [cursor=pointer]:
+                        - /url: https://jaeger.corp.mongodb.com/search
+              - heading "Kanopy Health DashboardsDirect link to Kanopy Health Dashboards" [level=2] [ref=e215]:
+                - text: Kanopy Health Dashboards
+                - link "Direct link to Kanopy Health Dashboards" [ref=e216] [cursor=pointer]:
+                  - /url: "#kanopy-health-dashboards"
+                  - text: "#"
+              - paragraph [ref=e217]: These dashboards provide live information about the availability of core Kanopy services.
+              - list [ref=e218]:
+                - listitem [ref=e219]:
+                  - link "Production cluster" [ref=e220] [cursor=pointer]:
+                    - /url: https://grafana.corp.mongodb.com/d/DgX5qJmWz/kanopy-home-dashboard?orgId=1
+                - listitem [ref=e221]:
+                  - link "Staging cluster" [ref=e222] [cursor=pointer]:
+                    - /url: https://grafana.staging.corp.mongodb.com/d/DgX5qJmWz/kanopy-home-dashboard?orgId=1
+              - heading "AnnouncementsDirect link to Announcements" [level=2] [ref=e223]:
+                - text: Announcements
+                - link "Direct link to Announcements" [ref=e224] [cursor=pointer]:
+                  - /url: "#announcements"
+                  - text: "#"
+              - list [ref=e225]:
+                - listitem [ref=e226]:
+                  - text: Join the
+                  - link "Kanopy Announcements" [ref=e227] [cursor=pointer]:
+                    - /url: https://groups.google.com/a/10gen.com/forum/#!forum/kanopy-announcements
+                  - text: e-mail list
+              - heading "SupportDirect link to Support" [level=2] [ref=e228]:
+                - text: Support
+                - link "Direct link to Support" [ref=e229] [cursor=pointer]:
+                  - /url: "#support"
+                  - text: "#"
+              - paragraph [ref=e230]: "If you need help with Kanopy you can reach us in multiple ways:"
+              - list [ref=e231]:
+                - listitem [ref=e232]:
+                  - text: Look through our
+                  - link "Frequently Asked Questions" [ref=e233] [cursor=pointer]:
+                    - /url: /docs/faq/
+                - listitem [ref=e234]:
+                  - text: Join
+                  - link "#kanopy-users" [ref=e235] [cursor=pointer]:
+                    - /url: https://mongodb.slack.com/app_redirect?channel=kanopy-users
+                  - text: on Slack
+                - listitem [ref=e236]:
+                  - text: Create a
+                  - link "Jira" [ref=e237] [cursor=pointer]:
+                    - /url: https://jira.mongodb.org/servicedesk/customer/portal/48
+                  - text: issue
+                - listitem [ref=e238]:
+                  - link "Emergency Contact" [ref=e239] [cursor=pointer]:
+                    - /url: /docs/emergency_contact/
+                  - text: for major production outages
+              - heading "Production ShowcaseDirect link to Production Showcase" [level=2] [ref=e240]:
+                - text: Production Showcase
+                - link "Direct link to Production Showcase" [ref=e241] [cursor=pointer]:
+                  - /url: "#production-showcase"
+                  - text: "#"
+              - paragraph [ref=e242]: The following production workloads are just a few examples of the kinds of workloads teams are currently running on Kanopy.
+              - paragraph [ref=e243]:
+                - strong [ref=e244]: Note
+                - text: ": Many of the following source repos are private but grant read-only access to the"
+                - code [ref=e245]: 10gen/Everyone
+                - text: GitHub team. Use
+                - link "MANA" [ref=e246] [cursor=pointer]:
+                  - /url: https://mana.corp.mongodbgov.com/resources/61a3e37ff29b988eeefa6471
+                - text: to request being added to this team.
+              - table [ref=e247]:
+                - rowgroup [ref=e248]:
+                  - row "Audience Project URL Source Code Description" [ref=e249]:
+                    - columnheader "Audience" [ref=e250]
+                    - columnheader "Project URL" [ref=e251]
+                    - columnheader "Source Code" [ref=e252]
+                    - columnheader "Description" [ref=e253]
+                - rowgroup [ref=e254]:
+                  - row "Public mongodb.com source MongoDB marketing site" [ref=e255]:
+                    - cell "Public" [ref=e256]
+                    - cell "mongodb.com" [ref=e257]:
+                      - link "mongodb.com" [ref=e258] [cursor=pointer]:
+                        - /url: https://www.mongodb.com/
+                    - cell "source" [ref=e259]:
+                      - link "source" [ref=e260] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mongodbcom-node
+                    - cell "MongoDB marketing site" [ref=e261]
+                  - row "Public mongodb.com/blog source MongoDB blog" [ref=e262]:
+                    - cell "Public" [ref=e263]
+                    - cell "mongodb.com/blog" [ref=e264]:
+                      - link "mongodb.com/blog" [ref=e265] [cursor=pointer]:
+                        - /url: https://www.mongodb.com/blog/
+                    - cell "source" [ref=e266]:
+                      - link "source" [ref=e267] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mongodbcom-node-blog
+                    - cell "MongoDB blog" [ref=e268]
+                  - row "Public support.mongodb.com source Customer support portal" [ref=e269]:
+                    - cell "Public" [ref=e270]
+                    - cell "support.mongodb.com" [ref=e271]:
+                      - link "support.mongodb.com" [ref=e272] [cursor=pointer]:
+                        - /url: https://support.mongodb.com/
+                    - cell "source" [ref=e273]:
+                      - link "source" [ref=e274] [cursor=pointer]:
+                        - /url: https://github.com/10gen/ts-tools-support-portal
+                    - cell "Customer support portal" [ref=e275]
+                  - row "Public compass.mongodb.com (API) source MongoDB Compass update API, server installers support API, and MongoSH snippets list" [ref=e276]:
+                    - cell "Public" [ref=e277]
+                    - cell "compass.mongodb.com (API)" [ref=e278]:
+                      - code [ref=e279]: compass.mongodb.com
+                      - text: (API)
+                    - cell "source" [ref=e280]:
+                      - link "source" [ref=e281] [cursor=pointer]:
+                        - /url: https://github.com/10gen/compass-mongodb-com
+                    - cell "MongoDB Compass update API, server installers support API, and MongoSH snippets list" [ref=e282]
+                  - row "Internal argo-server.devprod-infra.prod.corp.mongodb.com source Argo Workflows for running R&D DevProd ETL DAGs" [ref=e283]:
+                    - cell "Internal" [ref=e284]
+                    - cell "argo-server.devprod-infra.prod.corp.mongodb.com" [ref=e285]:
+                      - link "argo-server.devprod-infra.prod.corp.mongodb.com" [ref=e286] [cursor=pointer]:
+                        - /url: https://argo-server.devprod-infra.prod.corp.mongodb.com
+                    - cell "source" [ref=e287]:
+                      - link "source" [ref=e288] [cursor=pointer]:
+                        - /url: https://github.com/10gen/dev-prod-etls
+                    - cell "Argo Workflows for running R&D DevProd ETL DAGs" [ref=e289]
+                  - row "Internal argos.corp.mongodb.com docs, source Internal sales productivity tool that allows users to easily access relevant prospecting and customer account data" [ref=e290]:
+                    - cell "Internal" [ref=e291]
+                    - cell "argos.corp.mongodb.com" [ref=e292]:
+                      - link "argos.corp.mongodb.com" [ref=e293] [cursor=pointer]:
+                        - /url: https://argos.corp.mongodb.com
+                    - cell "docs, source" [ref=e294]:
+                      - link "docs" [ref=e295] [cursor=pointer]:
+                        - /url: https://wiki.corp.mongodb.com/display/CORPS/Argos
+                      - text: ","
+                      - link "source" [ref=e296] [cursor=pointer]:
+                        - /url: https://github.com/10gen/argos
+                    - cell "Internal sales productivity tool that allows users to easily access relevant prospecting and customer account data" [ref=e297]
+                  - row "Internal docs.dataplatform.prod.corp.mongodb.com docs, mars, presto-gateway, trino, model registry Internal data services provided by the Data Platforms team" [ref=e298]:
+                    - cell "Internal" [ref=e299]
+                    - cell "docs.dataplatform.prod.corp.mongodb.com" [ref=e300]:
+                      - link "docs.dataplatform.prod.corp.mongodb.com" [ref=e301] [cursor=pointer]:
+                        - /url: https://docs.dataplatform.prod.corp.mongodb.com/
+                    - cell "docs, mars, presto-gateway, trino, model registry" [ref=e302]:
+                      - link "docs" [ref=e303] [cursor=pointer]:
+                        - /url: https://github.com/10gen/dp-documentations
+                      - text: ","
+                      - link "mars" [ref=e304] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mars
+                      - text: ","
+                      - link "presto-gateway" [ref=e305] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mongo-presto-gateway
+                      - text: ","
+                      - link "trino" [ref=e306] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mongo-trino
+                      - text: ","
+                      - link "model registry" [ref=e307] [cursor=pointer]:
+                        - /url: https://github.com/10gen/model-registry
+                    - cell "Internal data services provided by the Data Platforms team" [ref=e308]
+                  - row "Internal login.corp.mongodb.com source Corporate identity proxy that protects Kanopy services at the edge" [ref=e309]:
+                    - cell "Internal" [ref=e310]
+                    - cell "login.corp.mongodb.com" [ref=e311]:
+                      - link "login.corp.mongodb.com" [ref=e312] [cursor=pointer]:
+                        - /url: https://login.corp.mongodb.com/
+                    - cell "source" [ref=e313]:
+                      - link "source" [ref=e314] [cursor=pointer]:
+                        - /url: https://github.com/10gen/login
+                    - cell "Corporate identity proxy that protects Kanopy services at the edge" [ref=e315]
+                  - row "Internal privatebin.corp.mongodb.com source Internal pastebin for sharing encrypted data" [ref=e316]:
+                    - cell "Internal" [ref=e317]
+                    - cell "privatebin.corp.mongodb.com" [ref=e318]:
+                      - link "privatebin.corp.mongodb.com" [ref=e319] [cursor=pointer]:
+                        - /url: https://privatebin.corp.mongodb.com/
+                    - cell "source" [ref=e320]:
+                      - link "source" [ref=e321] [cursor=pointer]:
+                        - /url: https://github.com/10gen/PrivateBin
+                    - cell "Internal pastebin for sharing encrypted data" [ref=e322]
+                  - row "Internal signal-processing-service.server-tig.prod.corp.mongodb.com (API) source Service for signal processing and performance monitoring" [ref=e323]:
+                    - cell "Internal" [ref=e324]
+                    - cell "signal-processing-service.server-tig.prod.corp.mongodb.com (API)" [ref=e325]:
+                      - code [ref=e326]: signal-processing-service.server-tig.prod.corp.mongodb.com
+                      - text: (API)
+                    - cell "source" [ref=e327]:
+                      - link "source" [ref=e328] [cursor=pointer]:
+                        - /url: https://github.com/10gen/signal-processing-service
+                    - cell "Service for signal processing and performance monitoring" [ref=e329]
+                  - row "Internal symbolizer-service.server-tig.prod.corp.mongodb.com (API) source Tools to symbolize stacktraces of MongoDB C++ binaries" [ref=e330]:
+                    - cell "Internal" [ref=e331]
+                    - cell "symbolizer-service.server-tig.prod.corp.mongodb.com (API)" [ref=e332]:
+                      - code [ref=e333]: symbolizer-service.server-tig.prod.corp.mongodb.com
+                      - text: (API)
+                    - cell "source" [ref=e334]:
+                      - link "source" [ref=e335] [cursor=pointer]:
+                        - /url: https://github.com/10gen/symbolizer-service
+                    - cell "Tools to symbolize stacktraces of MongoDB C++ binaries" [ref=e336]
+                  - row "Internal Bosun (/cloudops Slack Bot) source The Cloud Operations Engineers hailing Slack bot" [ref=e337]:
+                    - cell "Internal" [ref=e338]
+                    - cell "Bosun (/cloudops Slack Bot)" [ref=e339]:
+                      - text: Bosun (
+                      - code [ref=e340]: /cloudops
+                      - text: Slack Bot)
+                    - cell "source" [ref=e341]:
+                      - link "source" [ref=e342] [cursor=pointer]:
+                        - /url: https://github.com/10gen/bosun
+                    - cell "The Cloud Operations Engineers hailing Slack bot" [ref=e343]
+                  - row "Internal 10gen/mms bazel_telemetry, cloud_bot, foliage, pct MongoDB Atlas control plane monorepo that hosts various Kanopy services" [ref=e344]:
+                    - cell "Internal" [ref=e345]
+                    - cell "10gen/mms" [ref=e346]:
+                      - link "10gen/mms" [ref=e347] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mms
+                    - cell "bazel_telemetry, cloud_bot, foliage, pct" [ref=e348]:
+                      - link "bazel_telemetry" [ref=e349] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mms/tree/master/scripts/bazel_telemetry
+                      - text: ","
+                      - link "cloud_bot" [ref=e350] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mms/tree/master/scripts/cloud_bot
+                      - text: ","
+                      - link "foliage" [ref=e351] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mms/tree/master/scripts/foliage
+                      - text: ","
+                      - link "pct" [ref=e352] [cursor=pointer]:
+                        - /url: https://github.com/10gen/mms/tree/master/scripts/pct
+                    - cell "MongoDB Atlas control plane monorepo that hosts various Kanopy services" [ref=e353]
+                  - row "Internal 10gen/pm-resources cronjobs Processes and scripts for internal PMO teams with a number of Kanopy CronJobs" [ref=e354]:
+                    - cell "Internal" [ref=e355]
+                    - cell "10gen/pm-resources" [ref=e356]:
+                      - link "10gen/pm-resources" [ref=e357] [cursor=pointer]:
+                        - /url: https://github.com/10gen/pm-resources
+                    - cell "cronjobs" [ref=e358]:
+                      - link "cronjobs" [ref=e359] [cursor=pointer]:
+                        - /url: https://github.com/10gen/pm-resources/blob/master/cronjobs.yml
+                    - cell "Processes and scripts for internal PMO teams with a number of Kanopy CronJobs" [ref=e360]
+              - heading "ContributingDirect link to Contributing" [level=2] [ref=e361]:
+                - text: Contributing
+                - link "Direct link to Contributing" [ref=e362] [cursor=pointer]:
+                  - /url: "#contributing"
+                  - text: "#"
+              - paragraph [ref=e363]: If you notice any issues with this documentation, please feel free to submit a pull request or let us know by opening a GitHub issue.
+          - navigation "Docs pages" [ref=e364]:
+            - link "Next Onboarding »" [ref=e365] [cursor=pointer]:
+              - /url: /docs/onboarding/
+              - generic [ref=e366]: Next
+              - generic [ref=e367]: Onboarding »
+        - list [ref=e370]:
+          - listitem [ref=e371]:
+            - link "Overview" [ref=e372] [cursor=pointer]:
+              - /url: "#overview"
+          - listitem [ref=e373]:
+            - link "Kanopy Health Dashboards" [ref=e374] [cursor=pointer]:
+              - /url: "#kanopy-health-dashboards"
+          - listitem [ref=e375]:
+            - link "Announcements" [ref=e376] [cursor=pointer]:
+              - /url: "#announcements"
+          - listitem [ref=e377]:
+            - link "Support" [ref=e378] [cursor=pointer]:
+              - /url: "#support"
+          - listitem [ref=e379]:
+            - link "Production Showcase" [ref=e380] [cursor=pointer]:
+              - /url: "#production-showcase"
+          - listitem [ref=e381]:
+            - link "Contributing" [ref=e382] [cursor=pointer]:
+              - /url: "#contributing"
+  - contentinfo [ref=e383]:
+    - generic [ref=e384]:
+      - generic [ref=e385]:
+        - generic [ref=e386]:
+          - generic [ref=e387]: Docs
+          - list [ref=e388]:
+            - listitem [ref=e389]:
+              - link "Documentation" [ref=e390] [cursor=pointer]:
+                - /url: /docs/
+            - listitem [ref=e391]:
+              - link "Support" [ref=e392] [cursor=pointer]:
+                - /url: https://jira.mongodb.org/plugins/servlet/desk/portal/48
+        - generic [ref=e393]:
+          - generic [ref=e394]: More
+          - list [ref=e395]:
+            - listitem [ref=e396]:
+              - link "GitHub" [ref=e397] [cursor=pointer]:
+                - /url: https://github.com/10gen/kanopy-docs
+                - text: GitHub
+                - img [ref=e398]
+      - generic [ref=e401]: Copyright © 2026 MongoDB.

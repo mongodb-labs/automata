@@ -73,7 +73,7 @@ steps:
       - kubectl config set-cluster staging --server=https://api.staging.corp.mongodb.com
       - kubectl config set-context default --cluster=staging --user=cicd --namespace=skunkworks
       - kubectl config use-context default
-      - kubectl apply -f k8s/eventsource.yaml
-      - kubectl apply -f k8s/sensor.yaml
+      - kubectl apply -f deploy/eventsource.yaml
+      - kubectl apply -f deploy/sensor.yaml
     when:
       event: [push]

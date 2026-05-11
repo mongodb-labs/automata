@@ -1,0 +1,802 @@
+- generic [ref=e2]:
+  - region "Skip to main content":
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#__docusaurus_skipToContent_fallback"
+  - navigation "Main" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Kanopy logo Kanopy" [ref=e7] [cursor=pointer]:
+          - /url: /docs/
+          - img "Kanopy logo" [ref=e9]
+          - generic [ref=e10]: Kanopy
+        - link "Documentation" [ref=e11] [cursor=pointer]:
+          - /url: /docs/
+        - link "Tutorial" [ref=e12] [cursor=pointer]:
+          - /url: /docs/getting_started/
+        - link "Examples" [ref=e13] [cursor=pointer]:
+          - /url: /docs/examples/
+        - link "Advisories" [ref=e14] [cursor=pointer]:
+          - /url: /docs/advisories/
+        - link "FAQ" [ref=e15] [cursor=pointer]:
+          - /url: /docs/faq/
+      - generic [ref=e16]:
+        - link "GitHub" [ref=e17] [cursor=pointer]:
+          - /url: https://github.com/10gen/kanopy-docs
+          - text: GitHub
+          - img [ref=e18]
+        - button "Switch between dark and light mode (currently light mode)" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+        - generic [ref=e25]:
+          - textbox "Search" [ref=e26]
+          - generic:
+            - generic: ⌘
+            - generic: K
+  - generic [ref=e29]:
+    - complementary [ref=e30]:
+      - navigation "Docs sidebar" [ref=e33]:
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link "Introduction" [ref=e36] [cursor=pointer]:
+              - /url: /docs/
+          - listitem [ref=e37]:
+            - generic [ref=e38]:
+              - link "Onboarding" [ref=e39] [cursor=pointer]:
+                - /url: /docs/onboarding/
+              - button "Expand sidebar category 'Onboarding'" [ref=e40] [cursor=pointer]
+          - listitem [ref=e41]:
+            - generic [ref=e42]:
+              - link "Accessing Kanopy" [ref=e43] [cursor=pointer]:
+                - /url: /docs/access/
+              - button "Expand sidebar category 'Accessing Kanopy'" [ref=e44] [cursor=pointer]
+          - listitem [ref=e45]:
+            - generic [ref=e46]:
+              - link "Configuration" [ref=e47] [cursor=pointer]:
+                - /url: /docs/configuration/
+              - button "Expand sidebar category 'Configuration'" [ref=e48] [cursor=pointer]
+          - listitem [ref=e49]:
+            - generic [ref=e50]:
+              - link "Getting Started with Kanopy" [ref=e51] [cursor=pointer]:
+                - /url: /docs/getting_started/
+              - button "Expand sidebar category 'Getting Started with Kanopy'" [ref=e52] [cursor=pointer]
+          - listitem [ref=e53]:
+            - generic [ref=e54]:
+              - link "Development" [ref=e55] [cursor=pointer]:
+                - /url: /docs/development/
+              - button "Expand sidebar category 'Development'" [ref=e56] [cursor=pointer]
+          - listitem [ref=e57]:
+            - generic [ref=e58]:
+              - link "CI/CD" [ref=e59] [cursor=pointer]:
+                - /url: /docs/cicd/
+              - button "Collapse sidebar category 'CI/CD'" [expanded] [ref=e60] [cursor=pointer]
+            - list [ref=e61]:
+              - listitem [ref=e62]:
+                - link "Advanced Drone Pipeline Configuration" [ref=e63] [cursor=pointer]:
+                  - /url: /docs/cicd/advanced_drone/
+              - listitem [ref=e64]:
+                - link "Managing Drone Secrets" [ref=e65] [cursor=pointer]:
+                  - /url: /docs/cicd/drone_secrets/
+              - listitem [ref=e66]:
+                - link "drone.yml Explained" [ref=e67] [cursor=pointer]:
+                  - /url: /docs/cicd/drone_yml_explained/
+          - listitem [ref=e68]:
+            - generic [ref=e69]:
+              - link "Routing" [ref=e70] [cursor=pointer]:
+                - /url: /docs/routing/
+              - button "Expand sidebar category 'Routing'" [ref=e71] [cursor=pointer]
+          - listitem [ref=e72]:
+            - generic [ref=e73]:
+              - link "Kanopy Service Mesh" [ref=e74] [cursor=pointer]:
+                - /url: /docs/ingress/
+              - button "Expand sidebar category 'Kanopy Service Mesh'" [ref=e75] [cursor=pointer]
+          - listitem [ref=e76]:
+            - generic [ref=e77]:
+              - link "CorpSecure" [ref=e78] [cursor=pointer]:
+                - /url: /docs/corpsecure/
+              - button "Expand sidebar category 'CorpSecure'" [ref=e79] [cursor=pointer]
+          - listitem [ref=e80]:
+            - generic [ref=e81]:
+              - link "Observability" [ref=e82] [cursor=pointer]:
+                - /url: /docs/observability/
+              - button "Expand sidebar category 'Observability'" [ref=e83] [cursor=pointer]
+          - listitem [ref=e84]:
+            - generic [ref=e85]:
+              - link "Data Analytics" [ref=e86] [cursor=pointer]:
+                - /url: /docs/data-analytics/
+              - button "Expand sidebar category 'Data Analytics'" [ref=e87] [cursor=pointer]
+          - listitem [ref=e88]:
+            - generic [ref=e89]:
+              - link "Production" [ref=e90] [cursor=pointer]:
+                - /url: /docs/production/
+              - button "Expand sidebar category 'Production'" [ref=e91] [cursor=pointer]
+          - listitem [ref=e92]:
+            - generic [ref=e93]:
+              - link "Examples" [ref=e94] [cursor=pointer]:
+                - /url: /docs/examples/
+              - button "Expand sidebar category 'Examples'" [ref=e95] [cursor=pointer]
+          - listitem [ref=e96]:
+            - generic [ref=e97]:
+              - link "Security" [ref=e98] [cursor=pointer]:
+                - /url: /docs/security/
+              - button "Expand sidebar category 'Security'" [ref=e99] [cursor=pointer]
+          - listitem [ref=e100]:
+            - generic [ref=e101]:
+              - link "Advisories" [ref=e102] [cursor=pointer]:
+                - /url: /docs/advisories/
+              - button "Expand sidebar category 'Advisories'" [ref=e103] [cursor=pointer]
+          - listitem [ref=e104]:
+            - generic [ref=e105]:
+              - link "Policies" [ref=e106] [cursor=pointer]:
+                - /url: /docs/policies/
+              - button "Expand sidebar category 'Policies'" [ref=e107] [cursor=pointer]
+          - listitem [ref=e108]:
+            - generic [ref=e109]:
+              - link "Kanopy beta services" [ref=e110] [cursor=pointer]:
+                - /url: /docs/beta/
+              - button "Expand sidebar category 'Kanopy beta services'" [ref=e111] [cursor=pointer]
+          - listitem [ref=e112]:
+            - generic [ref=e113]:
+              - link "Kanopy alpha services" [ref=e114] [cursor=pointer]:
+                - /url: /docs/alpha/
+              - button "Expand sidebar category 'Kanopy alpha services'" [ref=e115] [cursor=pointer]
+          - listitem [ref=e116]:
+            - generic [ref=e117]:
+              - link "Other" [ref=e118] [cursor=pointer]:
+                - /url: /docs/other/
+              - button "Expand sidebar category 'Other'" [ref=e119] [cursor=pointer]
+          - listitem [ref=e120]:
+            - link "Kanopy Cheatsheet" [ref=e121] [cursor=pointer]:
+              - /url: /docs/cheatsheet/
+          - listitem [ref=e122]:
+            - link "Emergency Contact" [ref=e123] [cursor=pointer]:
+              - /url: /docs/emergency_contact/
+          - listitem [ref=e124]:
+            - link "FAQ" [ref=e125] [cursor=pointer]:
+              - /url: /docs/faq/
+          - listitem [ref=e126]:
+            - link "Glossary" [ref=e127] [cursor=pointer]:
+              - /url: /docs/glossary/
+          - listitem [ref=e128]:
+            - button "api" [ref=e130] [cursor=pointer]
+    - main [ref=e131]:
+      - generic [ref=e133]:
+        - generic [ref=e135]:
+          - article [ref=e136]:
+            - navigation "Breadcrumbs" [ref=e137]:
+              - list [ref=e138]:
+                - listitem [ref=e139]:
+                  - link "Home page" [ref=e140] [cursor=pointer]:
+                    - /url: /docs/
+                    - img [ref=e141]
+                - listitem [ref=e143]:
+                  - link "CI/CD" [ref=e144] [cursor=pointer]:
+                    - /url: /docs/cicd/
+                - listitem [ref=e145]:
+                  - generic [ref=e146]: Advanced Drone Pipeline Configuration
+            - generic [ref=e147]:
+              - heading "Advanced Drone Pipeline Configuration" [level=1] [ref=e149]
+              - list [ref=e150]:
+                - listitem [ref=e151]:
+                  - link "Long Running Jobs" [ref=e152] [cursor=pointer]:
+                    - /url: "#long-running-jobs"
+                - listitem [ref=e153]:
+                  - link "Drone CLI" [ref=e154] [cursor=pointer]:
+                    - /url: "#drone-cli"
+                - listitem [ref=e155]:
+                  - link "Trigger Downstream Builds" [ref=e156] [cursor=pointer]:
+                    - /url: "#trigger-downstream-builds"
+                - listitem [ref=e157]:
+                  - link "Parallelization" [ref=e158] [cursor=pointer]:
+                    - /url: "#parallelization"
+                - listitem [ref=e159]:
+                  - link "Increasing Compute Resources" [ref=e160] [cursor=pointer]:
+                    - /url: "#increasing-compute-resources"
+                - listitem [ref=e161]:
+                  - link "Monorepos" [ref=e162] [cursor=pointer]:
+                    - /url: "#monorepos"
+                  - list [ref=e163]:
+                    - listitem [ref=e164]:
+                      - link "Paths Changed" [ref=e165] [cursor=pointer]:
+                        - /url: "#paths-changed"
+                - listitem [ref=e166]:
+                  - link "Starlark Scripting" [ref=e167] [cursor=pointer]:
+                    - /url: "#starlark-scripting"
+                - listitem [ref=e168]:
+                  - link "ARM64 Builds" [ref=e169] [cursor=pointer]:
+                    - /url: "#arm64-builds"
+              - heading "Long Running JobsDirect link to Long Running Jobs" [level=2] [ref=e170]:
+                - text: Long Running Jobs
+                - link "Direct link to Long Running Jobs" [ref=e171] [cursor=pointer]:
+                  - /url: "#long-running-jobs"
+                  - text: "#"
+              - paragraph [ref=e172]:
+                - text: Drone pipelines have a default timeout of 60 minutes. If you have a use case that requires a pipeline that runs for longer than 60 minutes, please open
+                - link "KANOPY issue" [ref=e173] [cursor=pointer]:
+                  - /url: https://jira.mongodb.org/plugins/servlet/desk/portal/48
+                - text: with the name of the repository, the long running stages, and the upper bound for how long a build is expected to take.
+              - heading "Drone CLIDirect link to Drone CLI" [level=2] [ref=e174]:
+                - text: Drone CLI
+                - link "Direct link to Drone CLI" [ref=e175] [cursor=pointer]:
+                  - /url: "#drone-cli"
+                  - text: "#"
+              - paragraph [ref=e176]: Drone offers a CLI to perform operations from the command line.
+              - paragraph [ref=e177]:
+                - link "Installation" [ref=e178] [cursor=pointer]:
+                  - /url: https://docs.drone.io/cli/install/
+              - paragraph [ref=e179]:
+                - link "Configuration" [ref=e180] [cursor=pointer]:
+                  - /url: https://docs.drone.io/cli/configure/
+              - paragraph [ref=e181]: From the CLI you can for example, add a secret
+              - generic [ref=e183]:
+                - code [ref=e185]:
+                  - generic [ref=e186]: drone secret add <repo> --name=test --data=hello
+                - button "Copy code to clipboard" [ref=e188] [cursor=pointer]:
+                  - generic [ref=e189]:
+                    - img [ref=e190]
+                    - img [ref=e192]
+              - paragraph [ref=e194]:
+                - text: The full reference for Drone commands can be found
+                - link "here" [ref=e195] [cursor=pointer]:
+                  - /url: https://docs.drone.io/cli/install/
+                - text: on the left hand nav bar.
+              - heading "Trigger Downstream BuildsDirect link to Trigger Downstream Builds" [level=2] [ref=e196]:
+                - text: Trigger Downstream Builds
+                - link "Direct link to Trigger Downstream Builds" [ref=e197] [cursor=pointer]:
+                  - /url: "#trigger-downstream-builds"
+                  - text: "#"
+              - paragraph [ref=e198]:
+                - text: Lets say you have
+                - code [ref=e199]: repoA
+                - text: which has
+                - code [ref=e200]: repoB
+                - text: as a submodule, and you would like to rebuild
+                - code [ref=e201]: repoA
+                - text: everytime someone pushes to
+                - code [ref=e202]: repoB
+                - text: and begins a build. In this case you may think of
+                - code [ref=e203]: repoB
+                - text: as an upstream repository and
+                - code [ref=e204]: repoA
+                - text: as its downstream repository. Drone enables you to easily list downstream repositories in the
+                - code [ref=e205]: drone.yml
+                - text: file of the upstream repository.
+              - paragraph [ref=e206]:
+                - text: First add a secret in drone with the name
+                - code [ref=e207]: downstream_token
+                - text: and paste in your OAuth token found in Drone. (You must have admin access to both repositories).
+              - paragraph [ref=e208]:
+                - text: Next, add the following stage to an upstream repository and replace
+                - code [ref=e209]: DOWNSTREAM_REPO
+                - text: "with the name of the desired repository(s):"
+              - generic [ref=e211]:
+                - code [ref=e213]:
+                  - generic [ref=e214]: "steps:"
+                  - generic [ref=e215]: "- name: trigger"
+                  - generic [ref=e216]: "image: plugins/downstream"
+                  - generic [ref=e217]: "settings:"
+                  - generic [ref=e218]: "server: https://drone.corp.mongodb.com"
+                  - generic [ref=e219]: "token:"
+                  - generic [ref=e220]: "from_secret: downstream_token"
+                  - generic [ref=e221]: "fork: true"
+                  - generic [ref=e222]: "repositories:"
+                  - generic [ref=e223]: "- DOWNSTREAM_REPO"
+                - button "Copy code to clipboard" [ref=e225] [cursor=pointer]:
+                  - generic [ref=e226]:
+                    - img [ref=e227]
+                    - img [ref=e229]
+              - list [ref=e231]:
+                - listitem [ref=e232]:
+                  - text: Here are the
+                  - link "settings" [ref=e233] [cursor=pointer]:
+                    - /url: https://plugins.drone.io/plugins/downstream
+                  - text: for
+                  - code [ref=e234]: plugins/downstream
+                  - text: .
+                - listitem [ref=e235]:
+                  - text: Note,
+                  - code [ref=e236]: DOWNSTREAM_REPO
+                  - text: is in the format
+                  - code [ref=e237]: 10gen/repo
+                  - text: ", a specific branch"
+                  - strong [ref=e238]: may
+                  - text: be targeted using
+                  - code [ref=e239]: "@"
+                  - text: .
+                - listitem [ref=e240]:
+                  - text: If the
+                  - code [ref=e241]: DOWNSTREAM_REPO
+                  - text: publishes an image to ECR (Docker Registry) you
+                  - strong [ref=e242]: MUST
+                  - text: adjust its image tagging strategy to ensure deployments continue successfully. Using the
+                  - code [ref=e243]: "${DRONE_BUILD_NUMBER}"
+                  - text: will deploy latest changes built by the trigger. When a
+                  - code [ref=e244]: DOWNSTREAM_REPO
+                  - text: is triggered, the git-sha remains the same.
+              - paragraph [ref=e245]:
+                - text: In the
+                - code [ref=e246]: .drone.yml
+                - text: of the downstream repo add the
+                - strong [ref=e247]:
+                  - code [ref=e248]: "${DRONE_BUILD_NUMBER}"
+                - text: under
+                - code [ref=e249]: "tags:"
+                - text: in the publish step, and
+                - code [ref=e250]: "values:"
+                - text: "in the deploy step. e.g:"
+              - generic [ref=e252]:
+                - code [ref=e254]:
+                  - generic [ref=e255]: "steps:"
+                  - generic [ref=e256]: "- name: publish"
+                  - generic [ref=e257]: "image: plugins/kaniko-ecr"
+                  - generic [ref=e258]: "settings:"
+                  - generic [ref=e259]: ...
+                  - generic [ref=e260]: "tags:"
+                  - generic [ref=e261]: "- git-${DRONE_COMMIT_SHA:0:7}-${DRONE_BUILD_NUMBER}"
+                  - generic [ref=e262]: "- latest"
+                  - generic [ref=e263]: ...
+                  - generic [ref=e264]: "- name: deploy"
+                  - generic [ref=e265]: "image: public.ecr.aws/kanopy/drone-helm:v3"
+                  - generic [ref=e266]: "settings:"
+                  - generic [ref=e267]: ...
+                  - generic [ref=e268]: "values: image.tag=git-${DRONE_COMMIT_SHA:0:7}-${DRONE_BUILD_NUMBER},image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/devops/${DRONE_REPO_NAME},ingress.enabled=false"
+                  - generic [ref=e269]: ...
+                - generic [ref=e270]:
+                  - button "Toggle word wrap" [ref=e271] [cursor=pointer]:
+                    - img [ref=e272]
+                  - button "Copy code to clipboard" [ref=e274] [cursor=pointer]:
+                    - generic [ref=e275]:
+                      - img [ref=e276]
+                      - img [ref=e278]
+              - list [ref=e280]:
+                - listitem [ref=e281]: Triggered builds are asynchronous. The initiator of the trigger does not wait or register status of any downstream build.
+                - listitem [ref=e282]:
+                  - text: If you release to production using tagged git releases (recommended) your process to deploy to production does not change. However, be sure to target downstream builds to
+                  - code [ref=e283]: develop
+                  - text: or
+                  - code [ref=e284]: staging
+                  - text: branches.
+              - heading "ParallelizationDirect link to Parallelization" [level=2] [ref=e285]:
+                - text: Parallelization
+                - link "Direct link to Parallelization" [ref=e286] [cursor=pointer]:
+                  - /url: "#parallelization"
+                  - text: "#"
+              - paragraph [ref=e287]:
+                - text: Drone supports parallel execution of steps and pipelines. This allows for both faster and complex build pipelines. Refer to
+                - link "Drone's Parallelism" [ref=e288] [cursor=pointer]:
+                  - /url: https://docs.drone.io/pipeline/kubernetes/syntax/parallelism/
+                - text: for full documentation.
+              - list [ref=e289]:
+                - listitem [ref=e290]:
+                  - text: Parallel steps execute in different containers in the
+                  - strong [ref=e291]: same
+                  - text: pod.
+                - listitem [ref=e292]:
+                  - text: Parallel pipelines execute in
+                  - strong [ref=e293]: different
+                  - text: pods.
+              - paragraph [ref=e294]: This is an important distinction that can have direct impact on the available resources on a machine.
+              - heading "Increasing Compute ResourcesDirect link to Increasing Compute Resources" [level=2] [ref=e295]:
+                - text: Increasing Compute Resources
+                - link "Direct link to Increasing Compute Resources" [ref=e296] [cursor=pointer]:
+                  - /url: "#increasing-compute-resources"
+                  - text: "#"
+              - paragraph [ref=e297]: If you know your build or new E2E test requires dedicated CPU and memory to function, be sure to request it.
+              - paragraph [ref=e298]: Since Drone v1, you can define resource requests at the pipeline level and resource limits at the step level. Internally Kubernetes runner will split the values, so that every container gets approximately the same amount of resources.
+              - generic [ref=e300]:
+                - code [ref=e302]:
+                  - generic [ref=e303]: "kind: pipeline"
+                  - generic [ref=e304]: "type: kubernetes"
+                  - generic [ref=e305]: "resources:"
+                  - generic [ref=e306]: "requests:"
+                  - generic [ref=e307]: "cpu: 2000"
+                  - generic [ref=e308]: "memory: 2000MiB"
+                  - generic [ref=e309]: "steps:"
+                  - generic [ref=e310]: "- name: backend"
+                  - generic [ref=e311]: "image: golang"
+                  - generic [ref=e312]: "resources:"
+                  - generic [ref=e313]: "limits:"
+                  - generic [ref=e314]: "cpu: 500"
+                  - generic [ref=e315]: "memory: 500MiB"
+                  - generic [ref=e316]: "commands:"
+                  - generic [ref=e317]: "- go build"
+                  - generic [ref=e318]: "- go test"
+                  - generic [ref=e319]: "- go run main.go -http=:3000"
+                - button "Copy code to clipboard" [ref=e321] [cursor=pointer]:
+                  - generic [ref=e322]:
+                    - img [ref=e323]
+                    - img [ref=e325]
+              - paragraph [ref=e327]:
+                - text: If migrating a pipeline from an old version where resource requests and limits were specified by step, please look at the
+                - link "drone resources migration advisory" [ref=e328] [cursor=pointer]:
+                  - /url: /docs/advisories/2021-12-01_drone_resources_migration/
+              - paragraph [ref=e329]:
+                - text: "Note: If even more resources are required Drone supports"
+                - link "Tolerations" [ref=e330] [cursor=pointer]:
+                  - /url: https://docs.drone.io/pipeline/kubernetes/syntax/tolerations/
+                - text: and
+                - link "Node Selectors" [ref=e331] [cursor=pointer]:
+                  - /url: https://docs.drone.io/pipeline/kubernetes/syntax/nodes/
+                - text: . A build can then be scheduled on our
+                - link "Batch" [ref=e332] [cursor=pointer]:
+                  - /url: /docs/data-analytics/batch/
+                - text: instance groups.
+              - heading "MonoreposDirect link to Monorepos" [level=2] [ref=e333]:
+                - text: Monorepos
+                - link "Direct link to Monorepos" [ref=e334] [cursor=pointer]:
+                  - /url: "#monorepos"
+                  - text: "#"
+              - heading "Paths ChangedDirect link to Paths Changed" [level=3] [ref=e335]:
+                - text: Paths Changed
+                - link "Direct link to Paths Changed" [ref=e336] [cursor=pointer]:
+                  - /url: "#paths-changed"
+                  - text: "#"
+              - paragraph [ref=e337]:
+                - text: You can use the
+                - code [ref=e338]: paths
+                - text: conditional to specify files to
+                - code [ref=e339]: include
+                - text: ", and optionally"
+                - code [ref=e340]: exclude
+                - text: ", to trigger pipelines and build steps. If the"
+                - code [ref=e341]: paths
+                - text: conditional evaluates to false for a change in GitHub, then that pipeline or step will not be present in the resulting build.
+              - paragraph [ref=e342]:
+                - text: Please note that there are some
+                - link "known issues" [ref=e343] [cursor=pointer]:
+                  - /url: https://github.com/meltwater/drone-convert-pathschanged#known-issues
+                - text: with this approach.
+              - list [ref=e344]:
+                - listitem [ref=e345]:
+                  - text: Empty commits (
+                  - code [ref=e346]: git commit --allow-empty
+                  - text: ) return that no files have changed, which effectively ignores all
+                  - code [ref=e347]: paths
+                  - text: conditionals and can result in unexpected behavior.
+                - listitem [ref=e348]:
+                  - text: The ordering of fields when using YAML anchors matters which can lead to build errors. See
+                  - link "this workaround" [ref=e349] [cursor=pointer]:
+                    - /url: https://github.com/meltwater/drone-convert-pathschanged#yaml-anchors
+                  - text: for how to avoid this.
+                - listitem [ref=e350]:
+                  - text: The pathschanged plugin may strip away surrounding quotes
+                  - code [ref=e351]: "\"...\""
+                  - text: ", which may result in invalid YAML when the string ends with"
+                  - code [ref=e352]: ":${DRONE_VARIABLE}"
+                  - text: . See
+                  - link "this" [ref=e353] [cursor=pointer]:
+                    - /url: "#paths-changed---known-issues"
+                  - text: for detailed explanation and workaround.
+              - paragraph [ref=e354]: Pipeline Conditional
+              - generic [ref=e356]:
+                - code [ref=e358]:
+                  - generic [ref=e359]: "---"
+                  - generic [ref=e360]: "kind: pipeline"
+                  - generic [ref=e361]: "name: readme"
+                  - generic [ref=e362]: "trigger:"
+                  - generic [ref=e363]: "paths:"
+                  - generic [ref=e364]: "include:"
+                  - generic [ref=e365]: "- README.md"
+                  - generic [ref=e366]: "steps:"
+                  - generic [ref=e367]: "- name: message"
+                  - generic [ref=e368]: "image: busybox"
+                  - generic [ref=e369]: "commands:"
+                  - generic [ref=e370]: "- echo \"README.md was changed”"
+                - button "Copy code to clipboard" [ref=e372] [cursor=pointer]:
+                  - generic [ref=e373]:
+                    - img [ref=e374]
+                    - img [ref=e376]
+              - paragraph [ref=e378]: Step Conditional
+              - generic [ref=e380]:
+                - code [ref=e382]:
+                  - generic [ref=e383]: "---"
+                  - generic [ref=e384]: "kind: pipeline"
+                  - generic [ref=e385]: "name: yaml"
+                  - generic [ref=e386]: "steps:"
+                  - generic [ref=e387]: "- name: build"
+                  - generic [ref=e388]: "image: busybox"
+                  - generic [ref=e389]: "commands:"
+                  - generic [ref=e390]: "- echo \"A .yml file in the root of the repo other than .drone.yml was changed\""
+                  - generic [ref=e391]: "when:"
+                  - generic [ref=e392]: "paths:"
+                  - generic [ref=e393]: "include:"
+                  - generic [ref=e394]: "- \"*.yml\""
+                  - generic [ref=e395]: "exclude:"
+                  - generic [ref=e396]: "- .drone.yml"
+                - generic [ref=e397]:
+                  - button "Toggle word wrap" [ref=e398] [cursor=pointer]:
+                    - img [ref=e399]
+                  - button "Copy code to clipboard" [ref=e401] [cursor=pointer]:
+                    - generic [ref=e402]:
+                      - img [ref=e403]
+                      - img [ref=e405]
+              - paragraph [ref=e407]: Notation Examples
+              - paragraph [ref=e408]:
+                - text: See the
+                - link "doublestar patterns" [ref=e409] [cursor=pointer]:
+                  - /url: https://github.com/bmatcuk/doublestar#patterns
+                - text: documentation for more info.
+              - generic [ref=e411]:
+                - code [ref=e413]:
+                  - generic [ref=e414]: ...
+                  - generic [ref=e415]: "paths:"
+                  - generic [ref=e416]: "include:"
+                  - generic [ref=e417]: "- a/specific/file.txt"
+                  - generic [ref=e418]: "- a/sequence/of/characters/{staging,prod}.yaml"
+                  - generic [ref=e419]: "- a/character/class/us-east-1[a-f].yaml"
+                  - generic [ref=e420]: "- all/files/in/a/specific/dir/*"
+                  - generic [ref=e421]: "- all/files/in/all/subdirs/**/*"
+                  - generic [ref=e422]: ...
+                - button "Copy code to clipboard" [ref=e424] [cursor=pointer]:
+                  - generic [ref=e425]:
+                    - img [ref=e426]
+                    - img [ref=e428]
+              - paragraph [ref=e430]:
+                - text: More detailed examples can be found
+                - link "here" [ref=e431] [cursor=pointer]:
+                  - /url: https://github.com/meltwater/drone-convert-pathschanged#examples
+                - text: .
+              - heading "Paths Changed - Known IssuesDirect link to Paths Changed - Known Issues" [level=4] [ref=e432]:
+                - text: Paths Changed - Known Issues
+                - link "Direct link to Paths Changed - Known Issues" [ref=e433] [cursor=pointer]:
+                  - /url: "#paths-changed---known-issues"
+                  - text: "#"
+              - heading "Unquoted key values resulting in invalid YAMLDirect link to Unquoted key values resulting in invalid YAML" [level=5] [ref=e434]:
+                - text: Unquoted key values resulting in invalid YAML
+                - link "Direct link to Unquoted key values resulting in invalid YAML" [ref=e435] [cursor=pointer]:
+                  - /url: "#unquoted-key-values-resulting-in-invalid-yaml"
+                  - text: "#"
+              - paragraph [ref=e436]:
+                - text: The pathschanged plugin will remove double quotes from strings that contain the YAML control character
+                - code [ref=e437]: ":"
+                - text: followed by a
+                - link "drone variable" [ref=e438] [cursor=pointer]:
+                  - /url: https://docs.drone.io/pipeline/environment/reference/
+                - text: enclosed in $. If a key value line ends in
+                - code [ref=e439]: ":"
+                - text: followed by an empty drone variable value, the unquoted value will result in invalid yaml. This impacts pipeline steps disabled for a given set of events, such as a tag event.
+              - paragraph [ref=e440]: "Take for example this pipeline step:"
+              - generic [ref=e442]:
+                - code [ref=e444]:
+                  - generic [ref=e445]: "- image: plugins/kaniko-ecr:latest-kaniko1.8.1"
+                  - generic [ref=e446]: "name: build"
+                  - generic [ref=e447]: "settings:"
+                  - generic [ref=e448]: "thing: \"key.subkey.image=path.to.a.repohost.com/repo/name:${DRONE_TAG}\""
+                  - generic [ref=e449]: "when:"
+                  - generic [ref=e450]: "event:"
+                  - generic [ref=e451]: "- tag"
+                - generic [ref=e452]:
+                  - button "Toggle word wrap" [ref=e453] [cursor=pointer]:
+                    - img [ref=e454]
+                  - button "Copy code to clipboard" [ref=e456] [cursor=pointer]:
+                    - generic [ref=e457]:
+                      - img [ref=e458]
+                      - img [ref=e460]
+              - paragraph [ref=e462]: The pathschanged plugin will strip out the surrounding quotes of the string
+              - generic [ref=e464]:
+                - code [ref=e466]:
+                  - generic [ref=e467]: "thing: key.subkey.image=path.to.a.repohost.com/repo/name:${DRONE_TAG}"
+                - generic [ref=e468]:
+                  - button "Toggle word wrap" [ref=e469] [cursor=pointer]:
+                    - img [ref=e470]
+                  - button "Copy code to clipboard" [ref=e472] [cursor=pointer]:
+                    - generic [ref=e473]:
+                      - img [ref=e474]
+                      - img [ref=e476]
+              - paragraph [ref=e478]:
+                - text: On non-tag events, Drone will substitute in a blank or whitespace for
+                - code [ref=e479]: "${DRONE_TAG}"
+              - generic [ref=e481]:
+                - code [ref=e483]:
+                  - generic [ref=e484]: "thing: key.subkey.image=path.to.a.repohost.com/repo/name:"
+                - button "Copy code to clipboard" [ref=e486] [cursor=pointer]:
+                  - generic [ref=e487]:
+                    - img [ref=e488]
+                    - img [ref=e490]
+              - paragraph [ref=e492]: This fails Drone YAML validation with the error
+              - generic [ref=e494]:
+                - code [ref=e496]:
+                  - generic [ref=e497]: "yaml: line _: mapping values are not allowed in this context"
+                - button "Copy code to clipboard" [ref=e499] [cursor=pointer]:
+                  - generic [ref=e500]:
+                    - img [ref=e501]
+                    - img [ref=e503]
+              - paragraph [ref=e505]:
+                - text: To workaround, add characters after
+                - code [ref=e506]: ":"
+              - generic [ref=e508]:
+                - code [ref=e510]:
+                  - generic [ref=e511]: "thing: \"key.subkey.image=path.to.a.repohost.com/repo/name:some-words-${DRONE_TAG}\""
+                - generic [ref=e512]:
+                  - button "Toggle word wrap" [ref=e513] [cursor=pointer]:
+                    - img [ref=e514]
+                  - button "Copy code to clipboard" [ref=e516] [cursor=pointer]:
+                    - generic [ref=e517]:
+                      - img [ref=e518]
+                      - img [ref=e520]
+              - paragraph [ref=e522]:
+                - text: Or if this is a comma separated list, append a
+                - code [ref=e523]: ","
+                - text: "at the end:"
+              - generic [ref=e525]:
+                - code [ref=e527]:
+                  - generic [ref=e528]: "values: \"app.api.image=app.api.envVars.TAG=app-worker:${DRONE_TAG},repo.com/app:${DRONE_TAG},\""
+                - generic [ref=e529]:
+                  - button "Toggle word wrap" [ref=e530] [cursor=pointer]:
+                    - img [ref=e531]
+                  - button "Copy code to clipboard" [ref=e533] [cursor=pointer]:
+                    - generic [ref=e534]:
+                      - img [ref=e535]
+                      - img [ref=e537]
+              - heading "Starlark ScriptingDirect link to Starlark Scripting" [level=2] [ref=e539]:
+                - text: Starlark Scripting
+                - link "Direct link to Starlark Scripting" [ref=e540] [cursor=pointer]:
+                  - /url: "#starlark-scripting"
+                  - text: "#"
+              - paragraph [ref=e541]: The Starlark configuration language can be used as an alternative to YAML-based pipelines for projects with complex configurations that benefit from using a scripting language.
+              - list [ref=e542]:
+                - listitem [ref=e543]:
+                  - text: See the
+                  - link "Drone Starlark Docs" [ref=e544] [cursor=pointer]:
+                    - /url: https://docs.drone.io/pipeline/scripting/starlark/
+                  - text: for information on setting up starlark scripting for your project.
+                - listitem [ref=e545]:
+                  - text: Starlark-based pipelines start with a
+                  - code [ref=e546]: def main(ctx)
+                  - text: function that receives a
+                  - code [ref=e547]: ctx
+                  - text: argument. The contents of the build context is currently undocumented, but you can refer to the source code for
+                  - link "Drone Starlark Args" [ref=e548] [cursor=pointer]:
+                    - /url: https://github.com/harness/drone/blob/v2.12.1/plugin/converter/starlark/args.go
+                  - text: to get a sense of the values available to use for controlling the logic of starlark pipelines.
+                - listitem [ref=e549]:
+                  - text: See the
+                  - link "Starlark Language Spec" [ref=e550] [cursor=pointer]:
+                    - /url: https://github.com/google/starlark-go/blob/master/doc/spec.md
+                  - text: for more information about the Python-like syntax of Starlark.
+              - heading "ARM64 BuildsDirect link to ARM64 Builds" [level=2] [ref=e551]:
+                - text: ARM64 Builds
+                - link "Direct link to ARM64 Builds" [ref=e552] [cursor=pointer]:
+                  - /url: "#arm64-builds"
+                  - text: "#"
+              - paragraph [ref=e553]:
+                - text: There is support for running Drone builds on
+                - code [ref=e554]: arm64
+                - text: instances using the
+                - code [ref=e555]: platform
+                - text: pipeline configuration parameter.
+              - paragraph [ref=e556]:
+                - strong [ref=e557]: Please note
+                - text: ": At this time we scale all"
+                - code [ref=e558]: arm64
+                - text: instance groups to 0 nodes as a cost-saving measure. Due to this, you might experience slightly delayed build times when triggering
+                - code [ref=e559]: arm64
+                - text: builds if there is a need to provision a new virtual machine (typically ~1-3 minutes).
+              - paragraph [ref=e560]:
+                - text: Add the following configuration to a pipeline to indicate that all of the pipeline's build steps should run on an
+                - code [ref=e561]: arm64
+                - text: "instance:"
+              - generic [ref=e563]:
+                - code [ref=e565]:
+                  - generic [ref=e566]: "platform:"
+                  - generic [ref=e567]: "arch: arm64"
+                - button "Copy code to clipboard" [ref=e569] [cursor=pointer]:
+                  - generic [ref=e570]:
+                    - img [ref=e571]
+                    - img [ref=e573]
+              - generic [ref=e575]:
+                - generic [ref=e576]:
+                  - img [ref=e578]
+                  - text: info
+                - paragraph [ref=e581]:
+                  - text: See the
+                  - link "Multi Architecture Builds" [ref=e582] [cursor=pointer]:
+                    - /url: /docs/examples/drone/multi-architecture-builds/
+                  - text: examples for details on how to update your drone pipeline for
+                  - code [ref=e583]: amd64
+                  - text: and
+                  - code [ref=e584]: arm64
+                  - text: builds.
+              - paragraph [ref=e585]:
+                - text: See
+                - link "upstream Drone docs" [ref=e586] [cursor=pointer]:
+                  - /url: https://docs.drone.io/pipeline/kubernetes/syntax/platform/
+                - text: for more info.
+              - heading "Helm LintDirect link to Helm Lint" [level=2] [ref=e587]:
+                - text: Helm Lint
+                - link "Direct link to Helm Lint" [ref=e588] [cursor=pointer]:
+                  - /url: "#helm-lint"
+                  - text: "#"
+              - paragraph [ref=e589]: "Linting validates the provided custom values.yaml in two ways, helm recommended style and against a json schema defined inside the chart, so it will help with catching misconfigurations. Lint runs as part of the install/upgrade step, failing the process if there are any issues found. Charts that support full values schema validations are:"
+              - list [ref=e590]:
+                - listitem [ref=e591]: web-app >= 4.15.0
+                - listitem [ref=e592]: cronjobs >= 1.9.0
+              - paragraph [ref=e593]:
+                - text: A
+                - code [ref=e594]: dry_run
+                - text: step added to the pipeline prior to deployment can provide quick feedback of the
+                - code [ref=e595]: values.yaml
+                - text: ". Example:"
+              - generic [ref=e597]:
+                - code [ref=e599]:
+                  - generic [ref=e600]: "steps:"
+                  - generic [ref=e601]: "- name: deploy-dry-run"
+                  - generic [ref=e602]: "image: public.ecr.aws/kanopy/drone-helm:v3"
+                  - generic [ref=e603]: "settings:"
+                  - generic [ref=e604]: ...
+                  - generic [ref=e605]: "dry_run: true"
+                  - generic [ref=e606]: ...
+                  - generic [ref=e607]: "trigger:"
+                  - generic [ref=e608]: "event:"
+                  - generic [ref=e609]: "- push"
+                  - generic [ref=e610]: "- name: deploy"
+                  - generic [ref=e611]: "image: public.ecr.aws/kanopy/drone-helm:v3"
+                  - generic [ref=e612]: "settings:"
+                  - generic [ref=e613]: "... # the dry_run flag can be omitted or set to false when a dry-run is not desired."
+                - generic [ref=e614]:
+                  - button "Toggle word wrap" [ref=e615] [cursor=pointer]:
+                    - img [ref=e616]
+                  - button "Copy code to clipboard" [ref=e618] [cursor=pointer]:
+                    - generic [ref=e619]:
+                      - img [ref=e620]
+                      - img [ref=e622]
+          - navigation "Docs pages" [ref=e624]:
+            - link "Previous « CI/CD" [ref=e625] [cursor=pointer]:
+              - /url: /docs/cicd/
+              - generic [ref=e626]: Previous
+              - generic [ref=e627]: « CI/CD
+            - link "Next Managing Drone Secrets »" [ref=e628] [cursor=pointer]:
+              - /url: /docs/cicd/drone_secrets/
+              - generic [ref=e629]: Next
+              - generic [ref=e630]: Managing Drone Secrets »
+        - list [ref=e633]:
+          - listitem [ref=e634]:
+            - link "Long Running Jobs" [ref=e635] [cursor=pointer]:
+              - /url: "#long-running-jobs"
+          - listitem [ref=e636]:
+            - link "Drone CLI" [ref=e637] [cursor=pointer]:
+              - /url: "#drone-cli"
+          - listitem [ref=e638]:
+            - link "Trigger Downstream Builds" [ref=e639] [cursor=pointer]:
+              - /url: "#trigger-downstream-builds"
+          - listitem [ref=e640]:
+            - link "Parallelization" [ref=e641] [cursor=pointer]:
+              - /url: "#parallelization"
+          - listitem [ref=e642]:
+            - link "Increasing Compute Resources" [ref=e643] [cursor=pointer]:
+              - /url: "#increasing-compute-resources"
+          - listitem [ref=e644]:
+            - link "Monorepos" [ref=e645] [cursor=pointer]:
+              - /url: "#monorepos"
+            - list [ref=e646]:
+              - listitem [ref=e647]:
+                - link "Paths Changed" [ref=e648] [cursor=pointer]:
+                  - /url: "#paths-changed"
+          - listitem [ref=e649]:
+            - link "Starlark Scripting" [ref=e650] [cursor=pointer]:
+              - /url: "#starlark-scripting"
+          - listitem [ref=e651]:
+            - link "ARM64 Builds" [ref=e652] [cursor=pointer]:
+              - /url: "#arm64-builds"
+          - listitem [ref=e653]:
+            - link "Helm Lint" [ref=e654] [cursor=pointer]:
+              - /url: "#helm-lint"
+  - contentinfo [ref=e655]:
+    - generic [ref=e656]:
+      - generic [ref=e657]:
+        - generic [ref=e658]:
+          - generic [ref=e659]: Docs
+          - list [ref=e660]:
+            - listitem [ref=e661]:
+              - link "Documentation" [ref=e662] [cursor=pointer]:
+                - /url: /docs/
+            - listitem [ref=e663]:
+              - link "Support" [ref=e664] [cursor=pointer]:
+                - /url: https://jira.mongodb.org/plugins/servlet/desk/portal/48
+        - generic [ref=e665]:
+          - generic [ref=e666]: More
+          - list [ref=e667]:
+            - listitem [ref=e668]:
+              - link "GitHub" [ref=e669] [cursor=pointer]:
+                - /url: https://github.com/10gen/kanopy-docs
+                - text: GitHub
+                - img [ref=e670]
+      - generic [ref=e673]: Copyright © 2026 MongoDB.

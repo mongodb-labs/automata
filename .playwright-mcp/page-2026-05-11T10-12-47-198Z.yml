@@ -1,0 +1,278 @@
+- generic [ref=e2]:
+  - region "Skip to main content":
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#__docusaurus_skipToContent_fallback"
+  - navigation "Main" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Kanopy logo Kanopy" [ref=e7] [cursor=pointer]:
+          - /url: /docs/
+          - img "Kanopy logo" [ref=e9]
+          - generic [ref=e10]: Kanopy
+        - link "Documentation" [ref=e11] [cursor=pointer]:
+          - /url: /docs/
+        - link "Tutorial" [ref=e12] [cursor=pointer]:
+          - /url: /docs/getting_started/
+        - link "Examples" [ref=e13] [cursor=pointer]:
+          - /url: /docs/examples/
+        - link "Advisories" [ref=e14] [cursor=pointer]:
+          - /url: /docs/advisories/
+        - link "FAQ" [ref=e15] [cursor=pointer]:
+          - /url: /docs/faq/
+      - generic [ref=e16]:
+        - link "GitHub" [ref=e17] [cursor=pointer]:
+          - /url: https://github.com/10gen/kanopy-docs
+          - text: GitHub
+          - img [ref=e18]
+        - button "Switch between dark and light mode (currently light mode)" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+        - generic [ref=e25]:
+          - textbox "Search" [ref=e26]
+          - generic:
+            - generic: ⌘
+            - generic: K
+  - generic [ref=e29]:
+    - complementary [ref=e30]:
+      - navigation "Docs sidebar" [ref=e33]:
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link "Introduction" [ref=e36] [cursor=pointer]:
+              - /url: /docs/
+          - listitem [ref=e37]:
+            - generic [ref=e38]:
+              - link "Onboarding" [ref=e39] [cursor=pointer]:
+                - /url: /docs/onboarding/
+              - button "Expand sidebar category 'Onboarding'" [ref=e40] [cursor=pointer]
+          - listitem [ref=e41]:
+            - generic [ref=e42]:
+              - link "Accessing Kanopy" [ref=e43] [cursor=pointer]:
+                - /url: /docs/access/
+              - button "Expand sidebar category 'Accessing Kanopy'" [ref=e44] [cursor=pointer]
+          - listitem [ref=e45]:
+            - generic [ref=e46]:
+              - link "Configuration" [ref=e47] [cursor=pointer]:
+                - /url: /docs/configuration/
+              - button "Expand sidebar category 'Configuration'" [ref=e48] [cursor=pointer]
+          - listitem [ref=e49]:
+            - generic [ref=e50]:
+              - link "Getting Started with Kanopy" [ref=e51] [cursor=pointer]:
+                - /url: /docs/getting_started/
+              - button "Collapse sidebar category 'Getting Started with Kanopy'" [expanded] [ref=e52] [cursor=pointer]
+            - list [ref=e53]:
+              - listitem [ref=e54]:
+                - link "Create a Flask App" [ref=e55] [cursor=pointer]:
+                  - /url: /docs/getting_started/flask_app/
+              - listitem [ref=e56]:
+                - link "Create a Drone Pipeline" [ref=e57] [cursor=pointer]:
+                  - /url: /docs/getting_started/drone_pipeline/
+              - listitem [ref=e58]:
+                - link "Configure Drone Pipeline" [ref=e59] [cursor=pointer]:
+                  - /url: /docs/getting_started/drone_configuration/
+              - listitem [ref=e60]:
+                - link "Application Configuration" [ref=e61] [cursor=pointer]:
+                  - /url: /docs/getting_started/application_configuration/
+              - listitem [ref=e62]:
+                - link "Application Observability" [ref=e63] [cursor=pointer]:
+                  - /url: /docs/getting_started/application_observability/
+              - listitem [ref=e64]:
+                - link "Application Lifecycle" [ref=e65] [cursor=pointer]:
+                  - /url: /docs/getting_started/application_lifecycle/
+          - listitem [ref=e66]:
+            - generic [ref=e67]:
+              - link "Development" [ref=e68] [cursor=pointer]:
+                - /url: /docs/development/
+              - button "Expand sidebar category 'Development'" [ref=e69] [cursor=pointer]
+          - listitem [ref=e70]:
+            - generic [ref=e71]:
+              - link "CI/CD" [ref=e72] [cursor=pointer]:
+                - /url: /docs/cicd/
+              - button "Expand sidebar category 'CI/CD'" [ref=e73] [cursor=pointer]
+          - listitem [ref=e74]:
+            - generic [ref=e75]:
+              - link "Routing" [ref=e76] [cursor=pointer]:
+                - /url: /docs/routing/
+              - button "Expand sidebar category 'Routing'" [ref=e77] [cursor=pointer]
+          - listitem [ref=e78]:
+            - generic [ref=e79]:
+              - link "Kanopy Service Mesh" [ref=e80] [cursor=pointer]:
+                - /url: /docs/ingress/
+              - button "Expand sidebar category 'Kanopy Service Mesh'" [ref=e81] [cursor=pointer]
+          - listitem [ref=e82]:
+            - generic [ref=e83]:
+              - link "CorpSecure" [ref=e84] [cursor=pointer]:
+                - /url: /docs/corpsecure/
+              - button "Expand sidebar category 'CorpSecure'" [ref=e85] [cursor=pointer]
+          - listitem [ref=e86]:
+            - generic [ref=e87]:
+              - link "Observability" [ref=e88] [cursor=pointer]:
+                - /url: /docs/observability/
+              - button "Expand sidebar category 'Observability'" [ref=e89] [cursor=pointer]
+          - listitem [ref=e90]:
+            - generic [ref=e91]:
+              - link "Data Analytics" [ref=e92] [cursor=pointer]:
+                - /url: /docs/data-analytics/
+              - button "Expand sidebar category 'Data Analytics'" [ref=e93] [cursor=pointer]
+          - listitem [ref=e94]:
+            - generic [ref=e95]:
+              - link "Production" [ref=e96] [cursor=pointer]:
+                - /url: /docs/production/
+              - button "Expand sidebar category 'Production'" [ref=e97] [cursor=pointer]
+          - listitem [ref=e98]:
+            - generic [ref=e99]:
+              - link "Examples" [ref=e100] [cursor=pointer]:
+                - /url: /docs/examples/
+              - button "Expand sidebar category 'Examples'" [ref=e101] [cursor=pointer]
+          - listitem [ref=e102]:
+            - generic [ref=e103]:
+              - link "Security" [ref=e104] [cursor=pointer]:
+                - /url: /docs/security/
+              - button "Expand sidebar category 'Security'" [ref=e105] [cursor=pointer]
+          - listitem [ref=e106]:
+            - generic [ref=e107]:
+              - link "Advisories" [ref=e108] [cursor=pointer]:
+                - /url: /docs/advisories/
+              - button "Expand sidebar category 'Advisories'" [ref=e109] [cursor=pointer]
+          - listitem [ref=e110]:
+            - generic [ref=e111]:
+              - link "Policies" [ref=e112] [cursor=pointer]:
+                - /url: /docs/policies/
+              - button "Expand sidebar category 'Policies'" [ref=e113] [cursor=pointer]
+          - listitem [ref=e114]:
+            - generic [ref=e115]:
+              - link "Kanopy beta services" [ref=e116] [cursor=pointer]:
+                - /url: /docs/beta/
+              - button "Expand sidebar category 'Kanopy beta services'" [ref=e117] [cursor=pointer]
+          - listitem [ref=e118]:
+            - generic [ref=e119]:
+              - link "Kanopy alpha services" [ref=e120] [cursor=pointer]:
+                - /url: /docs/alpha/
+              - button "Expand sidebar category 'Kanopy alpha services'" [ref=e121] [cursor=pointer]
+          - listitem [ref=e122]:
+            - generic [ref=e123]:
+              - link "Other" [ref=e124] [cursor=pointer]:
+                - /url: /docs/other/
+              - button "Expand sidebar category 'Other'" [ref=e125] [cursor=pointer]
+          - listitem [ref=e126]:
+            - link "Kanopy Cheatsheet" [ref=e127] [cursor=pointer]:
+              - /url: /docs/cheatsheet/
+          - listitem [ref=e128]:
+            - link "Emergency Contact" [ref=e129] [cursor=pointer]:
+              - /url: /docs/emergency_contact/
+          - listitem [ref=e130]:
+            - link "FAQ" [ref=e131] [cursor=pointer]:
+              - /url: /docs/faq/
+          - listitem [ref=e132]:
+            - link "Glossary" [ref=e133] [cursor=pointer]:
+              - /url: /docs/glossary/
+          - listitem [ref=e134]:
+            - button "api" [ref=e136] [cursor=pointer]
+    - main [ref=e137]:
+      - generic [ref=e139]:
+        - generic [ref=e141]:
+          - article [ref=e142]:
+            - navigation "Breadcrumbs" [ref=e143]:
+              - list [ref=e144]:
+                - listitem [ref=e145]:
+                  - link "Home page" [ref=e146] [cursor=pointer]:
+                    - /url: /docs/
+                    - img [ref=e147]
+                - listitem [ref=e149]:
+                  - generic [ref=e150]: Getting Started with Kanopy
+            - generic [ref=e151]:
+              - heading "Getting Started with Kanopy" [level=1] [ref=e153]
+              - paragraph [ref=e154]:
+                - text: Complete our 15 minute
+                - link "Getting Started with Kanopy" [ref=e155] [cursor=pointer]:
+                  - /url: https://learn.mongodb.com/courses/getting-started-with-kanopy
+                - text: module on MongoDB University.
+              - heading "Kanopy Tutorial" [level=1] [ref=e156]
+              - paragraph [ref=e157]: In this tutorial, we will create a basic Python application and deploy it to Kubernetes using Drone.
+              - heading "RequirementsDirect link to Requirements" [level=2] [ref=e158]:
+                - text: Requirements
+                - link "Direct link to Requirements" [ref=e159] [cursor=pointer]:
+                  - /url: "#requirements"
+                  - text: "#"
+              - paragraph [ref=e160]: "Before starting this tutorial:"
+              - list [ref=e161]:
+                - listitem [ref=e162]:
+                  - text: Ensure you have
+                  - link "access to a namespace" [ref=e163] [cursor=pointer]:
+                    - /url: /docs/access/
+                - listitem [ref=e164]:
+                  - link "Install and configure kubectl" [ref=e165] [cursor=pointer]:
+                    - /url: /docs/configuration/kubeconfig/
+                - listitem [ref=e166]:
+                  - link "Install the helm and ksec" [ref=e167] [cursor=pointer]:
+                    - /url: /docs/configuration/helm/
+                  - text: command-line utilities
+                - listitem [ref=e168]:
+                  - text: Set kubectl to use the
+                  - code [ref=e169]: api.staging.corp.mongodb.com
+                  - text: context
+              - heading "Kanopy Tutorial indexDirect link to Kanopy Tutorial index" [level=2] [ref=e170]:
+                - text: Kanopy Tutorial index
+                - link "Direct link to Kanopy Tutorial index" [ref=e171] [cursor=pointer]:
+                  - /url: "#kanopy-tutorial-index"
+                  - text: "#"
+              - list [ref=e172]:
+                - listitem [ref=e173]:
+                  - link "Create a Flask app" [ref=e174] [cursor=pointer]:
+                    - /url: /docs/getting_started/flask_app/
+                  - text: ": creating a Flask application to use in this guide"
+                - listitem [ref=e175]:
+                  - link "Create a Drone Pipeline" [ref=e176] [cursor=pointer]:
+                    - /url: /docs/getting_started/drone_pipeline/
+                  - text: ": creating a CI/CD pipeline"
+                - listitem [ref=e177]:
+                  - link "Configure Drone Pipeline" [ref=e178] [cursor=pointer]:
+                    - /url: /docs/getting_started/drone_configuration/
+                  - text: ": configuring Drone settings for our repository"
+                - listitem [ref=e179]:
+                  - link "Application Configuration" [ref=e180] [cursor=pointer]:
+                    - /url: /docs/getting_started/application_configuration/
+                  - text: ": configure environment variables, secrets, and more advanced topics"
+                - listitem [ref=e181]:
+                  - link "Application Observability" [ref=e182] [cursor=pointer]:
+                    - /url: /docs/getting_started/application_observability/
+                  - text: ": tools for analyzing application telemetry"
+                - listitem [ref=e183]:
+                  - link "Application Lifecycle" [ref=e184] [cursor=pointer]:
+                    - /url: /docs/getting_started/application_lifecycle/
+                  - text: ": scale, rollback, or delete your deployment"
+          - navigation "Docs pages" [ref=e185]:
+            - link "Previous « Helm V2 configuration and usage" [ref=e186] [cursor=pointer]:
+              - /url: /docs/configuration/legacy_helm_v2/
+              - generic [ref=e187]: Previous
+              - generic [ref=e188]: « Helm V2 configuration and usage
+            - link "Next Create a Flask App »" [ref=e189] [cursor=pointer]:
+              - /url: /docs/getting_started/flask_app/
+              - generic [ref=e190]: Next
+              - generic [ref=e191]: Create a Flask App »
+        - list [ref=e194]:
+          - listitem [ref=e195]:
+            - link "Requirements" [ref=e196] [cursor=pointer]:
+              - /url: "#requirements"
+          - listitem [ref=e197]:
+            - link "Kanopy Tutorial index" [ref=e198] [cursor=pointer]:
+              - /url: "#kanopy-tutorial-index"
+  - contentinfo [ref=e199]:
+    - generic [ref=e200]:
+      - generic [ref=e201]:
+        - generic [ref=e202]:
+          - generic [ref=e203]: Docs
+          - list [ref=e204]:
+            - listitem [ref=e205]:
+              - link "Documentation" [ref=e206] [cursor=pointer]:
+                - /url: /docs/
+            - listitem [ref=e207]:
+              - link "Support" [ref=e208] [cursor=pointer]:
+                - /url: https://jira.mongodb.org/plugins/servlet/desk/portal/48
+        - generic [ref=e209]:
+          - generic [ref=e210]: More
+          - list [ref=e211]:
+            - listitem [ref=e212]:
+              - link "GitHub" [ref=e213] [cursor=pointer]:
+                - /url: https://github.com/10gen/kanopy-docs
+                - text: GitHub
+                - img [ref=e214]
+      - generic [ref=e217]: Copyright © 2026 MongoDB.

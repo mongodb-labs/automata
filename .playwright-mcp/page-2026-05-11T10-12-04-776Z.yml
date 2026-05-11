@@ -1,0 +1,421 @@
+- generic [ref=e2]:
+  - region "Skip to main content":
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#__docusaurus_skipToContent_fallback"
+  - navigation "Main" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Kanopy logo Kanopy" [ref=e7] [cursor=pointer]:
+          - /url: /docs/
+          - img "Kanopy logo" [ref=e9]
+          - generic [ref=e10]: Kanopy
+        - link "Documentation" [ref=e11] [cursor=pointer]:
+          - /url: /docs/
+        - link "Tutorial" [ref=e12] [cursor=pointer]:
+          - /url: /docs/getting_started/
+        - link "Examples" [ref=e13] [cursor=pointer]:
+          - /url: /docs/examples/
+        - link "Advisories" [ref=e14] [cursor=pointer]:
+          - /url: /docs/advisories/
+        - link "FAQ" [ref=e15] [cursor=pointer]:
+          - /url: /docs/faq/
+      - generic [ref=e16]:
+        - link "GitHub" [ref=e17] [cursor=pointer]:
+          - /url: https://github.com/10gen/kanopy-docs
+          - text: GitHub
+          - img [ref=e18]
+        - button "Switch between dark and light mode (currently light mode)" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+        - generic [ref=e25]:
+          - textbox "Search" [ref=e26]
+          - generic:
+            - generic: ⌘
+            - generic: K
+  - generic [ref=e29]:
+    - complementary [ref=e30]:
+      - navigation "Docs sidebar" [ref=e33]:
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link "Introduction" [ref=e36] [cursor=pointer]:
+              - /url: /docs/
+          - listitem [ref=e37]:
+            - generic [ref=e38]:
+              - link "Onboarding" [ref=e39] [cursor=pointer]:
+                - /url: /docs/onboarding/
+              - button "Expand sidebar category 'Onboarding'" [ref=e40] [cursor=pointer]
+          - listitem [ref=e41]:
+            - generic [ref=e42]:
+              - link "Accessing Kanopy" [ref=e43] [cursor=pointer]:
+                - /url: /docs/access/
+              - button "Expand sidebar category 'Accessing Kanopy'" [ref=e44] [cursor=pointer]
+          - listitem [ref=e45]:
+            - generic [ref=e46]:
+              - link "Configuration" [ref=e47] [cursor=pointer]:
+                - /url: /docs/configuration/
+              - button "Collapse sidebar category 'Configuration'" [expanded] [ref=e48] [cursor=pointer]
+            - list [ref=e49]:
+              - listitem [ref=e50]:
+                - link "kubectl Configuration" [ref=e51] [cursor=pointer]:
+                  - /url: /docs/configuration/kubeconfig/
+              - listitem [ref=e52]:
+                - link "Helm" [ref=e53] [cursor=pointer]:
+                  - /url: /docs/configuration/helm/
+              - listitem [ref=e54]:
+                - link "Helm V2 configuration and usage" [ref=e55] [cursor=pointer]:
+                  - /url: /docs/configuration/legacy_helm_v2/
+          - listitem [ref=e56]:
+            - generic [ref=e57]:
+              - link "Getting Started with Kanopy" [ref=e58] [cursor=pointer]:
+                - /url: /docs/getting_started/
+              - button "Expand sidebar category 'Getting Started with Kanopy'" [ref=e59] [cursor=pointer]
+          - listitem [ref=e60]:
+            - generic [ref=e61]:
+              - link "Development" [ref=e62] [cursor=pointer]:
+                - /url: /docs/development/
+              - button "Expand sidebar category 'Development'" [ref=e63] [cursor=pointer]
+          - listitem [ref=e64]:
+            - generic [ref=e65]:
+              - link "CI/CD" [ref=e66] [cursor=pointer]:
+                - /url: /docs/cicd/
+              - button "Expand sidebar category 'CI/CD'" [ref=e67] [cursor=pointer]
+          - listitem [ref=e68]:
+            - generic [ref=e69]:
+              - link "Routing" [ref=e70] [cursor=pointer]:
+                - /url: /docs/routing/
+              - button "Expand sidebar category 'Routing'" [ref=e71] [cursor=pointer]
+          - listitem [ref=e72]:
+            - generic [ref=e73]:
+              - link "Kanopy Service Mesh" [ref=e74] [cursor=pointer]:
+                - /url: /docs/ingress/
+              - button "Expand sidebar category 'Kanopy Service Mesh'" [ref=e75] [cursor=pointer]
+          - listitem [ref=e76]:
+            - generic [ref=e77]:
+              - link "CorpSecure" [ref=e78] [cursor=pointer]:
+                - /url: /docs/corpsecure/
+              - button "Expand sidebar category 'CorpSecure'" [ref=e79] [cursor=pointer]
+          - listitem [ref=e80]:
+            - generic [ref=e81]:
+              - link "Observability" [ref=e82] [cursor=pointer]:
+                - /url: /docs/observability/
+              - button "Expand sidebar category 'Observability'" [ref=e83] [cursor=pointer]
+          - listitem [ref=e84]:
+            - generic [ref=e85]:
+              - link "Data Analytics" [ref=e86] [cursor=pointer]:
+                - /url: /docs/data-analytics/
+              - button "Expand sidebar category 'Data Analytics'" [ref=e87] [cursor=pointer]
+          - listitem [ref=e88]:
+            - generic [ref=e89]:
+              - link "Production" [ref=e90] [cursor=pointer]:
+                - /url: /docs/production/
+              - button "Expand sidebar category 'Production'" [ref=e91] [cursor=pointer]
+          - listitem [ref=e92]:
+            - generic [ref=e93]:
+              - link "Examples" [ref=e94] [cursor=pointer]:
+                - /url: /docs/examples/
+              - button "Expand sidebar category 'Examples'" [ref=e95] [cursor=pointer]
+          - listitem [ref=e96]:
+            - generic [ref=e97]:
+              - link "Security" [ref=e98] [cursor=pointer]:
+                - /url: /docs/security/
+              - button "Expand sidebar category 'Security'" [ref=e99] [cursor=pointer]
+          - listitem [ref=e100]:
+            - generic [ref=e101]:
+              - link "Advisories" [ref=e102] [cursor=pointer]:
+                - /url: /docs/advisories/
+              - button "Expand sidebar category 'Advisories'" [ref=e103] [cursor=pointer]
+          - listitem [ref=e104]:
+            - generic [ref=e105]:
+              - link "Policies" [ref=e106] [cursor=pointer]:
+                - /url: /docs/policies/
+              - button "Expand sidebar category 'Policies'" [ref=e107] [cursor=pointer]
+          - listitem [ref=e108]:
+            - generic [ref=e109]:
+              - link "Kanopy beta services" [ref=e110] [cursor=pointer]:
+                - /url: /docs/beta/
+              - button "Expand sidebar category 'Kanopy beta services'" [ref=e111] [cursor=pointer]
+          - listitem [ref=e112]:
+            - generic [ref=e113]:
+              - link "Kanopy alpha services" [ref=e114] [cursor=pointer]:
+                - /url: /docs/alpha/
+              - button "Expand sidebar category 'Kanopy alpha services'" [ref=e115] [cursor=pointer]
+          - listitem [ref=e116]:
+            - generic [ref=e117]:
+              - link "Other" [ref=e118] [cursor=pointer]:
+                - /url: /docs/other/
+              - button "Expand sidebar category 'Other'" [ref=e119] [cursor=pointer]
+          - listitem [ref=e120]:
+            - link "Kanopy Cheatsheet" [ref=e121] [cursor=pointer]:
+              - /url: /docs/cheatsheet/
+          - listitem [ref=e122]:
+            - link "Emergency Contact" [ref=e123] [cursor=pointer]:
+              - /url: /docs/emergency_contact/
+          - listitem [ref=e124]:
+            - link "FAQ" [ref=e125] [cursor=pointer]:
+              - /url: /docs/faq/
+          - listitem [ref=e126]:
+            - link "Glossary" [ref=e127] [cursor=pointer]:
+              - /url: /docs/glossary/
+          - listitem [ref=e128]:
+            - button "api" [ref=e130] [cursor=pointer]
+    - main [ref=e131]:
+      - generic [ref=e133]:
+        - generic [ref=e135]:
+          - article [ref=e136]:
+            - navigation "Breadcrumbs" [ref=e137]:
+              - list [ref=e138]:
+                - listitem [ref=e139]:
+                  - link "Home page" [ref=e140] [cursor=pointer]:
+                    - /url: /docs/
+                    - img [ref=e141]
+                - listitem [ref=e143]:
+                  - link "Configuration" [ref=e144] [cursor=pointer]:
+                    - /url: /docs/configuration/
+                - listitem [ref=e145]:
+                  - generic [ref=e146]: Helm
+            - generic [ref=e147]:
+              - heading "Helm" [level=1] [ref=e149]
+              - paragraph [ref=e150]:
+                - text: If you are looking for installation instructions jump to
+                - link "Installation" [ref=e151] [cursor=pointer]:
+                  - /url: "#installation"
+                - text: .
+              - paragraph [ref=e152]:
+                - text: For instructions to configure and use the
+                - strong [ref=e153]: LEGACY
+                - text: helm v2 version, jump to
+                - link "helm v2 instructions" [ref=e154] [cursor=pointer]:
+                  - /url: /docs/configuration/legacy_helm_v2/
+                - text: .
+              - paragraph [ref=e155]: "Kubernetes applications require multiple objects to be created in order to operate. For instance, a web application might be composed of the following k8s resources:"
+              - list [ref=e156]:
+                - listitem [ref=e157]: Deployment
+                - listitem [ref=e158]: Configmap
+                - listitem [ref=e159]: Secret
+                - listitem [ref=e160]: Service
+                - listitem [ref=e161]: Ingress
+              - paragraph [ref=e162]:
+                - text: Creating each resource individually is cumbersome, therefore Kanopy uses
+                - link "Helm" [ref=e163] [cursor=pointer]:
+                  - /url: https://helm.sh/
+                - text: to package and deploy Kubernetes applications.
+              - paragraph [ref=e164]:
+                - text: Helm uses a packaging format called
+                - link "Charts" [ref=e165] [cursor=pointer]:
+                  - /url: https://helm.sh/docs/topics/charts/
+                - text: to abstract the complexity of an application by templating Kubernetes object definitions, allowing the user to pass a much simpler values file with environment-specific configuration. A chart is a collection of files that describes a set of related Kubernetes resources. A single chart could be used to deployed a small web application, or something more complex, like a full stack of microservices.
+              - paragraph [ref=e166]: Kanopy provides charts for the most common use cases across MongoDB.
+              - heading "web-app ChartDirect link to web-app-chart" [level=2] [ref=e167]:
+                - link "web-app Chart" [ref=e168] [cursor=pointer]:
+                  - /url: /docs/examples/web-app/
+                - link "Direct link to web-app-chart" [ref=e169] [cursor=pointer]:
+                  - /url: "#web-app-chart"
+                  - text: "#"
+              - paragraph [ref=e170]:
+                - code [ref=e171]: web-app
+                - text: is a bit of a misnomer, since most
+                - link "Twelve-factor" [ref=e172] [cursor=pointer]:
+                  - /url: https://12factor.net/
+                - text: "applications can be deployed with it. This chart is being used in Kanopy for many services, such as:"
+              - list [ref=e173]:
+                - listitem [ref=e174]: Web applications
+                - listitem [ref=e175]: Services exposing a REST or gRPC APIs
+                - listitem [ref=e176]: Slack and Github bots
+                - listitem [ref=e177]: etc.
+              - heading "cronjobs ChartDirect link to cronjobs-chart" [level=2] [ref=e178]:
+                - link "cronjobs Chart" [ref=e179] [cursor=pointer]:
+                  - /url: /docs/examples/cronjobs/
+                - link "Direct link to cronjobs-chart" [ref=e180] [cursor=pointer]:
+                  - /url: "#cronjobs-chart"
+                  - text: "#"
+              - paragraph [ref=e181]:
+                - text: The
+                - code [ref=e182]: cronjobs
+                - text: "chart configures Kubernetes Cronjobs, which is used across the company to configure run to completion jobs. These are some examples of Kanopy jobs that run on a schedule:"
+              - list [ref=e183]:
+                - listitem [ref=e184]: Pulling data from an external service's API to update a MongoDB database
+                - listitem [ref=e185]: Training machine learning models
+                - listitem [ref=e186]: Performing maintenance on Jira projects
+                - listitem [ref=e187]: Syncing data between dependent services
+                - listitem [ref=e188]: Creating and e-mailing analysis reports
+                - listitem [ref=e189]: and many others
+              - heading "InstallationDirect link to Installation" [level=2] [ref=e190]:
+                - text: Installation
+                - link "Direct link to Installation" [ref=e191] [cursor=pointer]:
+                  - /url: "#installation"
+                  - text: "#"
+              - paragraph [ref=e192]:
+                - emphasis [ref=e193]: "Please note:"
+                - text: our environment has been tested to support up to helm version
+                - code [ref=e194]: v3.9.4
+                - text: .
+              - paragraph [ref=e195]:
+                - text: The
+                - link "upstream documentation" [ref=e196] [cursor=pointer]:
+                  - /url: https://helm.sh/docs/intro/install/
+                - text: offers installation options.
+              - heading "UsageDirect link to Usage" [level=2] [ref=e197]:
+                - text: Usage
+                - link "Direct link to Usage" [ref=e198] [cursor=pointer]:
+                  - /url: "#usage"
+                  - text: "#"
+              - heading "Through DroneDirect link to Through Drone" [level=3] [ref=e199]:
+                - text: Through Drone
+                - link "Direct link to Through Drone" [ref=e200] [cursor=pointer]:
+                  - /url: "#through-drone"
+                  - text: "#"
+              - paragraph [ref=e201]: Kanopy provides a Drone plugin in the form of a Docker image that contains the Helm executable. In order for applications to use the Kanopy helm charts they simply need to add a Drone pipeline step that uses this image.
+              - paragraph [ref=e202]:
+                - text: Getting Started section on
+                - link "creating a Drone pipeline step" [ref=e203] [cursor=pointer]:
+                  - /url: /docs/getting_started/drone_pipeline/
+                - text: .
+              - heading "Through the command-lineDirect link to Through the command-line" [level=3] [ref=e204]:
+                - text: Through the command-line
+                - link "Direct link to Through the command-line" [ref=e205] [cursor=pointer]:
+                  - /url: "#through-the-command-line"
+                  - text: "#"
+              - paragraph [ref=e206]: "Helm as a command-line tool can be used for a variety of operations:"
+              - list [ref=e207]:
+                - listitem [ref=e208]: Viewing the history of deployments for a release
+                - listitem [ref=e209]: Rolling back a deployment to a previous version
+                - listitem [ref=e210]: Manually installing a release to a namespace (not recommended other than for testing - Drone should be used in most cases)
+              - paragraph [ref=e211]: To use the mongodb provided helm charts, add repo (recommended)
+              - generic [ref=e213]:
+                - code [ref=e215]:
+                  - generic [ref=e216]: helm repo add mongodb https://10gen.github.io/helm-charts
+                - button "Copy code to clipboard" [ref=e218] [cursor=pointer]:
+                  - generic [ref=e219]:
+                    - img [ref=e220]
+                    - img [ref=e222]
+              - paragraph [ref=e224]:
+                - text: See the
+                - link "cheatsheet" [ref=e225] [cursor=pointer]:
+                  - /url: /docs/cheatsheet/
+                - text: for advanced usage.
+              - 'heading "Helm plug-in: ksecDirect link to Helm plug-in: ksec" [level=2] [ref=e226]':
+                - text: "Helm plug-in: ksec"
+                - 'link "Direct link to Helm plug-in: ksec" [ref=e227] [cursor=pointer]':
+                  - /url: "#helm-plug-in-ksec"
+                  - text: "#"
+              - paragraph [ref=e228]:
+                - text: Using Helm's plugin interface Kanopy provides the
+                - code [ref=e229]: ksec
+                - text: utility to facilitate the management of
+                - link "Kubernetes Secrets" [ref=e230] [cursor=pointer]:
+                  - /url: https://kubernetes.io/docs/concepts/configuration/secret/
+                - text: .
+              - heading "ksec installationDirect link to ksec installation" [level=3] [ref=e231]:
+                - text: ksec installation
+                - link "Direct link to ksec installation" [ref=e232] [cursor=pointer]:
+                  - /url: "#ksec-installation"
+                  - text: "#"
+              - paragraph [ref=e233]: ksec is a command line tool that simplifies the management of Kubernetes Secrets, built for Kanopy.
+              - generic [ref=e235]:
+                - code [ref=e237]:
+                  - generic [ref=e238]: helm plugin install https://github.com/kanopy-platform/ksec
+                - button "Copy code to clipboard" [ref=e240] [cursor=pointer]:
+                  - generic [ref=e241]:
+                    - img [ref=e242]
+                    - img [ref=e244]
+              - heading "ksec usageDirect link to ksec usage" [level=3] [ref=e246]:
+                - text: ksec usage
+                - link "Direct link to ksec usage" [ref=e247] [cursor=pointer]:
+                  - /url: "#ksec-usage"
+                  - text: "#"
+              - list [ref=e248]:
+                - listitem [ref=e249]:
+                  - text: "List secrets:"
+                  - code [ref=e250]: helm ksec ls
+                - listitem [ref=e251]:
+                  - text: "Create secret:"
+                  - code [ref=e252]: helm ksec set mysecret variable1=value1 variable2=value2
+                - listitem [ref=e253]:
+                  - text: "Show secrets:"
+                  - code [ref=e254]: helm ksec get mysecret
+                - listitem [ref=e255]: "Create from file:"
+              - generic [ref=e257]:
+                - code [ref=e259]:
+                  - generic [ref=e260]: echo foo=bar > mysecret.txt
+                  - generic [ref=e261]: helm ksec push mysecret.txt mysecret
+                - button "Copy code to clipboard" [ref=e263] [cursor=pointer]:
+                  - generic [ref=e264]:
+                    - img [ref=e265]
+                    - img [ref=e267]
+              - paragraph [ref=e269]:
+                - text: This secret can now be used to configure an application, as described in
+                - link "Configuring Secret Environment Variables" [ref=e270] [cursor=pointer]:
+                  - /url: /docs/getting_started/application_configuration/#configuring-secret-environment-variables
+                - text: .
+              - heading "Next stepsDirect link to Next steps" [level=2] [ref=e271]:
+                - text: Next steps
+                - link "Direct link to Next steps" [ref=e272] [cursor=pointer]:
+                  - /url: "#next-steps"
+                  - text: "#"
+              - paragraph [ref=e273]:
+                - text: After configuring kubectl and helm, your environment is ready for the
+                - link "Kanopy Tutorial" [ref=e274] [cursor=pointer]:
+                  - /url: /docs/getting_started/
+                - text: .
+          - navigation "Docs pages" [ref=e275]:
+            - link "Previous « kubectl Configuration" [ref=e276] [cursor=pointer]:
+              - /url: /docs/configuration/kubeconfig/
+              - generic [ref=e277]: Previous
+              - generic [ref=e278]: « kubectl Configuration
+            - link "Next Helm V2 configuration and usage »" [ref=e279] [cursor=pointer]:
+              - /url: /docs/configuration/legacy_helm_v2/
+              - generic [ref=e280]: Next
+              - generic [ref=e281]: Helm V2 configuration and usage »
+        - list [ref=e284]:
+          - listitem [ref=e285]:
+            - link "web-app Chart" [ref=e286] [cursor=pointer]:
+              - /url: "#web-app-chart"
+          - listitem [ref=e287]:
+            - link "cronjobs Chart" [ref=e288] [cursor=pointer]:
+              - /url: "#cronjobs-chart"
+          - listitem [ref=e289]:
+            - link "Installation" [ref=e290] [cursor=pointer]:
+              - /url: "#installation"
+          - listitem [ref=e291]:
+            - link "Usage" [ref=e292] [cursor=pointer]:
+              - /url: "#usage"
+            - list [ref=e293]:
+              - listitem [ref=e294]:
+                - link "Through Drone" [ref=e295] [cursor=pointer]:
+                  - /url: "#through-drone"
+              - listitem [ref=e296]:
+                - link "Through the command-line" [ref=e297] [cursor=pointer]:
+                  - /url: "#through-the-command-line"
+          - listitem [ref=e298]:
+            - 'link "Helm plug-in: ksec" [ref=e299] [cursor=pointer]':
+              - /url: "#helm-plug-in-ksec"
+            - list [ref=e300]:
+              - listitem [ref=e301]:
+                - link "ksec installation" [ref=e302] [cursor=pointer]:
+                  - /url: "#ksec-installation"
+              - listitem [ref=e303]:
+                - link "ksec usage" [ref=e304] [cursor=pointer]:
+                  - /url: "#ksec-usage"
+          - listitem [ref=e305]:
+            - link "Next steps" [ref=e306] [cursor=pointer]:
+              - /url: "#next-steps"
+  - contentinfo [ref=e307]:
+    - generic [ref=e308]:
+      - generic [ref=e309]:
+        - generic [ref=e310]:
+          - generic [ref=e311]: Docs
+          - list [ref=e312]:
+            - listitem [ref=e313]:
+              - link "Documentation" [ref=e314] [cursor=pointer]:
+                - /url: /docs/
+            - listitem [ref=e315]:
+              - link "Support" [ref=e316] [cursor=pointer]:
+                - /url: https://jira.mongodb.org/plugins/servlet/desk/portal/48
+        - generic [ref=e317]:
+          - generic [ref=e318]: More
+          - list [ref=e319]:
+            - listitem [ref=e320]:
+              - link "GitHub" [ref=e321] [cursor=pointer]:
+                - /url: https://github.com/10gen/kanopy-docs
+                - text: GitHub
+                - img [ref=e322]
+      - generic [ref=e325]: Copyright © 2026 MongoDB.
