@@ -212,7 +212,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
   name: automata-github
-  namespace: <namespace>
+  namespace: skunkworks
   annotations:
     v1alpha1.argoslower.kanopy-platform/known-source: "github"
 spec:
@@ -243,7 +243,7 @@ spec:
 
 Webhook URL (production):
 ```
-https://webhooks.prod.corp.mongodb.com/<namespace>/automata-github/github
+https://webhooks.prod.corp.mongodb.com/skunkworks/automata-github/github
 ```
 
 ### Sensors
@@ -314,7 +314,7 @@ workflowTemplates:
     templates:
       - name: run
         container:
-          image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/<namespace>/automata:latest
+          image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/skunkworks/automata:latest
           command: ["automata"]
           args: ["jira-lifecycle-open", "--payload", "{{inputs.parameters.payload}}"]
           envFrom:
@@ -342,7 +342,7 @@ steps:
     image: plugins/kaniko-ecr
     settings:
       registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com
-      repo: <namespace>/automata
+      repo: skunkworks/automata
       tags: [git-${DRONE_COMMIT_SHA:0:7}, latest]
       create_repository: true
       access_key:
@@ -358,7 +358,7 @@ steps:
       chart: mongodb/argo-eventbus
       chart_version: TBD  # look up latest at https://github.com/10gen/helm-charts/tree/master/charts/argo-eventbus
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: <namespace>
+      namespace: skunkworks
       release: automata-eventbus
       values_files: ["deploy/eventbus-values.yaml"]
       api_server: https://api.prod.corp.mongodb.com
@@ -371,7 +371,7 @@ steps:
       chart: mongodb/argo-workflow-catalog
       chart_version: TBD  # look up latest at https://github.com/10gen/helm-charts/tree/master/charts/argo-workflow-catalog
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: <namespace>
+      namespace: skunkworks
       release: automata-workflows
       values_files: ["deploy/workflows-values.yaml"]
       api_server: https://api.prod.corp.mongodb.com
@@ -423,8 +423,8 @@ drone secret add <repo> --name=prod_kubernetes_token --data=<value>
 | Signal | Where |
 |---|---|
 | Workflow success/failure | Argo UI (`workflows.prod.corp.mongodb.com`) |
-| Step logs | Argo UI (during run) → Splunk after GC (`index=<namespace>-prod`) |
-| Run count / duration / status | Prometheus → Grafana (`argo_workflows_<namespace>_*`) |
+| Step logs | Argo UI (during run) → Splunk after GC (`index=skunkworks-prod`) |
+| Run count / duration / status | Prometheus → Grafana (`argo_workflows_skunkworks_*`) |
 | Webhook delivery | GitHub App webhook deliveries page |
 
 ---
@@ -434,7 +434,7 @@ drone secret add <repo> --name=prod_kubernetes_token --data=<value>
 To add a new repo to `automata`:
 
 1. Add it to the `repositories` list in `k8s/eventsource.yaml`
-2. Register the webhook in the repo settings pointing to `https://webhooks.prod.corp.mongodb.com/<namespace>/automata-github/github`, with the same `GITHUB_WEBHOOK_SECRET`
+2. Register the webhook in the repo settings pointing to `https://webhooks.prod.corp.mongodb.com/skunkworks/automata-github/github`, with the same `GITHUB_WEBHOOK_SECRET`
 3. Push to `main` — Drone re-applies the EventSource
 
 No code changes needed unless the new repo requires different Jira fields or components (add a per-repo mapping in `src/jira.rs`).
@@ -459,7 +459,6 @@ Looked up by `repo.full_name` at runtime.
 
 ## Open Questions
 
-- **Namespace**: which Kanopy namespace does `automata` live in? (suggest `apix-devtools` or a new `automata` namespace)
 - **Staging rollout**: should Sensors initially point only to non-production repos, or should staging/prod Kanopy clusters mirror each other from the start?
 - **Jira project per repo**: `atlas-cli` uses `CLOUDP`, `mongodb-mcp-server` uses a different project — confirm the full mapping before implementation
 - **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
