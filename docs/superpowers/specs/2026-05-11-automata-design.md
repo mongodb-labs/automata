@@ -83,19 +83,14 @@ Inspired by **Evergreen CI** named functions. Reusable step sequences that can b
 
 ### Expression syntax
 
-Two forms, both evaluated at runtime by the engine:
+Any string value may contain `{path}` expressions. At runtime the engine calls `interpolate(value, ctx)`, which finds all `{...}` spans via regex, resolves each dotted path against the execution context, and substitutes the result.
 
-| Form | Used for | Example |
-|---|---|---|
-| `!ref path` | Standalone field value resolved from context | `branch: !ref payload.pull_request.head.ref` |
-| `"{text} {key}"` + `param:` | String interpolation — `{key}` replaced from `param:` bindings | `summary: "[{repo}] {title}"` |
-
-Available context paths for `!ref` and `param:` values:
+Available context paths:
 
 | Path | Content |
 |---|---|
 | `payload.*` | Raw GitHub webhook payload |
-| `<step-id>.<output>` | Output from a previous step, e.g. `ticket.url` |
+| `<step-id>.<output>` | Output from a previous step, e.g. `{ticket.url}` |
 | `inputs.*` | Inputs passed to a named function via `uses:` |
 
 ---
@@ -125,14 +120,9 @@ then:
       component: AtlasCLI
       custom_fields:
         customfield_12751: "<JIRA_TEAM_APIX_2>"
-      summary: "[{repo}] {title}"
-      param:
-        repo: payload.repository.name
-        title: payload.pull_request.title
+      summary: "[{payload.repository.name}] {payload.pull_request.title}"
   - github.post_comment:
-      body: "Jira ticket: {url}"
-      param:
-        url: ticket.url
+      body: "Jira ticket: {ticket.url}"
   - github.add_label:
       label: auto_close_jira
 
@@ -157,10 +147,10 @@ then:
   - jira.find_key:
       id: find
       pattern: "CLOUDP-\\d+"
-      branch: !ref payload.pull_request.head.ref
-      comments_url: !ref payload.pull_request.comments_url
+      branch: "{payload.pull_request.head.ref}"
+      comments_url: "{payload.pull_request.comments_url}"
   - jira.transition:
-      key: !ref find.key
+      key: "{find.key}"
       transition_id: "1381"
 
 ---
@@ -181,27 +171,22 @@ then:
       if: action_is_opened
       project: CLOUDP
       component: AtlasCLI
-      summary: "[{repo}] {title}"
-      param:
-        repo: payload.repository.name
-        title: payload.issue.title
+      summary: "[{payload.repository.name}] {payload.issue.title}"
   - github.post_comment:
       if: action_is_opened
-      body: "Jira ticket: {url}"
-      param:
-        url: ticket.url
+      body: "Jira ticket: {ticket.url}"
   - jira.find_key:
       id: find
       if: action_not_opened
       pattern: "CLOUDP-\\d+"
-      comments_url: !ref payload.issue.comments_url
+      comments_url: "{payload.issue.comments_url}"
   - jira.transition:
       if: action_is_closed
-      key: !ref find.key
+      key: "{find.key}"
       transition_id: "1381"
   - jira.transition:
       if: action_is_reopened
-      key: !ref find.key
+      key: "{find.key}"
       transition_id: "1351"
 
 ---
@@ -244,8 +229,8 @@ inputs:
     required: true
 steps:
   - slack.post_message:
-      channel: !ref inputs.channel
-      text: !ref inputs.message
+      channel: "{inputs.channel}"
+      text: "{inputs.message}"
 ```
 
 Called from an automation:
@@ -258,9 +243,7 @@ then:
       # ...
   - uses: notify-slack
       channel: C12345678
-      message: "New ticket: {key}"
-      param:
-        key: ticket.key
+      message: "New ticket: {ticket.key}"
 ```
 
 ---
@@ -284,8 +267,8 @@ Functions are invoked by the engine as container steps:
 
 ```
 automata fn jira.create_story \
-  --inputs '{"project":"CLOUDP","component":"AtlasCLI",...}' \
-  --event  '{"repository":{"full_name":"mongodb/mongodb-atlas-cli"},...}'
+  --inputs  '{"project":"CLOUDP","component":"AtlasCLI",...}' \
+  --payload '{"repository":{"full_name":"mongodb/mongodb-atlas-cli"},...}'
 ```
 
 Output JSON is written to stdout and captured by Argo as a step output parameter.
