@@ -57,7 +57,7 @@ automata binary (Rust)
 
 - GitHub is a **well-known source** in Kanopy: self-service webhook setup, no approval process
 - Argo Events handles signature validation and fan-out over NATS
-- Argo Workflows gives per-step observability in the UI (`workflows.prod.corp.mongodb.com`), built-in Prometheus metrics, and native retry/parallelism
+- Argo Workflows gives per-step observability in the UI (`workflows.staging.corp.mongodb.com`), built-in Prometheus metrics, and native retry/parallelism
 - Both are available in all Kanopy clusters (beta status — not suitable for hard SLA requirements, acceptable for internal automation)
 
 ---
@@ -241,9 +241,9 @@ spec:
       contentType: json
 ```
 
-Webhook URL (production):
+Webhook URL (staging):
 ```
-https://webhooks.prod.corp.mongodb.com/skunkworks/automata-github/github
+https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
 ```
 
 ### Sensors
@@ -361,9 +361,9 @@ steps:
       namespace: skunkworks
       release: automata-eventbus
       values_files: ["deploy/eventbus-values.yaml"]
-      api_server: https://api.prod.corp.mongodb.com
+      api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
-        from_secret: prod_kubernetes_token
+        from_secret: staging_kubernetes_token
 
   - name: deploy-workflows
     image: public.ecr.aws/kanopy/drone-helm:v3
@@ -374,15 +374,15 @@ steps:
       namespace: skunkworks
       release: automata-workflows
       values_files: ["deploy/workflows-values.yaml"]
-      api_server: https://api.prod.corp.mongodb.com
+      api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
-        from_secret: prod_kubernetes_token
+        from_secret: staging_kubernetes_token
 
   - name: apply-eventsource-and-sensors
     image: bitnami/kubectl
     environment:
       KUBE_TOKEN:
-        from_secret: prod_kubernetes_token
+        from_secret: staging_kubernetes_token
     commands:
       - kubectl apply -f k8s/eventsource.yaml
       - kubectl apply -f k8s/sensor-jira-lifecycle.yaml
@@ -413,7 +413,7 @@ Drone secrets (for ECR + k8s deployment):
 ```bash
 drone secret add <repo> --name=ecr_access_key --data=<value>
 drone secret add <repo> --name=ecr_secret_key --data=<value>
-drone secret add <repo> --name=prod_kubernetes_token --data=<value>
+drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 ```
 
 ---
@@ -422,8 +422,8 @@ drone secret add <repo> --name=prod_kubernetes_token --data=<value>
 
 | Signal | Where |
 |---|---|
-| Workflow success/failure | Argo UI (`workflows.prod.corp.mongodb.com`) |
-| Step logs | Argo UI (during run) → Splunk after GC (`index=skunkworks-prod`) |
+| Workflow success/failure | Argo UI (`workflows.staging.corp.mongodb.com`) |
+| Step logs | Argo UI (during run) → Splunk after GC (`index=skunkworks-staging`) |
 | Run count / duration / status | Prometheus → Grafana (`argo_workflows_skunkworks_*`) |
 | Webhook delivery | GitHub App webhook deliveries page |
 
@@ -434,7 +434,7 @@ drone secret add <repo> --name=prod_kubernetes_token --data=<value>
 To add a new repo to `automata`:
 
 1. Add it to the `repositories` list in `k8s/eventsource.yaml`
-2. Register the webhook in the repo settings pointing to `https://webhooks.prod.corp.mongodb.com/skunkworks/automata-github/github`, with the same `GITHUB_WEBHOOK_SECRET`
+2. Register the webhook in the repo settings pointing to `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`, with the same `GITHUB_WEBHOOK_SECRET`
 3. Push to `main` — Drone re-applies the EventSource
 
 No code changes needed unless the new repo requires different Jira fields or components (add a per-repo mapping in `src/jira.rs`).
@@ -459,7 +459,7 @@ Looked up by `repo.full_name` at runtime.
 
 ## Open Questions
 
-- **Staging rollout**: should Sensors initially point only to non-production repos, or should staging/prod Kanopy clusters mirror each other from the start?
+- **Staging only**: `skunkworks` namespace is staging-only. If this moves to production in the future, a new namespace + prod cluster deployment will be needed.
 - **Jira project per repo**: `atlas-cli` uses `CLOUDP`, `mongodb-mcp-server` uses a different project — confirm the full mapping before implementation
 - **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
 - **Rate limit exception**: if Dependabot opens many PRs simultaneously, the default 1/s Sensor rate limit may need a KANOPY ticket exception
