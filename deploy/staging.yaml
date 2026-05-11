@@ -4,9 +4,6 @@ image:
 
 replicaCount: 1
 
-service:
-  port: 8080
-
 envSecrets:
   GITHUB_APP_ID: automata-secrets
   GITHUB_APP_PRIVATE_KEY: automata-secrets
