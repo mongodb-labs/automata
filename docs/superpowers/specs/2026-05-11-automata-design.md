@@ -71,12 +71,15 @@ automata/
 ├── Cargo.toml                        # workspace root
 ├── src/
 │   ├── main.rs                       # clap CLI, subcommands dispatch to handlers
+│   ├── config.rs                     # load + merge config/repos.yaml
 │   ├── github.rs                     # GitHub App auth (installation token) + API client
 │   ├── jira.rs                       # Jira REST client
 │   └── handlers/
 │       ├── jira_lifecycle.rs         # PR opened/merged ↔ Jira create/resolve
 │       ├── issue_sync.rs             # issue opened/closed/reopened ↔ Jira
 │       └── dependabot.rs             # Dependabot PR → approve + auto-merge
+├── config/
+│   └── repos.yaml                    # per-repo Jira + handler config, baked into image
 ├── k8s/
 │   ├── eventsource.yaml              # GitHub EventSource (raw manifest)
 │   ├── sensor-jira-lifecycle.yaml
@@ -437,29 +440,152 @@ To add a new repo to `automata`:
 2. Register the webhook in the repo settings pointing to `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`, with the same `GITHUB_WEBHOOK_SECRET`
 3. Push to `main` — Drone re-applies the EventSource
 
-No code changes needed unless the new repo requires different Jira fields or components (add a per-repo mapping in `src/jira.rs`).
+No code changes needed to add a new repo — add an entry to `config/repos.yaml` and push.
 
 ---
 
-## Jira Field Mapping per Repo
+## Configuration System
 
-The current estate uses `CLOUDP` tickets everywhere but with slightly different field values. A static mapping in `src/jira.rs`:
+### Location and loading
+
+`config/repos.yaml` lives in this repo and is baked into the container image at build time (`COPY config/ /app/config/`). The binary loads it once at startup via `serde_yaml`. Changing a mapping requires a PR + Drone rebuild, which provides a full audit trail and keeps config in sync with the binary.
+
+### Schema
+
+```yaml
+# config/repos.yaml
+
+defaults:
+  jira:
+    project: CLOUDP
+    team_custom_field: customfield_12751
+    team_value: "<JIRA_TEAM_APIX_2>"   # confirm value before implementation
+  handlers:
+    - jira_lifecycle
+    - issue_sync
+    - dependabot_merge
+
+repos:
+  mongodb/mongodb-atlas-cli:
+    jira:
+      component: AtlasCLI
+
+  mongodb/atlas-cli-core:
+    jira:
+      component: AtlasCLI
+    handlers:
+      - dependabot_merge   # no Jira integration in this repo
+
+  mongodb/atlas-github-action:
+    jira:
+      component: AtlasCLI
+
+  mongodb/mongodb-atlas-local:
+    jira:
+      component: AtlasLocal
+
+  mongodb/atlas-local-lib:
+    jira:
+      component: AtlasLocal
+
+  mongodb/atlas-local-cli:
+    jira:
+      component: AtlasLocal
+
+  mongodb-js/atlas-local-lib-js:
+    jira:
+      component: AtlasLocal
+
+  mongodb-js/mongodb-mcp-server:
+    jira:
+      project: TBD   # confirm MCP project key
+      component: MCP
+      team_value: TBD
+
+  10gen/apix-bot:
+    jira:
+      component: ApixBot
+    handlers:
+      - dependabot_merge
+
+  mongodb/apix-action:
+    handlers:
+      - dependabot_merge
+
+  mongodb/openapi:
+    jira:
+      component: OpenAPI
+      team_value: "<JIRA_TEAM_ID_APIX_PLATFORM>"   # different team field
+
+  mongodb-forks/chocolatey-packages:
+    handlers:
+      - dependabot_merge
+
+  mongodb-forks/digest:
+    handlers:
+      - dependabot_merge
+
+  mongodb-labs/cobra2snooty:
+    jira:
+      component: AtlasCLI
+```
+
+### Merge semantics
+
+Repo-level fields override defaults field-by-field. If `handlers` is absent in a repo entry, the default handler list applies. If `jira` is absent entirely, the repo uses all Jira defaults. A repo with `handlers: [dependabot_merge]` only runs that one automation — Jira handlers are skipped.
+
+### Rust types
 
 ```rust
-pub struct RepoConfig {
-    pub jira_project: &'static str,   // e.g. "CLOUDP"
-    pub jira_component: &'static str, // e.g. "AtlasCLI"
-    pub jira_team_field: &'static str, // customfield_12751 value
+// src/config.rs
+#[derive(Deserialize)]
+pub struct Config {
+    pub defaults: Defaults,
+    pub repos: HashMap<String, RepoOverride>,
+}
+
+#[derive(Deserialize)]
+pub struct Defaults {
+    pub jira: JiraDefaults,
+    pub handlers: Vec<Handler>,
+}
+
+#[derive(Deserialize)]
+pub struct JiraDefaults {
+    pub project: String,
+    pub team_custom_field: String,
+    pub team_value: String,
+}
+
+#[derive(Deserialize, Default)]
+pub struct RepoOverride {
+    pub jira: Option<JiraOverride>,
+    pub handlers: Option<Vec<Handler>>,
+}
+
+#[derive(Deserialize, Default)]
+pub struct JiraOverride {
+    pub project: Option<String>,
+    pub component: Option<String>,
+    pub team_value: Option<String>,
+}
+
+#[derive(Deserialize, PartialEq, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum Handler {
+    JiraLifecycle,
+    IssueSync,
+    DependabotMerge,
 }
 ```
 
-Looked up by `repo.full_name` at runtime.
+`Config::resolve(repo_full_name)` returns a merged `RepoConfig` by layering repo overrides on top of defaults. Unknown repos (not yet listed) fall back to defaults — opt-in exclusion rather than opt-in inclusion.
 
 ---
 
 ## Open Questions
 
 - **Staging only**: `skunkworks` namespace is staging-only. If this moves to production in the future, a new namespace + prod cluster deployment will be needed.
-- **Jira project per repo**: `atlas-cli` uses `CLOUDP`, `mongodb-mcp-server` uses a different project — confirm the full mapping before implementation
+- **Jira project per repo**: `mongodb-mcp-server` and `openapi` use different projects/team values — confirm exact keys before filling `config/repos.yaml` TBDs
 - **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
 - **Rate limit exception**: if Dependabot opens many PRs simultaneously, the default 1/s Sensor rate limit may need a KANOPY ticket exception
