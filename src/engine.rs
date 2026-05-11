@@ -1,5 +1,208 @@
-use crate::types::Automation;
+use crate::types::{Automation, WhenGroup};
+use anyhow::Context as _;
+use glob::glob;
+use serde_json::Value;
+use tracing::warn;
 
-pub fn load_automations(_dir: &str) -> anyhow::Result<Vec<Automation>> {
-    Ok(vec![])
+pub fn load_automations(dir: &str) -> anyhow::Result<Vec<Automation>> {
+    let pattern = format!("{dir}/*.yaml");
+    let mut automations = Vec::new();
+    for entry in glob(&pattern).context("invalid glob pattern")? {
+        let path = entry?;
+        let src = std::fs::read_to_string(&path)
+            .with_context(|| format!("reading {}", path.display()))?;
+        let auto: Automation = serde_yaml::from_str(&src)
+            .with_context(|| format!("parsing {}", path.display()))?;
+        automations.push(auto);
+    }
+    Ok(automations)
+}
+
+/// Returns true if the given GitHub webhook payload matches ANY of the when: groups.
+pub fn matches_when(automation: &Automation, event_type: &str, repo: &str, payload: &Value) -> bool {
+    // Check repo membership
+    if !automation.given.repos.iter().any(|r| r == repo) {
+        return false;
+    }
+
+    // Any when: group matching is sufficient (OR semantics)
+    automation.when.iter().any(|group| matches_group(group, event_type, payload))
+}
+
+fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
+    // event must match if specified
+    if let Some(ev) = &group.event {
+        if ev != event_type {
+            return false;
+        }
+    }
+
+    // action must match if specified
+    let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
+    if !group.action.matches(action) {
+        return false;
+    }
+
+    // actor must match if specified
+    let actor = payload
+        .pointer("/sender/login")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if let Some(required_actor) = &group.actor {
+        if actor != required_actor {
+            return false;
+        }
+    }
+    if let Some(excluded_actor) = &group.actor_not {
+        if actor == excluded_actor {
+            return false;
+        }
+    }
+
+    // merged must match if specified
+    if let Some(required_merged) = group.merged {
+        let is_merged = payload
+            .pointer("/pull_request/merged")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if is_merged != required_merged {
+            return false;
+        }
+    }
+
+    // labels_include: all listed labels must be present
+    if let Some(required_labels) = &group.labels_include {
+        let labels: Vec<&str> = payload
+            .pointer("/pull_request/labels")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|l| l.get("name").and_then(|n| n.as_str()))
+                    .collect()
+            })
+            .unwrap_or_default();
+        if !required_labels.iter().all(|req| labels.contains(&req.as_str())) {
+            return false;
+        }
+    }
+
+    true
+}
+
+/// Evaluate a step `if:` condition against the payload.
+pub fn eval_if(cond: &str, payload: &Value) -> bool {
+    let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
+    match cond {
+        "action_is_opened" => action == "opened",
+        "action_is_closed" => action == "closed",
+        "action_is_reopened" => action == "reopened",
+        "action_not_opened" => action != "opened",
+        _ => {
+            warn!(cond, "unknown if condition, skipping step");
+            false
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::{ActionFilter, Automation};
+    use serde_json::json;
+
+    fn make_auto(event: &str, action: &str, repo: &str) -> Automation {
+        serde_yaml::from_str(&format!(
+            "name: test\ngiven:\n  trigger: github\n  repos:\n    - {repo}\nwhen:\n  - event: {event}\n    action: {action}\nthen: []\n"
+        )).unwrap()
+    }
+
+    #[test]
+    fn matches_correct_event_and_repo() {
+        let a = make_auto("pull_request", "opened", "mongodb/atlas-cli");
+        let payload = json!({"action": "opened", "sender": {"login": "alice"}});
+        assert!(matches_when(&a, "pull_request", "mongodb/atlas-cli", &payload));
+    }
+
+    #[test]
+    fn rejects_wrong_repo() {
+        let a = make_auto("pull_request", "opened", "mongodb/atlas-cli");
+        let payload = json!({"action": "opened", "sender": {"login": "alice"}});
+        assert!(!matches_when(&a, "pull_request", "mongodb/other-repo", &payload));
+    }
+
+    #[test]
+    fn rejects_wrong_action() {
+        let a = make_auto("pull_request", "opened", "mongodb/atlas-cli");
+        let payload = json!({"action": "closed", "sender": {"login": "alice"}});
+        assert!(!matches_when(&a, "pull_request", "mongodb/atlas-cli", &payload));
+    }
+
+    #[test]
+    fn actor_not_excludes_dependabot() {
+        let a: Automation = serde_yaml::from_str(
+            "name: t\ngiven:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    actor_not: dependabot[bot]\nthen: []\n"
+        ).unwrap();
+        let bot = json!({"action": "opened", "sender": {"login": "dependabot[bot]"}});
+        let human = json!({"action": "opened", "sender": {"login": "alice"}});
+        assert!(!matches_when(&a, "pull_request", "mongodb/atlas-cli", &bot));
+        assert!(matches_when(&a, "pull_request", "mongodb/atlas-cli", &human));
+    }
+
+    #[test]
+    fn labels_include_filter() {
+        let a: Automation = serde_yaml::from_str(
+            "name: t\ngiven:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    labels_include: [auto_close_jira]\nthen: []\n"
+        ).unwrap();
+        let with_label = json!({
+            "action": "closed",
+            "sender": {"login": "alice"},
+            "pull_request": {
+                "merged": true,
+                "labels": [{"name": "auto_close_jira"}]
+            }
+        });
+        let without_label = json!({
+            "action": "closed",
+            "sender": {"login": "alice"},
+            "pull_request": {"merged": true, "labels": []}
+        });
+        assert!(matches_when(&a, "pull_request", "mongodb/atlas-cli", &with_label));
+        assert!(!matches_when(&a, "pull_request", "mongodb/atlas-cli", &without_label));
+    }
+
+    #[test]
+    fn eval_if_conditions() {
+        let opened = json!({"action": "opened"});
+        let closed = json!({"action": "closed"});
+        assert!(eval_if("action_is_opened", &opened));
+        assert!(!eval_if("action_is_opened", &closed));
+        assert!(eval_if("action_not_opened", &closed));
+        assert!(eval_if("action_is_closed", &closed));
+    }
+
+    #[test]
+    fn load_automations_from_dir() {
+        let autos = load_automations("automations/").unwrap();
+        assert_eq!(autos.len(), 4);
+    }
+
+    #[test]
+    fn load_automations_empty_dir_returns_empty_vec() {
+        let autos = load_automations("automations_nonexistent/").unwrap();
+        assert_eq!(autos.len(), 0);
+    }
+
+    #[test]
+    fn action_filter_many_matches_any_listed_action() {
+        let f = ActionFilter::Many(vec!["opened".into(), "closed".into(), "reopened".into()]);
+        assert!(f.matches("opened"));
+        assert!(f.matches("reopened"));
+        assert!(!f.matches("labeled"));
+    }
+
+    #[test]
+    fn action_filter_any_matches_everything() {
+        assert!(ActionFilter::Any.matches("anything"));
+        assert!(ActionFilter::Any.matches(""));
+    }
 }
