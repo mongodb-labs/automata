@@ -72,7 +72,7 @@ automata fn <name> --inputs '<json>'  ← Rust function library
 
 One YAML file = one automation. Each file declares:
 - `given:` — static context: trigger source and repo list
-- `when:` — list of runtime conditions (event type, action, actor filter, label filter)
+- `when:` — list of condition groups; items are OR'd, keys within an item are AND'd
 - `then:` — sequential steps, each calling a built-in function or a named reusable `uses:`
 
 Literal values (Jira project, component, team field) are hardcoded directly in the file. When a group of repos needs different values, a separate automation file is created for that group.
@@ -116,8 +116,8 @@ given:
     - mongodb-labs/cobra2snooty
 when:
   - event: pull_request
-  - action: opened
-  - actor_not: dependabot[bot]
+    action: opened
+    actor_not: dependabot[bot]
 then:
   - jira.create_story:
       id: ticket
@@ -150,9 +150,9 @@ given:
     - mongodb/openapi
 when:
   - event: pull_request
-  - action: closed
-  - merged: true
-  - labels_include: [auto_close_jira]
+    action: closed
+    merged: true
+    labels_include: [auto_close_jira]
 then:
   - jira.find_key:
       id: find
@@ -174,7 +174,7 @@ given:
     - mongodb/atlas-github-action
 when:
   - event: issues
-  - action: [opened, closed, reopened]
+    action: [opened, closed, reopened]
 then:
   - jira.create_story:
       id: ticket
@@ -219,8 +219,8 @@ given:
     - mongodb-js/atlas-local-lib-js
 when:
   - event: pull_request
-  - action: opened
-  - actor: dependabot[bot]
+    action: opened
+    actor: dependabot[bot]
 then:
   - github.approve_pr: {}
   - github.enable_auto_merge:
