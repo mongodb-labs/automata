@@ -46,11 +46,9 @@ Sensor — http trigger  ← no k8s rate limit
   │  POST full payload
   ▼
 automata  (axum HTTP server, mongodb/web-app)
-  ├── POST /webhook/github    — GitHub App events (HMAC-SHA256 validated)
-  ├── POST /webhook/slack     — future: Slack events
-  ├── POST /webhook/jira      — future: Jira webhooks
-  ├── POST /webhook/evergreen — future: Evergreen CI events
-  └── GET  /doctor            — ApixBot installation status across all configured repos
+  ├── POST /webhook/github  — GitHub App events (HMAC-SHA256 validated)
+  ├── POST /webhook/<other> — extensible: one route per trigger source
+  └── GET  /doctor          — ApixBot installation status across all configured repos
   │
   │  loads automations/*.yaml, matches when: conditions, executes then: steps
   ▼
@@ -75,7 +73,7 @@ Built-in function library (Rust)
 ### Automation files (`automations/*.yaml`)
 
 One YAML file = one automation. Each file declares:
-- `given:` — static context: trigger source (`github`, `slack`, `jira`, `evergreen`) and repo list
+- `given:` — static context: trigger source (e.g. `github`) and repo list
 - `when:` — list of condition groups; items are OR'd, keys within an item are AND'd
 - `then:` — sequential steps, each calling a built-in function or a named reusable `uses:`
 
