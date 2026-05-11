@@ -39,6 +39,10 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Env var mutations are process-global; serialize all tests to prevent races.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn set_all_vars() {
         std::env::set_var("GITHUB_APP_ID", "12345");
@@ -52,12 +56,14 @@ mod tests {
 
     #[test]
     fn all_vars_present_succeeds() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         assert!(Config::from_env().is_ok());
     }
 
     #[test]
     fn missing_github_app_id_names_the_var() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         std::env::remove_var("GITHUB_APP_ID");
         let err = Config::from_env().unwrap_err();
@@ -66,6 +72,7 @@ mod tests {
 
     #[test]
     fn missing_github_webhook_secret_names_the_var() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         std::env::remove_var("GITHUB_WEBHOOK_SECRET");
         let err = Config::from_env().unwrap_err();
@@ -74,6 +81,7 @@ mod tests {
 
     #[test]
     fn missing_sensor_token_names_the_var() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         std::env::remove_var("SENSOR_TOKEN");
         let err = Config::from_env().unwrap_err();
@@ -82,6 +90,7 @@ mod tests {
 
     #[test]
     fn missing_jira_base_url_names_the_var() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         std::env::remove_var("JIRA_BASE_URL");
         let err = Config::from_env().unwrap_err();
@@ -90,6 +99,7 @@ mod tests {
 
     #[test]
     fn invalid_github_app_id_format_is_reported() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         std::env::set_var("GITHUB_APP_ID", "not-a-number");
         let err = Config::from_env().unwrap_err();
@@ -98,6 +108,7 @@ mod tests {
 
     #[test]
     fn port_defaults_to_8080_when_unset() {
+        let _g = ENV_LOCK.lock().unwrap();
         set_all_vars();
         std::env::remove_var("PORT");
         let cfg = Config::from_env().unwrap();
