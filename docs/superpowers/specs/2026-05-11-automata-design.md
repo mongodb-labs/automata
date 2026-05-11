@@ -46,6 +46,8 @@ Sensor — http trigger  ← no k8s rate limit
   │  POST full payload
   ▼
 automata  (axum HTTP server, mongodb/web-app)
+  ├── POST /run     — receives event from Sensor, matches automations, executes steps
+  └── GET  /doctor  — checks ApixBot installation status across all configured repos
   │
   │  loads automations/*.yaml, matches when: conditions, executes then: steps
   ▼
@@ -508,5 +510,5 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 ## Open Questions
 
 - **Staging only**: `skunkworks` namespace is staging-only. Production deployment needs a separate namespace and prod cluster credentials.
-- **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
+- **`GET /doctor`**: endpoint that reads all `given.repos` entries across `automations/*.yaml` and checks each repo via the GitHub API for ApixBot installation status — returns a JSON report of installed / missing repos. Replaces the manual confirmation step.
 - **Sensor http trigger availability**: Kanopy doesn't explicitly document the `http` trigger type — verify it works in `skunkworks` before committing to the architecture
