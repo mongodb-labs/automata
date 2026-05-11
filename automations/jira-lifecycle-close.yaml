@@ -1,0 +1,24 @@
+name: jira-lifecycle-close
+description: Resolve the Jira ticket when a labeled PR is merged.
+given:
+  trigger: github
+  repos:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/mongodb-atlas-local
+    - mongodb/atlas-github-action
+    - mongodb-labs/cobra2snooty
+    - mongodb/openapi
+when:
+  - event: pull_request
+    action: closed
+    merged: true
+    labels_include: [auto_close_jira]
+then:
+  - jira.find_key:
+      id: find
+      pattern: "CLOUDP-\\d+"
+      branch: "{payload.pull_request.head.ref}"
+      comments_url: "{payload.pull_request.comments_url}"
+  - jira.transition:
+      key: "{find.key}"
+      transition_id: "1381"

@@ -1,0 +1,34 @@
+name: issue-sync-atlascli
+description: Sync GitHub issue lifecycle to Jira for AtlasCLI repos.
+given:
+  trigger: github
+  repos:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/atlas-github-action
+when:
+  - event: issues
+    action: [opened, closed, reopened]
+then:
+  - jira.create_issue:
+      id: ticket
+      if: action_is_opened
+      issue_type: Story
+      project: CLOUDP
+      component: AtlasCLI
+      summary: "[{payload.repository.name}] {payload.issue.title}"
+  - github.post_comment:
+      if: action_is_opened
+      body: "Jira ticket: {ticket.url}"
+  - jira.find_key:
+      id: find
+      if: action_not_opened
+      pattern: "CLOUDP-\\d+"
+      comments_url: "{payload.issue.comments_url}"
+  - jira.transition:
+      if: action_is_closed
+      key: "{find.key}"
+      transition_id: "1381"
+  - jira.transition:
+      if: action_is_reopened
+      key: "{find.key}"
+      transition_id: "1351"

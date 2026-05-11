@@ -1,0 +1,19 @@
+name: dependabot-merge
+description: Auto-approve and merge Dependabot PRs.
+given:
+  trigger: github
+  repos:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/mongodb-atlas-local
+    - mongodb/apix-action
+    - 10gen/apix-bot
+    - mongodb/atlas-local-lib
+    - mongodb-js/atlas-local-lib-js
+when:
+  - event: pull_request
+    action: opened
+    actor: dependabot[bot]
+then:
+  - github.approve_pr: {}
+  - github.enable_auto_merge:
+      strategy: squash
