@@ -10,7 +10,7 @@ trigger:
 
 steps:
   - name: test
-    image: rust:1.78-slim
+    image: rust:slim
     commands:
       - cargo test
     when:
