@@ -15,8 +15,7 @@ spec:
           url: http://automata.skunkworks.svc.cluster.local/webhook/github
           method: POST
           headers:
-            - name: Content-Type
-              value: application/json
+            Content-Type: application/json
           payload:
             - src:
                 dependencyName: github-dep
