@@ -46,7 +46,7 @@ Sensor — http trigger  ← no k8s rate limit
   │  POST full payload
   ▼
 automata  (axum HTTP server, mongodb/web-app)
-  ├── POST /webhook/github  — GitHub App events (HMAC-SHA256 validated)
+  ├── POST /webhook/github  — GitHub App events (sensor token validated)
   ├── POST /webhook/<other> — extensible: one route per trigger source
   └── GET  /doctor          — ApixBot installation status across all configured repos
   │
@@ -65,6 +65,14 @@ Built-in function library (Rust)
 - Sensor `http` trigger POSTs directly to the automata service — no container-per-step overhead
 - The 1/s Kanopy rate limit applies to **k8s triggers only** — http triggers are not subject to it
 - automata deployed as a `mongodb/web-app` service — single pod, structured logs to Splunk, Prometheus metrics via `/metrics`
+
+### Webhook Security Model
+
+GitHub HMAC-SHA256 validation (`X-Hub-Signature-256`) is performed by the **Argo Events EventSource**, not by automata. The `webhookSecret` in `eventsource.yaml` references `automata-secrets/GITHUB_WEBHOOK_SECRET`.
+
+automata validates only the `X-Automata-Token` header, which the Sensor injects via `secureHeaders` from `automata-secrets/SENSOR_TOKEN`. This token proves the request came from the trusted Sensor within the cluster.
+
+The Sensor also wraps the payload: `{"github_event": "<event-type>", "body": {<github payload>}}`. The `github_event` field is populated from the `X-Github-Event` header that Argo Events receives from GitHub.
 
 ---
 
@@ -116,8 +124,9 @@ when:
     action: opened
     actor_not: dependabot[bot]
 then:
-  - jira.create_story:
+  - jira.create_issue:
       id: ticket
+      issue_type: Story
       project: CLOUDP
       component: AtlasCLI
       custom_fields:
@@ -168,9 +177,10 @@ when:
   - event: issues
     action: [opened, closed, reopened]
 then:
-  - jira.create_story:
+  - jira.create_issue:
       id: ticket
       if: action_is_opened
+      issue_type: Story
       project: CLOUDP
       component: AtlasCLI
       summary: "[{payload.repository.name}] {payload.issue.title}"
@@ -239,7 +249,7 @@ Called from an automation:
 
 ```yaml
 then:
-  - jira.create_story:
+  - jira.create_issue:
       id: ticket
       project: CLOUDP
       # ...
@@ -256,7 +266,7 @@ These are the primitive operations implemented in Rust. New functions are added 
 
 | Function | Inputs | Outputs |
 |---|---|---|
-| `jira.create_story` | `project`, `component`, `summary`, `custom_fields` (map) | `key`, `url` |
+| `jira.create_issue` | `project`, `issue_type` (default: `Story`), `component`, `summary`, `custom_fields` (map) | `key`, `url` |
 | `jira.transition` | `key`, `transition_id` | — |
 | `jira.find_key` | `comments_url` or `branch`, `pattern` | `key` |
 | `github.post_comment` | `body` | `comment_id` |
@@ -265,15 +275,7 @@ These are the primitive operations implemented in Rust. New functions are added 
 | `github.enable_auto_merge` | `strategy` | — |
 | `slack.post_message` | `channel`, `text` | `ts` |
 
-Functions are invoked by the engine as container steps:
-
-```
-automata fn jira.create_story \
-  --inputs  '{"project":"CLOUDP","component":"AtlasCLI",...}' \
-  --payload '{"repository":{"full_name":"mongodb/mongodb-atlas-cli"},...}'
-```
-
-Output JSON is written to stdout and captured by Argo as a step output parameter.
+Functions are invoked in-process by the engine's step dispatcher (`src/functions/mod.rs`).
 
 ---
 
@@ -285,7 +287,7 @@ automata/
 ├── Dockerfile                         # multi-stage: cargo build → distroless/static
 ├── Cargo.toml
 ├── src/
-│   ├── main.rs                        # clap: `automata fn` and `automata generate`
+│   ├── main.rs                        # axum server setup, route registration, startup
 │   ├── engine.rs                      # loads automations/*.yaml, matches triggers
 │   ├── expr.rs                        # !ref resolver and {key} string interpolator
 │   ├── github.rs                      # GitHub App auth + API client

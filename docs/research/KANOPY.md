@@ -319,12 +319,16 @@ spec:
     - template:
         name: call-automata
         http:
-          url: http://automata.skunkworks.svc.cluster.local/run
+          url: http://automata.skunkworks.svc.cluster.local/webhook/github
           method: POST
           headers:
             - name: Content-Type
               value: application/json
           payload:
+            - src:
+                dependencyName: github-dep
+                dataKey: headers.X-Github-Event.0
+              dest: github_event
             - src:
                 dependencyName: github-dep
                 dataKey: body
