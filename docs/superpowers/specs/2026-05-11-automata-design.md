@@ -70,171 +70,142 @@ automata fn <name> --inputs '<json>'  ← Rust function library
 
 ### Automation files (`automations/*.yaml`)
 
-Inspired by **GitHub Actions** workflow files. One YAML file = one automation. Each file declares:
-- `on:` — when to run (GHA-style event trigger with filters)
+One YAML file = one automation. Each file declares:
+- `when:` — trigger condition (event type, action, actor filter, label filter)
 - `repos:` — which repos this automation applies to
-- `jobs:` — one or more parallel jobs (v1: single job, parallelism deferred)
-- `steps:` — sequential steps within a job, each calling a built-in `fn:` or a named reusable `uses:`
+- `then:` — sequential steps, each calling a built-in function or a named reusable `uses:`
+
+Literal values (Jira project, component, team field) are hardcoded directly in the file. When a group of repos needs different values, a separate automation file is created for that group.
 
 ### Functions (`functions/*.yaml`)
 
-Inspired by **Evergreen CI** named functions. Reusable step sequences that can be called from any automation with `uses:`. Avoids copy-pasting steps across automations.
-
-### Repo config (`config/repos.yaml`)
-
-Per-repo values (Jira project, component, team field) available as `${{ config.* }}` expressions inside automation steps. Kept separate from automation logic so a new repo can be onboarded without touching the automations.
+Inspired by **Evergreen CI** named functions. Reusable step sequences that can be called from any automation with `uses:`. Accepts typed `inputs:` passed at call site.
 
 ### Expression syntax
 
-`${{ }}` — same as GitHub Actions. Evaluated at runtime by the engine. Available contexts:
+Two forms, both evaluated at runtime by the engine:
 
-| Context | Content |
+| Form | Used for | Example |
+|---|---|---|
+| `!ref path` | Standalone field value resolved from context | `branch: !ref event.pull_request.head.ref` |
+| `"{text} {key}"` + `param:` | String interpolation — `{key}` replaced from `param:` bindings | `summary: "[{repo}] {title}"` |
+
+Available context paths for `!ref` and `param:` values:
+
+| Path | Content |
 |---|---|
-| `${{ event.* }}` | Raw GitHub webhook payload |
-| `${{ config.* }}` | Resolved repo config from `config/repos.yaml` |
-| `${{ steps.<id>.outputs.* }}` | Output from a previous step |
-| `${{ inputs.* }}` | Inputs passed to a named function via `uses:` |
-| `${{ env.* }}` | Environment variables |
+| `event.*` | Raw GitHub webhook payload |
+| `<step-id>.<output>` | Output from a previous step, e.g. `ticket.url` |
+| `inputs.*` | Inputs passed to a named function via `uses:` |
 
 ---
 
 ## Automation YAML Format
 
+Different repo groups get separate files when they need different literal values (e.g. different Jira component or project). There is no shared config system — values are hardcoded directly in each automation file.
+
 ```yaml
-# automations/jira-lifecycle.yaml
-name: jira-lifecycle
-description: Open a Jira ticket when a PR is opened; resolve it when merged.
-
-on:
-  pull_request:
-    types: [opened]
-    filters:
-      actor:
-        exclude: [dependabot[bot]]
-
+# automations/jira-lifecycle-atlascli.yaml
+name: jira-lifecycle-atlascli
+description: Open a Jira ticket when a PR is opened.
+when:
+  event: pull_request
+  action: opened
+  actor_not: dependabot[bot]
 repos:
   - mongodb/mongodb-atlas-cli
-  - mongodb/mongodb-atlas-local
   - mongodb/atlas-github-action
   - mongodb-labs/cobra2snooty
-  - mongodb/openapi
-
-jobs:
-  open-ticket:
-    steps:
-      - fn: jira.create_story
-        id: ticket
-        with:
-          project: "${{ config.jira.project }}"
-          component: "${{ config.jira.component }}"
-          team_field: "${{ config.jira.team_custom_field }}"
-          team_value: "${{ config.jira.team_value }}"
-          summary: "[${{ event.repository.name }}] ${{ event.pull_request.title }}"
-
-      - fn: github.post_comment
-        with:
-          body: "Jira ticket: ${{ steps.ticket.outputs.url }}"
-
-      - fn: github.add_label
-        with:
-          label: auto_close_jira
+then:
+  - jira.create_story:
+      id: ticket
+      project: CLOUDP
+      component: AtlasCLI
+      team_field: customfield_12751
+      team_value: "<JIRA_TEAM_APIX_2>"
+      summary: "[{repo}] {title}"
+      param:
+        repo: event.repository.name
+        title: event.pull_request.title
+  - github.post_comment:
+      body: "Jira ticket: {url}"
+      param:
+        url: ticket.url
+  - github.add_label:
+      label: auto_close_jira
 
 ---
 # automations/jira-lifecycle-close.yaml
 name: jira-lifecycle-close
 description: Resolve the Jira ticket when a labeled PR is merged.
-
-on:
-  pull_request:
-    types: [closed]
-    filters:
-      merged: true
-      labels:
-        include: [auto_close_jira]
-
+when:
+  event: pull_request
+  action: closed
+  merged: true
+  labels_include: [auto_close_jira]
 repos:
   - mongodb/mongodb-atlas-cli
   - mongodb/mongodb-atlas-local
   - mongodb/atlas-github-action
   - mongodb-labs/cobra2snooty
   - mongodb/openapi
-
-jobs:
-  close-ticket:
-    steps:
-      - fn: jira.find_key
-        id: find
-        with:
-          branch: "${{ event.pull_request.head.ref }}"
-          comments_url: "${{ event.pull_request.comments_url }}"
-          pattern: "${{ config.jira.project }}-\\d+"
-
-      - fn: jira.transition
-        with:
-          key: "${{ steps.find.outputs.key }}"
-          transition_id: "1381"
+then:
+  - jira.find_key:
+      id: find
+      pattern: "CLOUDP-\\d+"
+      branch: !ref event.pull_request.head.ref
+      comments_url: !ref event.pull_request.comments_url
+  - jira.transition:
+      key: !ref find.key
+      transition_id: "1381"
 
 ---
-# automations/issue-sync.yaml
-name: issue-sync
-description: Sync GitHub issue lifecycle to Jira.
-
-on:
-  issues:
-    types: [opened, closed, reopened]
-
+# automations/issue-sync-atlascli.yaml
+name: issue-sync-atlascli
+description: Sync GitHub issue lifecycle to Jira for AtlasCLI repos.
+when:
+  event: issues
+  action: [opened, closed, reopened]
 repos:
   - mongodb/mongodb-atlas-cli
-  - mongodb-js/mongodb-mcp-server
   - mongodb/atlas-github-action
-
-jobs:
-  sync:
-    steps:
-      - fn: jira.create_story
-        id: ticket
-        if: "${{ event.action == 'opened' }}"
-        with:
-          project: "${{ config.jira.project }}"
-          component: "${{ config.jira.component }}"
-          summary: "[${{ event.repository.name }}] ${{ event.issue.title }}"
-
-      - fn: github.post_comment
-        if: "${{ event.action == 'opened' }}"
-        with:
-          body: "Jira ticket: ${{ steps.ticket.outputs.url }}"
-
-      - fn: jira.find_key
-        id: find
-        if: "${{ event.action != 'opened' }}"
-        with:
-          comments_url: "${{ event.issue.comments_url }}"
-          pattern: "${{ config.jira.project }}-\\d+"
-
-      - fn: jira.transition
-        if: "${{ event.action == 'closed' }}"
-        with:
-          key: "${{ steps.find.outputs.key }}"
-          transition_id: "1381"
-
-      - fn: jira.transition
-        if: "${{ event.action == 'reopened' }}"
-        with:
-          key: "${{ steps.find.outputs.key }}"
-          transition_id: "1351"
+then:
+  - jira.create_story:
+      id: ticket
+      if: action_is_opened
+      project: CLOUDP
+      component: AtlasCLI
+      summary: "[{repo}] {title}"
+      param:
+        repo: event.repository.name
+        title: event.issue.title
+  - github.post_comment:
+      if: action_is_opened
+      body: "Jira ticket: {url}"
+      param:
+        url: ticket.url
+  - jira.find_key:
+      id: find
+      if: action_not_opened
+      pattern: "CLOUDP-\\d+"
+      comments_url: !ref event.issue.comments_url
+  - jira.transition:
+      if: action_is_closed
+      key: !ref find.key
+      transition_id: "1381"
+  - jira.transition:
+      if: action_is_reopened
+      key: !ref find.key
+      transition_id: "1351"
 
 ---
 # automations/dependabot-merge.yaml
 name: dependabot-merge
 description: Auto-approve and merge Dependabot PRs.
-
-on:
-  pull_request:
-    types: [opened]
-    filters:
-      actor:
-        include: [dependabot[bot]]
-
+when:
+  event: pull_request
+  action: opened
+  actor: dependabot[bot]
 repos:
   - mongodb/mongodb-atlas-cli
   - mongodb/mongodb-atlas-local
@@ -242,15 +213,10 @@ repos:
   - 10gen/apix-bot
   - mongodb/atlas-local-lib
   - mongodb-js/atlas-local-lib-js
-
-jobs:
-  auto-merge:
-    steps:
-      - fn: github.approve_pr
-
-      - fn: github.enable_auto_merge
-        with:
-          strategy: squash
+then:
+  - github.approve_pr: {}
+  - github.enable_auto_merge:
+      strategy: squash
 ```
 
 ---
@@ -268,26 +234,25 @@ inputs:
     required: true
   - name: message
     required: true
-
 steps:
-  - fn: slack.post_message
-    with:
-      channel: "${{ inputs.channel }}"
-      text: "${{ inputs.message }}"
+  - slack.post_message:
+      channel: !ref inputs.channel
+      text: !ref inputs.message
 ```
 
 Called from an automation:
 
 ```yaml
-steps:
-  - fn: jira.create_story
-    id: ticket
-    with: ...
-
+then:
+  - jira.create_story:
+      id: ticket
+      project: CLOUDP
+      # ...
   - uses: notify-slack
-    with:
-      channel: "${{ env.SLACK_CHANNEL_ID }}"
-      message: "New ticket ${{ steps.ticket.outputs.key }}"
+      channel: C12345678
+      message: "New ticket: {key}"
+      param:
+        key: ticket.key
 ```
 
 ---
@@ -312,8 +277,7 @@ Functions are invoked by the engine as container steps:
 ```
 automata fn jira.create_story \
   --inputs '{"project":"CLOUDP","component":"AtlasCLI",...}' \
-  --event  '{"repository":{"full_name":"mongodb/mongodb-atlas-cli"},...}' \
-  --config '{"jira":{"project":"CLOUDP",...}}'
+  --event  '{"repository":{"full_name":"mongodb/mongodb-atlas-cli"},...}'
 ```
 
 Output JSON is written to stdout and captured by Argo as a step output parameter.
@@ -330,8 +294,7 @@ automata/
 ├── src/
 │   ├── main.rs                        # clap: `automata fn` and `automata generate`
 │   ├── engine.rs                      # loads automations/*.yaml, matches triggers
-│   ├── config.rs                      # loads config/repos.yaml, resolves per-repo config
-│   ├── expr.rs                        # ${{ }} expression evaluator
+│   ├── expr.rs                        # !ref resolver and {key} string interpolator
 │   ├── github.rs                      # GitHub App auth + API client
 │   ├── jira.rs                        # Jira REST client
 │   └── functions/
@@ -346,8 +309,6 @@ automata/
 │   └── dependabot-merge.yaml
 ├── functions/                         # reusable named step sequences
 │   └── notify-slack.yaml
-├── config/
-│   └── repos.yaml                     # per-repo Jira config, baked into image
 ├── k8s/
 │   ├── eventsource.yaml               # GitHub EventSource (hand-written)
 │   └── generated/                     # output of `automata generate`, committed
@@ -411,72 +372,6 @@ steps:
     commands:
       - kubectl apply -f k8s/eventsource.yaml
       - kubectl apply -f k8s/generated/
-```
-
----
-
-## Repo Config (`config/repos.yaml`)
-
-Per-repo values available as `${{ config.* }}` in automations. Uses defaults + per-repo overrides.
-
-```yaml
-defaults:
-  jira:
-    project: CLOUDP
-    team_custom_field: customfield_12751
-    team_value: "<JIRA_TEAM_APIX_2>"
-
-repos:
-  mongodb/mongodb-atlas-cli:
-    jira:
-      component: AtlasCLI
-
-  mongodb/mongodb-atlas-local:
-    jira:
-      component: AtlasLocal
-
-  mongodb/atlas-local-lib:
-    jira:
-      component: AtlasLocal
-
-  mongodb/atlas-local-cli:
-    jira:
-      component: AtlasLocal
-
-  mongodb-js/atlas-local-lib-js:
-    jira:
-      component: AtlasLocal
-
-  mongodb-js/mongodb-mcp-server:
-    jira:
-      project: TBD
-      component: MCP
-      team_value: TBD
-
-  mongodb/atlas-github-action:
-    jira:
-      component: AtlasCLI
-
-  mongodb/openapi:
-    jira:
-      component: OpenAPI
-      team_value: "<JIRA_TEAM_ID_APIX_PLATFORM>"
-
-  10gen/apix-bot:
-    jira:
-      component: ApixBot
-
-  mongodb/apix-action:
-    jira:
-      component: ApixAction
-
-  mongodb-labs/cobra2snooty:
-    jira:
-      component: AtlasCLI
-
-  mongodb-forks/chocolatey-packages: {}
-  mongodb-forks/digest: {}
-  mongodb/atlas-cli-core: {}
 ```
 
 ---
@@ -607,10 +502,9 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 ## Onboarding a New Repo
 
 1. Add the repo to `k8s/eventsource.yaml` repositories list
-2. Add a `config/repos.yaml` entry (or rely on defaults)
-3. Add the repo to the `repos:` list in whichever `automations/*.yaml` apply
-4. Register the webhook in the repo settings: `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`
-5. Open a PR — Drone rebuilds and redeploys everything
+2. Add the repo to the `repos:` list in whichever `automations/*.yaml` apply (create a new automation file if it needs different literal values)
+3. Register the webhook in the repo settings: `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`
+4. Open a PR — Drone rebuilds and redeploys everything
 
 ---
 
@@ -625,7 +519,6 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 ## Open Questions
 
 - **Staging only**: `skunkworks` namespace is staging-only. Production deployment needs a separate namespace and prod cluster credentials.
-- **Jira project per repo**: `mongodb-mcp-server` and `openapi` use different projects/team values — confirm exact keys before filling `config/repos.yaml` TBDs
 - **ApixBot installation scope**: confirm ApixBot is installed on all 16 target repos
 - **Rate limit exception**: if Dependabot opens many PRs simultaneously, the default 1/s Sensor rate limit may need a KANOPY ticket exception
 - **`automata generate` bootstrap**: the first build needs the binary to exist before it can generate manifests — solve with a two-step pipeline or commit initial generated output manually
