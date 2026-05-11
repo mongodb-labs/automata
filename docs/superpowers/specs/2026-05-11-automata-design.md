@@ -71,8 +71,7 @@ automata fn <name> --inputs '<json>'  ← Rust function library
 ### Automation files (`automations/*.yaml`)
 
 One YAML file = one automation. Each file declares:
-- `when:` — trigger condition (event type, action, actor filter, label filter)
-- `repos:` — which repos this automation applies to
+- `when:` — trigger condition (event type, action, actor filter, label filter, `repo:` list)
 - `then:` — sequential steps, each calling a built-in function or a named reusable `uses:`
 
 Literal values (Jira project, component, team field) are hardcoded directly in the file. When a group of repos needs different values, a separate automation file is created for that group.
@@ -112,10 +111,10 @@ when:
   event: pull_request
   action: opened
   actor_not: dependabot[bot]
-repos:
-  - mongodb/mongodb-atlas-cli
-  - mongodb/atlas-github-action
-  - mongodb-labs/cobra2snooty
+  repo:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/atlas-github-action
+    - mongodb-labs/cobra2snooty
 then:
   - jira.create_story:
       id: ticket
@@ -143,12 +142,12 @@ when:
   action: closed
   merged: true
   labels_include: [auto_close_jira]
-repos:
-  - mongodb/mongodb-atlas-cli
-  - mongodb/mongodb-atlas-local
-  - mongodb/atlas-github-action
-  - mongodb-labs/cobra2snooty
-  - mongodb/openapi
+  repo:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/mongodb-atlas-local
+    - mongodb/atlas-github-action
+    - mongodb-labs/cobra2snooty
+    - mongodb/openapi
 then:
   - jira.find_key:
       id: find
@@ -166,9 +165,9 @@ description: Sync GitHub issue lifecycle to Jira for AtlasCLI repos.
 when:
   event: issues
   action: [opened, closed, reopened]
-repos:
-  - mongodb/mongodb-atlas-cli
-  - mongodb/atlas-github-action
+  repo:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/atlas-github-action
 then:
   - jira.create_story:
       id: ticket
@@ -206,13 +205,13 @@ when:
   event: pull_request
   action: opened
   actor: dependabot[bot]
-repos:
-  - mongodb/mongodb-atlas-cli
-  - mongodb/mongodb-atlas-local
-  - mongodb/apix-action
-  - 10gen/apix-bot
-  - mongodb/atlas-local-lib
-  - mongodb-js/atlas-local-lib-js
+  repo:
+    - mongodb/mongodb-atlas-cli
+    - mongodb/mongodb-atlas-local
+    - mongodb/apix-action
+    - 10gen/apix-bot
+    - mongodb/atlas-local-lib
+    - mongodb-js/atlas-local-lib-js
 then:
   - github.approve_pr: {}
   - github.enable_auto_merge:
@@ -502,7 +501,7 @@ drone secret add <repo> --name=staging_kubernetes_token --data=<value>
 ## Onboarding a New Repo
 
 1. Add the repo to `k8s/eventsource.yaml` repositories list
-2. Add the repo to the `repos:` list in whichever `automations/*.yaml` apply (create a new automation file if it needs different literal values)
+2. Add the repo to the `when.repo:` list in whichever `automations/*.yaml` apply (create a new automation file if it needs different literal values)
 3. Register the webhook in the repo settings: `https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github`
 4. Open a PR — Drone rebuilds and redeploys everything
 
