@@ -52,7 +52,7 @@ steps:
     image: public.ecr.aws/kanopy/drone-helm:v3
     settings:
       chart: mongodb/argo-eventbus
-      chart_version: 1.0.0
+      chart_version: 0.2.0
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: skunkworks
       release: automata-eventbus
