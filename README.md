@@ -53,7 +53,7 @@ pipeline:
 | `github.approve_pr` | `owner`, `repo`, `number` | `review_id` |
 | `github.enable_auto_merge` | `owner`, `repo`, `number`, `strategy` | — |
 | `github.list_pr_comments` | `owner`, `repo`, `number` | `comments` (array) |
-| `builtin.jq` | `input` (step id), `expr` (jq expression) | `result` |
+| `builtin.jq` | `input` (step id), `expr` (jq expression) | fields of the object if `expr` returns one, otherwise `result` |
 
 `owner`, `repo`, and `number` are typically interpolated from the event payload:
 

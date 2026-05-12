@@ -40,9 +40,9 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
+          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
-          key: "{find.result}"
+          key: "{find.key}"
           transition_id: "1381"
 
   - given:
@@ -63,7 +63,7 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
+          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
-          key: "{find.result}"
+          key: "{find.key}"
           transition_id: "1351"

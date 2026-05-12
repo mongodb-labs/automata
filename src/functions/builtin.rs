@@ -11,7 +11,10 @@ pub async fn jq(
     let expr = inputs["expr"].as_str().context("expr must be a string")?;
     let input_val = ctx.outputs.get(input_id).cloned().unwrap_or(Value::Null);
     let result = run_jq(expr, input_val)?;
-    Ok(json!({ "result": result }))
+    match result {
+        Value::Object(_) => Ok(result),
+        other => Ok(json!({ "result": other })),
+    }
 }
 
 fn run_jq(expr: &str, input: Value) -> anyhow::Result<Value> {
@@ -92,5 +95,13 @@ mod tests {
     fn jq_multiple_outputs_become_array() {
         let v = run_jq(".[]", json!([1, 2, 3])).unwrap();
         assert_eq!(v, json!([1, 2, 3]));
+    }
+
+    #[test]
+    fn jq_object_output_returned_directly() {
+        let v = run_jq(r#"first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}"#,
+            json!({"comments": [{"body": "Jira ticket: CLOUDP-1234"}]}),
+        ).unwrap();
+        assert_eq!(v, json!({"key": "CLOUDP-1234"}));
     }
 }
