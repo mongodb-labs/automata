@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{Automation, PipelineEntry, WhenMatcher, WhenGroup};
+use crate::types::{Automation, PipelineEntry, WhenGroup, WhenMatcher};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
@@ -16,8 +16,8 @@ pub fn load_automations(dir: &str) -> anyhow::Result<Vec<Automation>> {
         let path = entry?;
         let src = std::fs::read_to_string(&path)
             .with_context(|| format!("reading {}", path.display()))?;
-        let auto: Automation = serde_yaml::from_str(&src)
-            .with_context(|| format!("parsing {}", path.display()))?;
+        let auto: Automation =
+            serde_yaml::from_str(&src).with_context(|| format!("parsing {}", path.display()))?;
         automations.push(auto);
     }
     Ok(automations)
@@ -28,14 +28,21 @@ pub fn matches_when(entry: &PipelineEntry, event_type: &str, repo: &str, payload
     if !entry.given.repos.iter().any(|r| r == repo) {
         return false;
     }
-    entry.when.iter().any(|group| matches_group(group, event_type, payload))
+    entry
+        .when
+        .iter()
+        .any(|group| matches_group(group, event_type, payload))
 }
 
 fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
     if !matches_core(&group.core, event_type, payload) {
         return false;
     }
-    if group.exclude.iter().any(|excl| matches_core(excl, event_type, payload)) {
+    if group
+        .exclude
+        .iter()
+        .any(|excl| matches_core(excl, event_type, payload))
+    {
         return false;
     }
     true
@@ -81,14 +88,17 @@ fn matches_core(core: &WhenMatcher, event_type: &str, payload: &Value) -> bool {
                     .collect()
             })
             .unwrap_or_default();
-        if !label_filter.values().iter().all(|req| present.contains(req)) {
+        if !label_filter
+            .values()
+            .iter()
+            .all(|req| present.contains(req))
+        {
             return false;
         }
     }
 
     true
 }
-
 
 pub async fn run_automation(
     entry: &PipelineEntry,
@@ -106,9 +116,9 @@ pub async fn run_automation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{PipelineEntry, StringFilter};
     #[allow(unused_imports)]
     use super::*;
+    use crate::types::{PipelineEntry, StringFilter};
     use serde_json::json;
 
     fn make_entry(event: &str, action: &str, repo: &str) -> PipelineEntry {
@@ -121,21 +131,36 @@ mod tests {
     fn matches_correct_event_and_repo() {
         let e = make_entry("pull_request", "opened", "mongodb/atlas-cli");
         let payload = json!({"action": "opened", "sender": {"login": "alice"}});
-        assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &payload));
+        assert!(matches_when(
+            &e,
+            "pull_request",
+            "mongodb/atlas-cli",
+            &payload
+        ));
     }
 
     #[test]
     fn rejects_wrong_repo() {
         let e = make_entry("pull_request", "opened", "mongodb/atlas-cli");
         let payload = json!({"action": "opened", "sender": {"login": "alice"}});
-        assert!(!matches_when(&e, "pull_request", "mongodb/other-repo", &payload));
+        assert!(!matches_when(
+            &e,
+            "pull_request",
+            "mongodb/other-repo",
+            &payload
+        ));
     }
 
     #[test]
     fn rejects_wrong_action() {
         let e = make_entry("pull_request", "opened", "mongodb/atlas-cli");
         let payload = json!({"action": "closed", "sender": {"login": "alice"}});
-        assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &payload));
+        assert!(!matches_when(
+            &e,
+            "pull_request",
+            "mongodb/atlas-cli",
+            &payload
+        ));
     }
 
     #[test]
@@ -146,7 +171,12 @@ mod tests {
         let bot = json!({"action": "opened", "sender": {"login": "dependabot[bot]"}});
         let human = json!({"action": "opened", "sender": {"login": "alice"}});
         assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &bot));
-        assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &human));
+        assert!(matches_when(
+            &e,
+            "pull_request",
+            "mongodb/atlas-cli",
+            &human
+        ));
     }
 
     #[test]
@@ -167,8 +197,18 @@ mod tests {
             "sender": {"login": "alice"},
             "pull_request": {"merged": true, "labels": []}
         });
-        assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &with_label));
-        assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &without_label));
+        assert!(matches_when(
+            &e,
+            "pull_request",
+            "mongodb/atlas-cli",
+            &with_label
+        ));
+        assert!(!matches_when(
+            &e,
+            "pull_request",
+            "mongodb/atlas-cli",
+            &without_label
+        ));
     }
 
     #[test]

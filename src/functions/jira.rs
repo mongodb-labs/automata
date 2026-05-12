@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::expr::interpolate;
-use crate::jira::JiraClient;
+use crate::jira::{CreateIssueParams, JiraClient};
 use anyhow::Context as _;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -11,33 +11,50 @@ pub async fn create_issue(
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
     let project = inputs["project"].as_str().context("project required")?;
-    let issue_type = inputs.get("issue_type").and_then(|v| v.as_str()).unwrap_or("Story");
+    let issue_type = inputs
+        .get("issue_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Story");
     let component = inputs["component"].as_str().context("component required")?;
     let summary_tpl = inputs["summary"].as_str().context("summary required")?;
     let summary = interpolate(summary_tpl, ctx)?;
-    let description = inputs.get("description")
+    let description = inputs
+        .get("description")
         .and_then(|v| v.as_str())
         .map(|tpl| interpolate(tpl, ctx))
         .transpose()?;
 
-    let assignee_raw = inputs.get("assignee")
+    let assignee_raw = inputs
+        .get("assignee")
         .and_then(|v| v.as_str())
         .map(|tpl| interpolate(tpl, ctx))
         .transpose()?;
-    let assignee = assignee_raw.as_deref().filter(|s| !s.is_empty() && *s != "null");
+    let assignee = assignee_raw
+        .as_deref()
+        .filter(|s| !s.is_empty() && *s != "null");
 
     let mut custom_fields = HashMap::new();
     if let Some(cf) = inputs.get("custom_fields").and_then(|v| v.as_mapping()) {
         for (k, v) in cf {
             if let Some(k) = k.as_str() {
-                let json_val: serde_json::Value = serde_json::to_value(v)
-                    .unwrap_or(serde_json::Value::Null);
+                let json_val: serde_json::Value =
+                    serde_json::to_value(v).unwrap_or(serde_json::Value::Null);
                 custom_fields.insert(k.to_string(), json_val);
             }
         }
     }
 
-    let (key, url) = client.create_issue(project, issue_type, component, &summary, description.as_deref(), assignee, &custom_fields).await?;
+    let (key, url) = client
+        .create_issue(CreateIssueParams {
+            project,
+            issue_type,
+            component,
+            summary: &summary,
+            description: description.as_deref(),
+            assignee,
+            custom_fields: &custom_fields,
+        })
+        .await?;
     Ok(json!({"key": key, "url": url}))
 }
 
@@ -48,12 +65,14 @@ pub async fn transition(
 ) -> anyhow::Result<Value> {
     let key_tpl = inputs["key"].as_str().context("key required")?;
     let key = interpolate(key_tpl, ctx)?;
-    let transition_id_tpl = inputs["transition_id"].as_str().context("transition_id required")?;
+    let transition_id_tpl = inputs["transition_id"]
+        .as_str()
+        .context("transition_id required")?;
     let transition_id = interpolate(transition_id_tpl, ctx)?;
-    let fields: Option<serde_json::Value> = inputs.get("fields")
-        .map(|v| serde_json::to_value(v))
-        .transpose()?;
-    client.transition(&key, &transition_id, fields.as_ref()).await?;
+    let fields: Option<serde_json::Value> =
+        inputs.get("fields").map(serde_json::to_value).transpose()?;
+    client
+        .transition(&key, &transition_id, fields.as_ref())
+        .await?;
     Ok(json!({}))
 }
-

@@ -25,10 +25,7 @@ pub async fn handle(
         return StatusCode::UNAUTHORIZED;
     }
 
-    let event_type = match headers
-        .get("X-GitHub-Event")
-        .and_then(|v| v.to_str().ok())
-    {
+    let event_type = match headers.get("X-GitHub-Event").and_then(|v| v.to_str().ok()) {
         Some(e) => e.to_string(),
         None => {
             warn!("missing X-GitHub-Event header");

@@ -14,18 +14,15 @@ struct AppClaims {
 
 /// Generate a GitHub App JWT valid for 60 seconds.
 pub fn app_jwt(app_id: u64, private_key_pem: &str) -> anyhow::Result<String> {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)?
-        .as_secs();
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let claims = AppClaims {
         iat: now - 60, // backdate 60s to account for clock skew
         exp: now + 60,
         iss: app_id.to_string(),
     };
-    let key = EncodingKey::from_rsa_pem(private_key_pem.as_bytes())
-        .context("invalid RSA private key")?;
-    encode(&Header::new(Algorithm::RS256), &claims, &key)
-        .context("failed to encode JWT")
+    let key =
+        EncodingKey::from_rsa_pem(private_key_pem.as_bytes()).context("invalid RSA private key")?;
+    encode(&Header::new(Algorithm::RS256), &claims, &key).context("failed to encode JWT")
 }
 
 pub struct InstallationInfo {
@@ -54,7 +51,9 @@ pub async fn installation_token(
 ) -> anyhow::Result<String> {
     // Find installation ID for the repo
     let install: Installation = client
-        .get(format!("https://api.github.com/repos/{owner}/{repo}/installation"))
+        .get(format!(
+            "https://api.github.com/repos/{owner}/{repo}/installation"
+        ))
         .bearer_auth(jwt)
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "automata/1.0")
@@ -66,7 +65,10 @@ pub async fn installation_token(
 
     // Exchange for a token
     let token: InstallationToken = client
-        .post(format!("https://api.github.com/app/installations/{}/access_tokens", install.id))
+        .post(format!(
+            "https://api.github.com/app/installations/{}/access_tokens",
+            install.id
+        ))
         .bearer_auth(jwt)
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "automata/1.0")
@@ -87,7 +89,9 @@ pub async fn installation_info(
     repo: &str,
 ) -> anyhow::Result<InstallationInfo> {
     let install: Installation = client
-        .get(format!("https://api.github.com/repos/{owner}/{repo}/installation"))
+        .get(format!(
+            "https://api.github.com/repos/{owner}/{repo}/installation"
+        ))
         .bearer_auth(jwt)
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "automata/1.0")
@@ -98,7 +102,10 @@ pub async fn installation_info(
         .await?;
 
     let token_resp: InstallationToken = client
-        .post(format!("https://api.github.com/app/installations/{}/access_tokens", install.id))
+        .post(format!(
+            "https://api.github.com/app/installations/{}/access_tokens",
+            install.id
+        ))
         .bearer_auth(jwt)
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "automata/1.0")

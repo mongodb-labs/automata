@@ -9,7 +9,11 @@ mod handlers;
 mod jira;
 mod types;
 
-use axum::{response::Redirect, routing::{get, post}, Router};
+use axum::{
+    response::Redirect,
+    routing::{get, post},
+    Router,
+};
 use std::sync::Arc;
 use tracing::info;
 

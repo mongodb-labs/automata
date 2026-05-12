@@ -8,7 +8,10 @@ pub struct GitHubClient {
 
 impl GitHubClient {
     pub fn new(token: String) -> Self {
-        Self { client: reqwest::Client::new(), token }
+        Self {
+            client: reqwest::Client::new(),
+            token,
+        }
     }
 
     fn base(owner: &str, repo: &str) -> String {
@@ -17,46 +20,86 @@ impl GitHubClient {
 
     fn headers(&self) -> reqwest::header::HeaderMap {
         let mut h = reqwest::header::HeaderMap::new();
-        h.insert("Authorization", format!("Bearer {}", self.token).parse().unwrap());
+        h.insert(
+            "Authorization",
+            format!("Bearer {}", self.token).parse().unwrap(),
+        );
         h.insert("Accept", "application/vnd.github+json".parse().unwrap());
         h.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
         h.insert("User-Agent", "automata/1.0".parse().unwrap());
         h
     }
 
-    pub async fn post_comment(&self, owner: &str, repo: &str, issue_number: u64, body: &str) -> anyhow::Result<u64> {
-        let resp: Value = self.client
-            .post(format!("{}/issues/{}/comments", Self::base(owner, repo), issue_number))
+    pub async fn post_comment(
+        &self,
+        owner: &str,
+        repo: &str,
+        issue_number: u64,
+        body: &str,
+    ) -> anyhow::Result<u64> {
+        let resp: Value = self
+            .client
+            .post(format!(
+                "{}/issues/{}/comments",
+                Self::base(owner, repo),
+                issue_number
+            ))
             .headers(self.headers())
             .json(&json!({"body": body}))
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json().await?;
+            .json()
+            .await?;
         resp["id"].as_u64().context("missing comment id")
     }
 
-    pub async fn add_label(&self, owner: &str, repo: &str, issue_number: u64, label: &str) -> anyhow::Result<()> {
+    pub async fn add_label(
+        &self,
+        owner: &str,
+        repo: &str,
+        issue_number: u64,
+        label: &str,
+    ) -> anyhow::Result<()> {
         self.client
-            .post(format!("{}/issues/{}/labels", Self::base(owner, repo), issue_number))
+            .post(format!(
+                "{}/issues/{}/labels",
+                Self::base(owner, repo),
+                issue_number
+            ))
             .headers(self.headers())
             .json(&json!({"labels": [label]}))
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?;
         Ok(())
     }
 
     pub async fn approve_pr(&self, owner: &str, repo: &str, pr_number: u64) -> anyhow::Result<u64> {
-        let resp: Value = self.client
-            .post(format!("{}/pulls/{}/reviews", Self::base(owner, repo), pr_number))
+        let resp: Value = self
+            .client
+            .post(format!(
+                "{}/pulls/{}/reviews",
+                Self::base(owner, repo),
+                pr_number
+            ))
             .headers(self.headers())
             .json(&json!({"event": "APPROVE"}))
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json().await?;
+            .json()
+            .await?;
         resp["id"].as_u64().context("missing review id")
     }
 
-    pub async fn enable_auto_merge(&self, owner: &str, repo: &str, pr_number: u64, strategy: &str) -> anyhow::Result<()> {
+    pub async fn enable_auto_merge(
+        &self,
+        owner: &str,
+        repo: &str,
+        pr_number: u64,
+        strategy: &str,
+    ) -> anyhow::Result<()> {
         let merge_method = match strategy {
             "squash" => "SQUASH",
             "merge" => "MERGE",
@@ -73,48 +116,82 @@ impl GitHubClient {
             .post("https://api.github.com/graphql")
             .headers(self.headers())
             .json(&json!({"query": query}))
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?;
         Ok(())
     }
 
     async fn pr_node_id(&self, owner: &str, repo: &str, pr_number: u64) -> anyhow::Result<String> {
-        let resp: Value = self.client
+        let resp: Value = self
+            .client
             .get(format!("{}/pulls/{}", Self::base(owner, repo), pr_number))
             .headers(self.headers())
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json().await?;
-        resp["node_id"].as_str().map(|s| s.to_string()).context("missing node_id")
+            .json()
+            .await?;
+        resp["node_id"]
+            .as_str()
+            .map(|s| s.to_string())
+            .context("missing node_id")
     }
 
-    pub async fn remove_label(&self, owner: &str, repo: &str, issue_number: u64, label: &str) -> anyhow::Result<()> {
+    pub async fn remove_label(
+        &self,
+        owner: &str,
+        repo: &str,
+        issue_number: u64,
+        label: &str,
+    ) -> anyhow::Result<()> {
         self.client
-            .delete(format!("{}/issues/{}/labels/{}", Self::base(owner, repo), issue_number, label))
+            .delete(format!(
+                "{}/issues/{}/labels/{}",
+                Self::base(owner, repo),
+                issue_number,
+                label
+            ))
             .headers(self.headers())
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?;
         Ok(())
     }
 
     pub async fn get_commit(&self, owner: &str, repo: &str, sha: &str) -> anyhow::Result<Value> {
-        let resp: Value = self.client
+        let resp: Value = self
+            .client
             .get(format!("{}/commits/{}", Self::base(owner, repo), sha))
             .headers(self.headers())
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json().await?;
+            .json()
+            .await?;
         Ok(resp)
     }
 
     /// Fetch all comments on an issue/PR and return the full comment objects.
-    pub async fn list_comments(&self, owner: &str, repo: &str, issue_number: u64) -> anyhow::Result<Vec<Value>> {
-        let resp: Vec<Value> = self.client
-            .get(format!("{}/issues/{}/comments", Self::base(owner, repo), issue_number))
+    pub async fn list_comments(
+        &self,
+        owner: &str,
+        repo: &str,
+        issue_number: u64,
+    ) -> anyhow::Result<Vec<Value>> {
+        let resp: Vec<Value> = self
+            .client
+            .get(format!(
+                "{}/issues/{}/comments",
+                Self::base(owner, repo),
+                issue_number
+            ))
             .headers(self.headers())
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json().await?;
+            .json()
+            .await?;
         Ok(resp)
     }
 }
