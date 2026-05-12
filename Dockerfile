@@ -11,5 +11,5 @@ FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=builder /app/target/release/automata /automata
 COPY automations /automations
 ENV PORT=8080
-EXPOSE 8080
+EXPOSE $PORT
 ENTRYPOINT ["/automata", "/automations"]
