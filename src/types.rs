@@ -26,7 +26,6 @@ pub struct WhenGroup {
     #[serde(default)]
     pub action: ActionFilter,
     pub actor: Option<String>,
-    pub actor_not: Option<String>,
     pub merged: Option<bool>,
     pub labels: Option<Vec<String>>,
 }

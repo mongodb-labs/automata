@@ -10,7 +10,7 @@ pipeline:
     when:
       - event: pull_request
         action: opened
-        actor_not: dependabot[bot]
+        actor: not(dependabot[bot])
     then:
       - jira.create_issue:
           id: ticket
