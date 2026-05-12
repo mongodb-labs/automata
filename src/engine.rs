@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{Automation, PipelineEntry, StringFilter, WhenGroup};
+use crate::types::{Automation, PipelineEntry, StringFilter, WhenCore, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
@@ -33,32 +33,24 @@ pub fn matches_when(entry: &PipelineEntry, event_type: &str, repo: &str, payload
 }
 
 fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
-    if !matches_conditions(&group.event, &group.action, &group.actor, group.merged, &group.label, event_type, payload) {
+    if !matches_core(&group.core, event_type, payload) {
         return false;
     }
     if let Some(excl) = &group.exclude {
-        if matches_conditions(&excl.event, &excl.action, &excl.actor, excl.merged, &excl.label, event_type, payload) {
+        if matches_core(excl, event_type, payload) {
             return false;
         }
     }
     true
 }
 
-fn matches_conditions(
-    event: &StringFilter,
-    action: &StringFilter,
-    actor: &Option<String>,
-    merged: Option<bool>,
-    label: &Option<StringFilter>,
-    event_type: &str,
-    payload: &Value,
-) -> bool {
-    if !event.matches(event_type) {
+fn matches_core(core: &WhenCore, event_type: &str, payload: &Value) -> bool {
+    if !core.event.matches(event_type) {
         return false;
     }
 
     let payload_action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
-    if !action.matches(payload_action) {
+    if !core.action.matches(payload_action) {
         return false;
     }
 
@@ -66,13 +58,13 @@ fn matches_conditions(
         .pointer("/sender/login")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if let Some(required) = actor {
+    if let Some(required) = &core.actor {
         if payload_actor != required.as_str() {
             return false;
         }
     }
 
-    if let Some(required_merged) = merged {
+    if let Some(required_merged) = core.merged {
         let is_merged = payload
             .pointer("/pull_request/merged")
             .and_then(|v| v.as_bool())
@@ -82,7 +74,7 @@ fn matches_conditions(
         }
     }
 
-    if let Some(label_filter) = label {
+    if let Some(label_filter) = &core.label {
         let present: Vec<&str> = payload
             .pointer("/pull_request/labels")
             .and_then(|v| v.as_array())

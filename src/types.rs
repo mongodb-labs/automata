@@ -21,7 +21,7 @@ pub struct Given {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct Exclude {
+pub struct WhenCore {
     #[serde(default)]
     pub event: StringFilter,
     #[serde(default)]
@@ -33,14 +33,9 @@ pub struct Exclude {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct WhenGroup {
-    #[serde(default)]
-    pub event: StringFilter,
-    #[serde(default)]
-    pub action: StringFilter,
-    pub actor: Option<String>,
-    pub merged: Option<bool>,
-    pub label: Option<StringFilter>,
-    pub exclude: Option<Exclude>,
+    #[serde(flatten)]
+    pub core: WhenCore,
+    pub exclude: Option<WhenCore>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -135,7 +130,7 @@ mod tests {
         assert_eq!(e.given.trigger, "github");
         assert_eq!(e.given.repos.len(), 1);
         assert_eq!(e.when.len(), 1);
-        assert!(matches!(&e.when[0].event, StringFilter::One(ev) if ev == "pull_request"));
+        assert!(matches!(&e.when[0].core.event, StringFilter::One(ev) if ev == "pull_request"));
         assert_eq!(e.then.len(), 3);
     }
 
@@ -143,7 +138,7 @@ mod tests {
     fn parse_jira_lifecycle_close() {
         let a = load("automations/jira-lifecycle-close.yaml");
         assert_eq!(a.name, "jira-lifecycle-close");
-        let w = &a.pipeline[0].when[0];
+        let w = &a.pipeline[0].when[0].core;
         assert!(w.merged == Some(true));
         assert!(matches!(&w.label, Some(StringFilter::One(l)) if l == "auto_close_jira"));
     }
@@ -152,15 +147,15 @@ mod tests {
     fn parse_issue_sync() {
         let a = load("automations/issue-sync-atlascli.yaml");
         assert_eq!(a.pipeline.len(), 3);
-        assert!(matches!(a.pipeline[0].when[0].action, StringFilter::One(_)));
-        assert!(matches!(a.pipeline[1].when[0].action, StringFilter::One(_)));
-        assert!(matches!(a.pipeline[2].when[0].action, StringFilter::One(_)));
+        assert!(matches!(a.pipeline[0].when[0].core.action, StringFilter::One(_)));
+        assert!(matches!(a.pipeline[1].when[0].core.action, StringFilter::One(_)));
+        assert!(matches!(a.pipeline[2].when[0].core.action, StringFilter::One(_)));
     }
 
     #[test]
     fn parse_dependabot_merge() {
         let a = load("automations/dependabot-merge.yaml");
-        assert_eq!(a.pipeline[0].when[0].actor.as_deref(), Some("dependabot[bot]"));
+        assert_eq!(a.pipeline[0].when[0].core.actor.as_deref(), Some("dependabot[bot]"));
     }
 
     #[test]
