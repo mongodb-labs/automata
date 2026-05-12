@@ -11,7 +11,7 @@ pipeline:
       - event: pull_request
         action: opened
         exclude:
-          actor: dependabot[bot]
+          - actor: dependabot[bot]
     then:
       - jira.create_issue:
           id: ticket

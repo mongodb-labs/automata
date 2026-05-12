@@ -36,10 +36,8 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
     if !matches_core(&group.core, event_type, payload) {
         return false;
     }
-    if let Some(excl) = &group.exclude {
-        if matches_core(excl, event_type, payload) {
-            return false;
-        }
+    if group.exclude.iter().any(|excl| matches_core(excl, event_type, payload)) {
+        return false;
     }
     true
 }
@@ -156,7 +154,7 @@ mod tests {
     #[test]
     fn actor_not_excludes_dependabot() {
         let e: PipelineEntry = serde_yaml::from_str(
-            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    exclude:\n      actor: dependabot[bot]\nthen: []\n",
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    exclude:\n      - actor: dependabot[bot]\nthen: []\n",
         ).unwrap();
         let bot = json!({"action": "opened", "sender": {"login": "dependabot[bot]"}});
         let human = json!({"action": "opened", "sender": {"login": "alice"}});

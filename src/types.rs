@@ -35,7 +35,8 @@ pub struct WhenCore {
 pub struct WhenGroup {
     #[serde(flatten)]
     pub core: WhenCore,
-    pub exclude: Option<WhenCore>,
+    #[serde(default)]
+    pub exclude: Vec<WhenCore>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
