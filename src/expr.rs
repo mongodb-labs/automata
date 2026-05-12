@@ -36,6 +36,11 @@ pub fn resolve(path: &str, ctx: &ExecutionContext) -> anyhow::Result<String> {
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("input not found: {rest}"));
         }
+        "env" => {
+            let var = format!("AUTOMATA_{}", rest.to_uppercase());
+            return std::env::var(&var)
+                .map_err(|_| anyhow::anyhow!("env var not set: {var}"));
+        }
         step_id => {
             let outputs = ctx
                 .outputs
@@ -117,6 +122,21 @@ mod tests {
     #[test]
     fn interpolate_missing_path_returns_error() {
         let result = interpolate("{payload.nonexistent.field}", &ctx());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn env_resolves_with_automata_prefix() {
+        std::env::set_var("AUTOMATA_MY_SECRET", "hunter2");
+        let result = interpolate("{env.my_secret}", &ctx()).unwrap();
+        assert_eq!(result, "hunter2");
+        std::env::remove_var("AUTOMATA_MY_SECRET");
+    }
+
+    #[test]
+    fn env_missing_var_returns_error() {
+        std::env::remove_var("AUTOMATA_DEFINITELY_NOT_SET");
+        let result = interpolate("{env.definitely_not_set}", &ctx());
         assert!(result.is_err());
     }
 
