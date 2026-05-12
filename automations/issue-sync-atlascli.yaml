@@ -19,11 +19,12 @@ pipeline:
             customfield_12751: [{id: "22223"}]
             customfield_10257: {value: "Not Needed"}
           summary: "[{payload.repository.name}] {payload.issue.title}"
+          description: "This ticket tracks the following GitHub issue: {payload.issue.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.issue.number}"
-          body: "Jira ticket: {ticket.url}"
+          body: "Thanks for opening this issue. The ticket [{ticket.key}]({ticket.url}) was created for internal tracking."
 
   - given:
       trigger: github

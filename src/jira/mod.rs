@@ -32,6 +32,7 @@ impl JiraClient {
         issue_type: &str,
         component: &str,
         summary: &str,
+        description: Option<&str>,
         custom_fields: &HashMap<String, Value>,
     ) -> anyhow::Result<(String, String)> {
         let mut fields = json!({
@@ -40,6 +41,9 @@ impl JiraClient {
             "summary": summary,
             "components": [{"name": component}],
         });
+        if let Some(desc) = description {
+            fields["description"] = json!(desc);
+        }
         for (field_id, value) in custom_fields {
             fields[field_id] = value.clone();
         }

@@ -15,6 +15,10 @@ pub async fn create_issue(
     let component = inputs["component"].as_str().context("component required")?;
     let summary_tpl = inputs["summary"].as_str().context("summary required")?;
     let summary = interpolate(summary_tpl, ctx)?;
+    let description = inputs.get("description")
+        .and_then(|v| v.as_str())
+        .map(|tpl| interpolate(tpl, ctx))
+        .transpose()?;
 
     let mut custom_fields = HashMap::new();
     if let Some(cf) = inputs.get("custom_fields").and_then(|v| v.as_mapping()) {
@@ -27,7 +31,7 @@ pub async fn create_issue(
         }
     }
 
-    let (key, url) = client.create_issue(project, issue_type, component, &summary, &custom_fields).await?;
+    let (key, url) = client.create_issue(project, issue_type, component, &summary, description.as_deref(), &custom_fields).await?;
     Ok(json!({"key": key, "url": url}))
 }
 

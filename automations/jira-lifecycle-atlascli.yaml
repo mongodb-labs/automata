@@ -21,11 +21,12 @@ pipeline:
             customfield_12751: [{id: "22223"}]
             customfield_10257: {value: "Not Needed"}
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
+          description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.pull_request.number}"
-          body: "Jira ticket: {ticket.url}"
+          body: "The ticket [{ticket.key}]({ticket.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
       - github.add_label:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
@@ -52,11 +53,12 @@ pipeline:
             customfield_12751: [{id: "22223"}]
             customfield_10257: {value: "Not Needed"}
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
+          description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.pull_request.number}"
-          body: "Jira ticket: {ticket.url}"
+          body: "The ticket [{ticket.key}]({ticket.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
       - github.add_label:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
