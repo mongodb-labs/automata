@@ -5,6 +5,9 @@ name: default
 platform:
   arch: arm64
 trigger:
+  event:
+    - push
+    - pull_request
   branch:
     - main
 
