@@ -22,7 +22,8 @@ async fn main() -> anyhow::Result<()> {
     let config = config::Config::from_env()?;
     info!("starting automata");
 
-    let automations = engine::load_automations("automations/")?;
+    let automations_dir = std::env::args().nth(1).unwrap_or_else(|| "automations".to_string());
+    let automations = engine::load_automations(&automations_dir)?;
     info!(count = automations.len(), "loaded automations");
 
     let state = AppState {

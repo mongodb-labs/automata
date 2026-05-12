@@ -12,4 +12,4 @@ FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=builder /app/target/release/automata /automata
 COPY --from=builder /app/automations /automations
 EXPOSE 8080
-ENTRYPOINT ["/automata"]
+ENTRYPOINT ["/automata", "/automations"]
