@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{Automation, WhenGroup};
+use crate::types::{Automation, PipelineEntry, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
@@ -24,15 +24,12 @@ pub fn load_automations(dir: &str) -> anyhow::Result<Vec<Automation>> {
     Ok(automations)
 }
 
-/// Returns true if the given GitHub webhook payload matches ANY of the when: groups.
-pub fn matches_when(automation: &Automation, event_type: &str, repo: &str, payload: &Value) -> bool {
-    // Check repo membership
-    if !automation.given.repos.iter().any(|r| r == repo) {
+/// Returns true if the pipeline entry matches this event.
+pub fn matches_when(entry: &PipelineEntry, event_type: &str, repo: &str, payload: &Value) -> bool {
+    if !entry.given.repos.iter().any(|r| r == repo) {
         return false;
     }
-
-    // Any when: group matching is sufficient (OR semantics)
-    automation.when.iter().any(|group| matches_group(group, event_type, payload))
+    entry.when.iter().any(|group| matches_group(group, event_type, payload))
 }
 
 fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
@@ -111,12 +108,12 @@ pub fn eval_if(cond: &str, payload: &Value) -> bool {
 }
 
 pub async fn run_automation(
-    automation: &Automation,
+    entry: &PipelineEntry,
     payload: &Value,
     clients: &Clients,
 ) -> anyhow::Result<()> {
     let mut ctx = ExecutionContext::new(payload.clone());
-    for raw_step in &automation.then {
+    for raw_step in &entry.then {
         let step = crate::types::Step::from_yaml(raw_step)?;
         crate::functions::execute_step(&step, &mut ctx, clients).await?;
     }
@@ -126,51 +123,51 @@ pub async fn run_automation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ActionFilter, Automation};
+    use crate::types::{ActionFilter, PipelineEntry};
     use serde_json::json;
 
-    fn make_auto(event: &str, action: &str, repo: &str) -> Automation {
+    fn make_entry(event: &str, action: &str, repo: &str) -> PipelineEntry {
         serde_yaml::from_str(&format!(
-            "name: test\ngiven:\n  trigger: github\n  repos:\n    - {repo}\nwhen:\n  - event: {event}\n    action: {action}\nthen: []\n"
+            "given:\n  trigger: github\n  repos:\n    - {repo}\nwhen:\n  - event: {event}\n    action: {action}\nthen: []\n"
         )).unwrap()
     }
 
     #[test]
     fn matches_correct_event_and_repo() {
-        let a = make_auto("pull_request", "opened", "mongodb/atlas-cli");
+        let e = make_entry("pull_request", "opened", "mongodb/atlas-cli");
         let payload = json!({"action": "opened", "sender": {"login": "alice"}});
-        assert!(matches_when(&a, "pull_request", "mongodb/atlas-cli", &payload));
+        assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &payload));
     }
 
     #[test]
     fn rejects_wrong_repo() {
-        let a = make_auto("pull_request", "opened", "mongodb/atlas-cli");
+        let e = make_entry("pull_request", "opened", "mongodb/atlas-cli");
         let payload = json!({"action": "opened", "sender": {"login": "alice"}});
-        assert!(!matches_when(&a, "pull_request", "mongodb/other-repo", &payload));
+        assert!(!matches_when(&e, "pull_request", "mongodb/other-repo", &payload));
     }
 
     #[test]
     fn rejects_wrong_action() {
-        let a = make_auto("pull_request", "opened", "mongodb/atlas-cli");
+        let e = make_entry("pull_request", "opened", "mongodb/atlas-cli");
         let payload = json!({"action": "closed", "sender": {"login": "alice"}});
-        assert!(!matches_when(&a, "pull_request", "mongodb/atlas-cli", &payload));
+        assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &payload));
     }
 
     #[test]
     fn actor_not_excludes_dependabot() {
-        let a: Automation = serde_yaml::from_str(
-            "name: t\ngiven:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    actor_not: dependabot[bot]\nthen: []\n"
+        let e: PipelineEntry = serde_yaml::from_str(
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    actor_not: dependabot[bot]\nthen: []\n"
         ).unwrap();
         let bot = json!({"action": "opened", "sender": {"login": "dependabot[bot]"}});
         let human = json!({"action": "opened", "sender": {"login": "alice"}});
-        assert!(!matches_when(&a, "pull_request", "mongodb/atlas-cli", &bot));
-        assert!(matches_when(&a, "pull_request", "mongodb/atlas-cli", &human));
+        assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &bot));
+        assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &human));
     }
 
     #[test]
     fn labels_include_filter() {
-        let a: Automation = serde_yaml::from_str(
-            "name: t\ngiven:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    labels_include: [auto_close_jira]\nthen: []\n"
+        let e: PipelineEntry = serde_yaml::from_str(
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    labels_include: [auto_close_jira]\nthen: []\n"
         ).unwrap();
         let with_label = json!({
             "action": "closed",
@@ -185,8 +182,8 @@ mod tests {
             "sender": {"login": "alice"},
             "pull_request": {"merged": true, "labels": []}
         });
-        assert!(matches_when(&a, "pull_request", "mongodb/atlas-cli", &with_label));
-        assert!(!matches_when(&a, "pull_request", "mongodb/atlas-cli", &without_label));
+        assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &with_label));
+        assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &without_label));
     }
 
     #[test]

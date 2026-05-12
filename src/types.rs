@@ -4,7 +4,11 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Deserialize)]
 pub struct Automation {
     pub name: String,
-    pub description: Option<String>,
+    pub pipeline: Vec<PipelineEntry>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PipelineEntry {
     pub given: Given,
     pub when: Vec<WhenGroup>,
     pub then: Vec<serde_yaml::Value>,
@@ -104,20 +108,23 @@ mod tests {
     fn parse_jira_lifecycle_atlascli() {
         let a = load("automations/jira-lifecycle-atlascli.yaml");
         assert_eq!(a.name, "jira-lifecycle-atlascli");
-        assert_eq!(a.given.trigger, "github");
-        assert_eq!(a.given.repos.len(), 1);
-        assert_eq!(a.when.len(), 1);
-        assert_eq!(a.when[0].event.as_deref(), Some("pull_request"));
-        assert_eq!(a.then.len(), 3);
+        assert_eq!(a.pipeline.len(), 1);
+        let e = &a.pipeline[0];
+        assert_eq!(e.given.trigger, "github");
+        assert_eq!(e.given.repos.len(), 1);
+        assert_eq!(e.when.len(), 1);
+        assert_eq!(e.when[0].event.as_deref(), Some("pull_request"));
+        assert_eq!(e.then.len(), 3);
     }
 
     #[test]
     fn parse_jira_lifecycle_close() {
         let a = load("automations/jira-lifecycle-close.yaml");
         assert_eq!(a.name, "jira-lifecycle-close");
-        assert!(a.when[0].merged == Some(true));
+        let e = &a.pipeline[0];
+        assert!(e.when[0].merged == Some(true));
         assert_eq!(
-            a.when[0].labels_include.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
+            e.when[0].labels_include.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
             Some(vec!["auto_close_jira"])
         );
     }
@@ -125,13 +132,13 @@ mod tests {
     #[test]
     fn parse_issue_sync() {
         let a = load("automations/issue-sync-atlascli.yaml");
-        assert!(matches!(a.when[0].action, ActionFilter::Many(_)));
+        assert!(matches!(a.pipeline[0].when[0].action, ActionFilter::Many(_)));
     }
 
     #[test]
     fn parse_dependabot_merge() {
         let a = load("automations/dependabot-merge.yaml");
-        assert_eq!(a.when[0].actor.as_deref(), Some("dependabot[bot]"));
+        assert_eq!(a.pipeline[0].when[0].actor.as_deref(), Some("dependabot[bot]"));
     }
 
     #[test]

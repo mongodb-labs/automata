@@ -1,32 +1,32 @@
 name: jira-lifecycle-atlascli
-description: Open a Jira ticket when a PR is opened.
-given:
-  trigger: github
-  repos:
-    - mongodb-labs/automata
-    # - mongodb/mongodb-atlas-cli
-    # - mongodb/atlas-github-action
-    # - mongodb-labs/cobra2snooty
-when:
-  - event: pull_request
-    action: opened
-    actor_not: dependabot[bot]
-then:
-  - jira.create_issue:
-      id: ticket
-      issue_type: Story
-      project: CLOUDP
-      component: AtlasCLI
-      custom_fields:
-        customfield_12751: "<JIRA_TEAM_APIX_2>"
-      summary: "[{payload.repository.name}] {payload.pull_request.title}"
-  - github.post_comment:
-      owner: "{payload.repository.owner.login}"
-      repo: "{payload.repository.name}"
-      number: "{payload.pull_request.number}"
-      body: "Jira ticket: {ticket.url}"
-  - github.add_label:
-      owner: "{payload.repository.owner.login}"
-      repo: "{payload.repository.name}"
-      number: "{payload.pull_request.number}"
-      label: auto_close_jira
+pipeline:
+  - given:
+      trigger: github
+      repos:
+        - mongodb-labs/automata
+        # - mongodb/mongodb-atlas-cli
+        # - mongodb/atlas-github-action
+        # - mongodb-labs/cobra2snooty
+    when:
+      - event: pull_request
+        action: opened
+        actor_not: dependabot[bot]
+    then:
+      - jira.create_issue:
+          id: ticket
+          issue_type: Story
+          project: CLOUDP
+          component: AtlasCLI
+          custom_fields:
+            customfield_12751: "<JIRA_TEAM_APIX_2>"
+          summary: "[{payload.repository.name}] {payload.pull_request.title}"
+      - github.post_comment:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+          body: "Jira ticket: {ticket.url}"
+      - github.add_label:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+          label: auto_close_jira

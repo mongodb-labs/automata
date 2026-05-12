@@ -178,7 +178,7 @@ fn webhook_icon(status: Option<bool>) -> &'static str {
 pub fn collect_repos(automations: &[crate::types::Automation]) -> Vec<String> {
     let mut repos: Vec<String> = automations
         .iter()
-        .flat_map(|a| a.given.repos.iter().cloned())
+        .flat_map(|a| a.pipeline.iter().flat_map(|e| e.given.repos.iter().cloned()))
         .collect();
     repos.sort();
     repos.dedup();
@@ -193,11 +193,11 @@ mod tests {
     fn collect_repos_dedupes_and_sorts() {
         let autos: Vec<crate::types::Automation> = vec![
             serde_yaml::from_str(
-                "name: a\ngiven:\n  trigger: github\n  repos:\n    - mongodb/b\n    - mongodb/a\nwhen: []\nthen: []\n",
+                "name: a\npipeline:\n  - given:\n      trigger: github\n      repos:\n        - mongodb/b\n        - mongodb/a\n    when: []\n    then: []\n",
             )
             .unwrap(),
             serde_yaml::from_str(
-                "name: b\ngiven:\n  trigger: github\n  repos:\n    - mongodb/a\n    - mongodb/c\nwhen: []\nthen: []\n",
+                "name: b\npipeline:\n  - given:\n      trigger: github\n      repos:\n        - mongodb/a\n        - mongodb/c\n    when: []\n    then: []\n",
             )
             .unwrap(),
         ];

@@ -1,47 +1,47 @@
 name: issue-sync-atlascli
-description: Sync GitHub issue lifecycle to Jira for AtlasCLI repos.
-given:
-  trigger: github
-  repos:
-    - mongodb-labs/automata
-    # - mongodb/mongodb-atlas-cli
-    # - mongodb/atlas-github-action
-when:
-  - event: issues
-    action:
-      - opened
-      - closed
-      - reopened
-then:
-  - jira.create_issue:
-      id: ticket
-      if: action_is_opened
-      issue_type: Story
-      project: CLOUDP
-      component: AtlasCLI
-      summary: "[{payload.repository.name}] {payload.issue.title}"
-  - github.post_comment:
-      if: action_is_opened
-      owner: "{payload.repository.owner.login}"
-      repo: "{payload.repository.name}"
-      number: "{payload.issue.number}"
-      body: "Jira ticket: {ticket.url}"
-  - github.list_pr_comments:
-      id: comments
-      if: action_not_opened
-      owner: "{payload.repository.owner.login}"
-      repo: "{payload.repository.name}"
-      number: "{payload.issue.number}"
-  - builtin.jq:
-      id: find
-      if: action_not_opened
-      input: comments
-      expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
-  - jira.transition:
-      if: action_is_closed
-      key: "{find.result}"
-      transition_id: "1381"
-  - jira.transition:
-      if: action_is_reopened
-      key: "{find.result}"
-      transition_id: "1351"
+pipeline:
+  - given:
+      trigger: github
+      repos:
+        - mongodb-labs/automata
+        # - mongodb/mongodb-atlas-cli
+        # - mongodb/atlas-github-action
+    when:
+      - event: issues
+        action:
+          - opened
+          - closed
+          - reopened
+    then:
+      - jira.create_issue:
+          id: ticket
+          if: action_is_opened
+          issue_type: Story
+          project: CLOUDP
+          component: AtlasCLI
+          summary: "[{payload.repository.name}] {payload.issue.title}"
+      - github.post_comment:
+          if: action_is_opened
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.issue.number}"
+          body: "Jira ticket: {ticket.url}"
+      - github.list_pr_comments:
+          id: comments
+          if: action_not_opened
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.issue.number}"
+      - builtin.jq:
+          id: find
+          if: action_not_opened
+          input: comments
+          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
+      - jira.transition:
+          if: action_is_closed
+          key: "{find.result}"
+          transition_id: "1381"
+      - jira.transition:
+          if: action_is_reopened
+          key: "{find.result}"
+          transition_id: "1351"

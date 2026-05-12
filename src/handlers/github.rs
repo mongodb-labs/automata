@@ -67,10 +67,11 @@ pub async fn handle(
 
     info!(event_type, repo, "received github event");
 
-    let matched: Vec<_> = state
+    let matched: Vec<(&str, &crate::types::PipelineEntry)> = state
         .automations
         .iter()
-        .filter(|a| crate::engine::matches_when(a, &event_type, &repo, &payload))
+        .flat_map(|a| a.pipeline.iter().map(move |e| (a.name.as_str(), e)))
+        .filter(|(_, e)| crate::engine::matches_when(e, &event_type, &repo, &payload))
         .collect();
 
     if matched.is_empty() {
@@ -113,10 +114,10 @@ pub async fn handle(
         http: state.http.clone(),
     };
 
-    for automation in matched {
-        info!(name = %automation.name, "running automation");
-        if let Err(e) = crate::engine::run_automation(automation, &payload, &clients).await {
-            error!(name = %automation.name, %e, "automation failed");
+    for (name, entry) in matched {
+        info!(%name, "running automation");
+        if let Err(e) = crate::engine::run_automation(entry, &payload, &clients).await {
+            error!(%name, %e, "automation failed");
         }
     }
 

@@ -18,29 +18,29 @@ One YAML file = one automation. Example:
 
 ```yaml
 name: jira-lifecycle-atlascli
-description: Open a Jira ticket when a PR is opened.
-given:
-  trigger: github
-  repos:
-    - mongodb/mongodb-atlas-cli
-when:
-  - event: pull_request
-    action: opened
-    actor_not: dependabot[bot]
-then:
-  - jira.create_issue:
-      id: ticket
-      issue_type: Story
-      project: CLOUDP
-      component: AtlasCLI
-      summary: "[{payload.repository.name}] {payload.pull_request.title}"
-  - github.post_comment:
-      body: "Jira ticket: {ticket.url}"
-  - github.add_label:
-      label: auto_close_jira
+pipeline:
+  - given:
+      trigger: github
+      repos:
+        - mongodb/mongodb-atlas-cli
+    when:
+      - event: pull_request
+        action: opened
+        actor_not: dependabot[bot]
+    then:
+      - jira.create_issue:
+          id: ticket
+          issue_type: Story
+          project: CLOUDP
+          component: AtlasCLI
+          summary: "[{payload.repository.name}] {payload.pull_request.title}"
+      - github.post_comment:
+          body: "Jira ticket: {ticket.url}"
+      - github.add_label:
+          label: auto_close_jira
 ```
 
-`when:` items are OR'd; keys within an item are AND'd. `then:` steps run sequentially; each step can reference outputs from previous steps via `{step-id.field}`.
+`pipeline:` is a list of trigger blocks. `when:` items within a block are OR'd; keys within an item are AND'd. `then:` steps run sequentially; each step can reference outputs from previous steps via `{step-id.field}`.
 
 ## Built-in functions
 
