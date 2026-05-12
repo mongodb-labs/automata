@@ -29,3 +29,4 @@ jaq-parse = "1"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
+cargo-husky = { version = "1", default-features = false, features = ["user-hooks"] }
