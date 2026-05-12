@@ -23,9 +23,6 @@ spec:
           names:
             - mongodb-mcp-server
             - atlas-local-lib-js
-        - owner: 10gen
-          names:
-            - apix-bot
         - owner: mongodb-labs
           names:
             - cobra2snooty
