@@ -22,7 +22,12 @@ pub struct Given {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Exclude {
+    pub event: Option<String>,
+    #[serde(default)]
+    pub action: ActionFilter,
     pub actor: Option<String>,
+    pub merged: Option<bool>,
+    pub labels: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -33,8 +38,7 @@ pub struct WhenGroup {
     pub actor: Option<String>,
     pub merged: Option<bool>,
     pub labels: Option<Vec<String>>,
-    #[serde(default)]
-    pub exclude: Exclude,
+    pub exclude: Option<Exclude>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

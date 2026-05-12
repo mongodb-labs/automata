@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{Automation, PipelineEntry, WhenGroup};
+use crate::types::{ActionFilter, Automation, PipelineEntry, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
@@ -33,37 +33,47 @@ pub fn matches_when(entry: &PipelineEntry, event_type: &str, repo: &str, payload
 }
 
 fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
-    // event must match if specified
     if let Some(ev) = &group.event {
         if ev != event_type {
             return false;
         }
     }
+    if !matches_conditions(&group.action, &group.actor, group.merged, &group.labels, payload) {
+        return false;
+    }
+    if let Some(excl) = &group.exclude {
+        if excl.event.as_deref().map_or(true, |ev| ev == event_type)
+            && matches_conditions(&excl.action, &excl.actor, excl.merged, &excl.labels, payload)
+        {
+            return false;
+        }
+    }
+    true
+}
 
-    // action must match if specified
-    let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
-    if !group.action.matches(action) {
+fn matches_conditions(
+    action: &ActionFilter,
+    actor: &Option<String>,
+    merged: Option<bool>,
+    labels: &Option<Vec<String>>,
+    payload: &Value,
+) -> bool {
+    let payload_action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
+    if !action.matches(payload_action) {
         return false;
     }
 
-    // actor must match if specified
-    let actor = payload
+    let payload_actor = payload
         .pointer("/sender/login")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if let Some(required) = &group.actor {
-        if actor != required.as_str() {
-            return false;
-        }
-    }
-    if let Some(excluded) = &group.exclude.actor {
-        if actor == excluded.as_str() {
+    if let Some(required) = actor {
+        if payload_actor != required.as_str() {
             return false;
         }
     }
 
-    // merged must match if specified
-    if let Some(required_merged) = group.merged {
+    if let Some(required_merged) = merged {
         let is_merged = payload
             .pointer("/pull_request/merged")
             .and_then(|v| v.as_bool())
@@ -73,9 +83,8 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
         }
     }
 
-    // labels: all listed labels must be present
-    if let Some(required_labels) = &group.labels {
-        let labels: Vec<&str> = payload
+    if let Some(required_labels) = labels {
+        let present: Vec<&str> = payload
             .pointer("/pull_request/labels")
             .and_then(|v| v.as_array())
             .map(|arr| {
@@ -84,7 +93,7 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
                     .collect()
             })
             .unwrap_or_default();
-        if !required_labels.iter().all(|req| labels.contains(&req.as_str())) {
+        if !required_labels.iter().all(|req| present.contains(&req.as_str())) {
             return false;
         }
     }
@@ -156,7 +165,7 @@ mod tests {
     #[test]
     fn actor_not_excludes_dependabot() {
         let e: PipelineEntry = serde_yaml::from_str(
-            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    exclude:\n      actor: dependabot[bot]\nthen: []\n"
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    exclude:\n      actor: dependabot[bot]\nthen: []\n",
         ).unwrap();
         let bot = json!({"action": "opened", "sender": {"login": "dependabot[bot]"}});
         let human = json!({"action": "opened", "sender": {"login": "alice"}});
