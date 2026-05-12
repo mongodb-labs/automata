@@ -39,6 +39,7 @@ async fn dispatch(
 ) -> anyhow::Result<Value> {
     match func {
         "builtin.jq"               => builtin::jq(inputs, ctx).await,
+        "builtin.lookup"           => builtin::lookup(inputs, ctx).await,
         "jira.create_issue"        => jira::create_issue(&clients.jira, inputs, ctx).await,
         "jira.transition"          => jira::transition(&clients.jira, inputs, ctx).await,
         "github.post_comment"      => github::post_comment(&clients.github, inputs, ctx).await,

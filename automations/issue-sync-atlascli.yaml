@@ -18,6 +18,7 @@ pipeline:
           custom_fields:
             customfield_12751: [{id: "22223"}]
             customfield_10257: {value: "Not Needed"}
+            fixVersions: [{id: "50180"}]
           summary: "[{payload.repository.name}] {payload.issue.title}"
           description: "This ticket tracks the following GitHub issue: {payload.issue.html_url}"
       - github.post_comment:

@@ -65,13 +65,22 @@ impl JiraClient {
         Ok((key, url))
     }
 
-    pub async fn transition(&self, key: &str, transition_id: &str) -> anyhow::Result<()> {
-        self.client
+    pub async fn transition(&self, key: &str, transition_id: &str, fields: Option<&Value>) -> anyhow::Result<()> {
+        let mut body = json!({"transition": {"id": transition_id}});
+        if let Some(f) = fields {
+            body["fields"] = f.clone();
+        }
+        tracing::debug!(body = %body, "jira transition request");
+        let response = self.client
             .post(format!("{}/rest/api/2/issue/{}/transitions", self.base_url, key))
             .headers(self.auth())
-            .json(&json!({"transition": {"id": transition_id}}))
-            .send().await?
-            .error_for_status()?;
+            .json(&body)
+            .send().await?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            anyhow::bail!("Jira transition {status}: {body}");
+        }
         Ok(())
     }
 

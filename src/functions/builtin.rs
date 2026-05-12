@@ -3,6 +3,24 @@ use anyhow::Context as _;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
+pub async fn lookup(
+    inputs: &HashMap<String, serde_yaml::Value>,
+    ctx: &ExecutionContext,
+) -> anyhow::Result<Value> {
+    use crate::expr::interpolate;
+    let key_tpl = inputs["key"].as_str().context("key required")?;
+    let key = interpolate(key_tpl, ctx)?;
+    let table = inputs["table"].as_mapping().context("table required")?;
+    let result = table
+        .iter()
+        .find(|(k, _)| k.as_str().map_or(false, |s| s == key))
+        .map(|(_, v)| v);
+    match result {
+        Some(v) => Ok(json!({ "value": serde_json::to_value(v)? })),
+        None => anyhow::bail!("lookup: key {key:?} not found in table"),
+    }
+}
+
 pub async fn jq(
     inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
