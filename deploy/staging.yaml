@@ -4,11 +4,6 @@ image:
 
 replicaCount: 1
 
-services:
-  - name: http
-    port: 80
-    protocol: TCP
-    targetPort: 8080
 
 ingress:
   enabled: true
