@@ -132,7 +132,10 @@ mod tests {
     #[test]
     fn parse_issue_sync() {
         let a = load("automations/issue-sync-atlascli.yaml");
-        assert!(matches!(a.pipeline[0].when[0].action, ActionFilter::Many(_)));
+        assert_eq!(a.pipeline.len(), 3);
+        assert!(matches!(a.pipeline[0].when[0].action, ActionFilter::One(_)));
+        assert!(matches!(a.pipeline[1].when[0].action, ActionFilter::One(_)));
+        assert!(matches!(a.pipeline[2].when[0].action, ActionFilter::One(_)));
     }
 
     #[test]
