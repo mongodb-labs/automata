@@ -7,6 +7,10 @@ metadata:
     v1alpha1.argoslower.kanopy-platform/known-source: "github"
 spec:
   eventBusName: automata-bus
+  service:
+    ports:
+      - port: 80
+        targetPort: 12000
   github:
     automata:
       repositories:

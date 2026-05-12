@@ -1,0 +1,18 @@
+apiVersion: service.kanopy-platform.github.io/v1beta1
+kind: ServiceCatalogEntry
+metadata:
+  name: automata-github
+  namespace: skunkworks
+spec:
+  authorization:
+    # allowVanity: true allows argoslower to route external webhook traffic
+    # through the public ingress gateway at:
+    # https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
+    allowVanity: true
+    groups: []
+    scopes: []
+  selector:
+    matchLabels:
+      controller: eventsource-controller
+      eventsource-name: automata-github
+      owner-name: automata-github

@@ -84,6 +84,7 @@ steps:
       - kubectl config set-context default --cluster=staging --user=cicd --namespace=skunkworks
       - kubectl config use-context default
       - kubectl apply -f deploy/eventsource.yaml
+      - kubectl apply -f deploy/eventsource-sce.yaml
       - kubectl apply -f deploy/sensor.yaml
     when:
       event: [push]

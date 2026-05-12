@@ -11,6 +11,8 @@ jetstreams:
         limits:
           memory: 100Mi
           ephemeral-storage: 100Mi
+    streamConfig: |
+      replicas: 1
     settings: |
       max_memory_store: 50Mi
       max_file_store: 50Mi
