@@ -179,12 +179,25 @@ mod tests {
     }
 
     #[test]
-    fn parse_dependabot_merge() {
-        let a = load("automations/dependabot-merge.yaml");
+    fn parse_dependabot_approve() {
+        let a = load("automations/dependabot-approve.yaml");
+        assert_eq!(a.name, "dependabot-approve");
         assert_eq!(
             a.pipeline[0].when[0].core.actor.as_deref(),
             Some("dependabot[bot]")
         );
+        assert_eq!(a.pipeline[0].then.len(), 1);
+    }
+
+    #[test]
+    fn parse_dependabot_automerge() {
+        let a = load("automations/dependabot-automerge.yaml");
+        assert_eq!(a.name, "dependabot-automerge");
+        assert_eq!(
+            a.pipeline[0].when[0].core.actor.as_deref(),
+            Some("dependabot[bot]")
+        );
+        assert_eq!(a.pipeline[0].then.len(), 1);
     }
 
     #[test]
