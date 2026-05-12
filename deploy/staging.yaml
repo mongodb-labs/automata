@@ -11,6 +11,11 @@ services:
     targetPort: 8080
     type: ClusterIP
 
+ingress:
+  enabled: true
+  hosts:
+    - automata.skunkworks.staging.corp.mongodb.com
+
 mesh:
   enabled: true
 

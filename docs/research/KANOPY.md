@@ -375,11 +375,16 @@ services:
     protocol: TCP
     type: ClusterIP
 
+ingress:
+  enabled: true
+  hosts:
+    - <release>.<namespace>.staging.corp.mongodb.com
+
 mesh:
   enabled: true
 ```
 
-The hostname is auto-assigned as `<release>.<namespace>.<env>.corp.mongodb.com`:
+The `ingress.hosts` field sets the hostname for the Istio VirtualService. The hostname follows the pattern:
 - Staging: `automata.skunkworks.staging.corp.mongodb.com`
 - Production: `automata.skunkworks.prod.corp.mongodb.com`
 
