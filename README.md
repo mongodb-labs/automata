@@ -138,13 +138,13 @@ Any string value in a step's inputs can embed `{path}` expressions:
 | `{payload.repository.name}` | field from the GitHub webhook payload |
 | `{payload.pull_request.number}` | nested payload field |
 | `{step-id.field}` | named output from a previous step |
-| `{env.my_secret}` | env var `AUTOMATA_MY_SECRET` (prefix required, case-insensitive) |
+| `{env.AUTOMATA_MY_SECRET}` | env var `AUTOMATA_MY_SECRET` (must be prefixed with `AUTOMATA_`) |
 
-Secret values are injected via environment variables prefixed with `AUTOMATA_`. To use a secret in a step:
+Secret values are injected via environment variables. Only vars prefixed with `AUTOMATA_` are accessible. To use a secret in a step:
 
 1. Add it to `automata-secrets`: `helm ksec set automata-secrets AUTOMATA_MY_SECRET=<value>`
 2. Expose it in `deploy/staging.yaml` under `envSecrets:`: `AUTOMATA_MY_SECRET: automata-secrets`
-3. Reference it in the automation: `{env.my_secret}`
+3. Reference it in the automation: `{env.AUTOMATA_MY_SECRET}`
 
 ---
 

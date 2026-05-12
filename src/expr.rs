@@ -37,9 +37,12 @@ pub fn resolve(path: &str, ctx: &ExecutionContext) -> anyhow::Result<String> {
                 .ok_or_else(|| anyhow::anyhow!("input not found: {rest}"));
         }
         "env" => {
-            let var = format!("AUTOMATA_{}", rest.to_uppercase());
-            return std::env::var(&var)
-                .map_err(|_| anyhow::anyhow!("env var not set: {var}"));
+            anyhow::ensure!(
+                rest.starts_with("AUTOMATA_"),
+                "env var must be prefixed with AUTOMATA_: {rest}"
+            );
+            return std::env::var(rest)
+                .map_err(|_| anyhow::anyhow!("env var not set: {rest}"));
         }
         step_id => {
             let outputs = ctx
@@ -128,7 +131,7 @@ mod tests {
     #[test]
     fn env_resolves_with_automata_prefix() {
         std::env::set_var("AUTOMATA_MY_SECRET", "hunter2");
-        let result = interpolate("{env.my_secret}", &ctx()).unwrap();
+        let result = interpolate("{env.AUTOMATA_MY_SECRET}", &ctx()).unwrap();
         assert_eq!(result, "hunter2");
         std::env::remove_var("AUTOMATA_MY_SECRET");
     }
@@ -136,7 +139,13 @@ mod tests {
     #[test]
     fn env_missing_var_returns_error() {
         std::env::remove_var("AUTOMATA_DEFINITELY_NOT_SET");
-        let result = interpolate("{env.definitely_not_set}", &ctx());
+        let result = interpolate("{env.AUTOMATA_DEFINITELY_NOT_SET}", &ctx());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn env_without_prefix_returns_error() {
+        let result = interpolate("{env.HOME}", &ctx());
         assert!(result.is_err());
     }
 
