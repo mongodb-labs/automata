@@ -9,7 +9,7 @@ mod handlers;
 mod jira;
 mod types;
 
-use axum::{routing::{get, post}, Router};
+use axum::{response::Redirect, routing::{get, post}, Router};
 use std::sync::Arc;
 use tracing::info;
 
@@ -34,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
 
     let port = state.config.port;
     let app = Router::new()
+        .route("/", get(|| async { Redirect::permanent("/doctor") }))
         .route("/health", get(|| async { "ok" }))
         .route("/webhook/github", post(handlers::github::handle))
         .route("/doctor", get(handlers::doctor::handle))
