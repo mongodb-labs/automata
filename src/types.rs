@@ -123,7 +123,7 @@ mod tests {
     fn parse_jira_lifecycle_atlascli() {
         let a = load("automations/jira-lifecycle-atlascli.yaml");
         assert_eq!(a.name, "jira-lifecycle-atlascli");
-        assert_eq!(a.pipeline.len(), 2);
+        assert_eq!(a.pipeline.len(), 4);
         // Entry 0: dependabot actor trigger
         let e0 = &a.pipeline[0];
         assert_eq!(e0.given.trigger, "github");
@@ -134,6 +134,16 @@ mod tests {
         let e1 = &a.pipeline[1];
         assert!(matches!(&e1.when[0].core.label, Some(StringFilter::One(l)) if l == "create_jira"));
         assert_eq!(e1.then.len(), 4);
+        // Entry 2: auto_close_jira merged close trigger
+        let e2 = &a.pipeline[2];
+        assert!(matches!(&e2.when[0].core.label, Some(StringFilter::One(l)) if l == "auto_close_jira"));
+        assert_eq!(e2.when[0].core.merged, Some(true));
+        assert_eq!(e2.then.len(), 3);
+        // Entry 3: auto_close_jira closed-without-merge trigger
+        let e3 = &a.pipeline[3];
+        assert!(matches!(&e3.when[0].core.label, Some(StringFilter::One(l)) if l == "auto_close_jira"));
+        assert_eq!(e3.when[0].core.merged, Some(false));
+        assert_eq!(e3.then.len(), 3);
     }
 
     #[test]

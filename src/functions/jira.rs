@@ -42,8 +42,12 @@ pub async fn transition(
 ) -> anyhow::Result<Value> {
     let key_tpl = inputs["key"].as_str().context("key required")?;
     let key = interpolate(key_tpl, ctx)?;
-    let transition_id = inputs["transition_id"].as_str().context("transition_id required")?;
-    client.transition(&key, transition_id).await?;
+    let transition_id_tpl = inputs["transition_id"].as_str().context("transition_id required")?;
+    let transition_id = interpolate(transition_id_tpl, ctx)?;
+    let fields: Option<serde_json::Value> = inputs.get("fields")
+        .map(|v| serde_json::to_value(v))
+        .transpose()?;
+    client.transition(&key, &transition_id, fields.as_ref()).await?;
     Ok(json!({}))
 }
 

@@ -22,7 +22,10 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
+          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
           key: "{find.key}"
           transition_id: "1381"
+          fields:
+            resolution:
+              name: Fixed
