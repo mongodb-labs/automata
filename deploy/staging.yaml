@@ -4,6 +4,14 @@ image:
 
 replicaCount: 1
 
+services:
+  - name: http
+    ingress: true
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+    type: ClusterIP
+
 envSecrets:
   GITHUB_APP_ID: automata-secrets
   GITHUB_APP_PRIVATE_KEY: automata-secrets
