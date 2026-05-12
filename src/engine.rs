@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{Automation, PipelineEntry, WhenCore, WhenGroup};
+use crate::types::{Automation, PipelineEntry, WhenMatcher, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
@@ -41,7 +41,7 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
     true
 }
 
-fn matches_core(core: &WhenCore, event_type: &str, payload: &Value) -> bool {
+fn matches_core(core: &WhenMatcher, event_type: &str, payload: &Value) -> bool {
     if !core.event.matches(event_type) {
         return false;
     }

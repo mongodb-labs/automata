@@ -21,7 +21,7 @@ pub struct Given {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct WhenCore {
+pub struct WhenMatcher {
     #[serde(default)]
     pub event: StringFilter,
     #[serde(default)]
@@ -34,9 +34,9 @@ pub struct WhenCore {
 #[derive(Debug, Clone, Deserialize)]
 pub struct WhenGroup {
     #[serde(flatten)]
-    pub core: WhenCore,
+    pub core: WhenMatcher,
     #[serde(default)]
-    pub exclude: Vec<WhenCore>,
+    pub exclude: Vec<WhenMatcher>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
