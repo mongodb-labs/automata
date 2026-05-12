@@ -7,6 +7,10 @@ use serde_json::Value;
 use tracing::warn;
 
 pub fn load_automations(dir: &str) -> anyhow::Result<Vec<Automation>> {
+    anyhow::ensure!(
+        std::path::Path::new(dir).is_dir(),
+        "automations directory not found: {dir}"
+    );
     let pattern = format!("{dir}/*.yaml");
     let mut automations = Vec::new();
     for entry in glob(&pattern).context("invalid glob pattern")? {
@@ -202,9 +206,8 @@ mod tests {
     }
 
     #[test]
-    fn load_automations_empty_dir_returns_empty_vec() {
-        let autos = load_automations("automations_nonexistent/").unwrap();
-        assert_eq!(autos.len(), 0);
+    fn load_automations_nonexistent_dir_returns_error() {
+        assert!(load_automations("automations_nonexistent/").is_err());
     }
 
     #[test]
