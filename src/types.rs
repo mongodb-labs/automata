@@ -20,6 +20,11 @@ pub struct Given {
     pub repos: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct Exclude {
+    pub actor: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct WhenGroup {
     pub event: Option<String>,
@@ -28,6 +33,8 @@ pub struct WhenGroup {
     pub actor: Option<String>,
     pub merged: Option<bool>,
     pub labels: Option<Vec<String>>,
+    #[serde(default)]
+    pub exclude: Exclude,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

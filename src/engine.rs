@@ -46,17 +46,18 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
         return false;
     }
 
-    // actor must match if specified; supports not(...) for exclusion
+    // actor must match if specified
     let actor = payload
         .pointer("/sender/login")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if let Some(filter) = &group.actor {
-        if let Some(excluded) = filter.strip_prefix("not(").and_then(|s| s.strip_suffix(')')) {
-            if actor == excluded {
-                return false;
-            }
-        } else if actor != filter.as_str() {
+    if let Some(required) = &group.actor {
+        if actor != required.as_str() {
+            return false;
+        }
+    }
+    if let Some(excluded) = &group.exclude.actor {
+        if actor == excluded.as_str() {
             return false;
         }
     }
@@ -155,7 +156,7 @@ mod tests {
     #[test]
     fn actor_not_excludes_dependabot() {
         let e: PipelineEntry = serde_yaml::from_str(
-            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    actor: \"not(dependabot[bot])\"\nthen: []\n"
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: opened\n    exclude:\n      actor: dependabot[bot]\nthen: []\n"
         ).unwrap();
         let bot = json!({"action": "opened", "sender": {"login": "dependabot[bot]"}});
         let human = json!({"action": "opened", "sender": {"login": "alice"}});
