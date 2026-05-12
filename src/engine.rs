@@ -73,8 +73,8 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
         }
     }
 
-    // labels_include: all listed labels must be present
-    if let Some(required_labels) = &group.labels_include {
+    // labels: all listed labels must be present
+    if let Some(required_labels) = &group.labels {
         let labels: Vec<&str> = payload
             .pointer("/pull_request/labels")
             .and_then(|v| v.as_array())
@@ -165,9 +165,9 @@ mod tests {
     }
 
     #[test]
-    fn labels_include_filter() {
+    fn labels_filter() {
         let e: PipelineEntry = serde_yaml::from_str(
-            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    labels_include: [auto_close_jira]\nthen: []\n"
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    labels: [auto_close_jira]\nthen: []\n"
         ).unwrap();
         let with_label = json!({
             "action": "closed",

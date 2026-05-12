@@ -28,7 +28,7 @@ pub struct WhenGroup {
     pub actor: Option<String>,
     pub actor_not: Option<String>,
     pub merged: Option<bool>,
-    pub labels_include: Option<Vec<String>>,
+    pub labels: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -124,7 +124,7 @@ mod tests {
         let e = &a.pipeline[0];
         assert!(e.when[0].merged == Some(true));
         assert_eq!(
-            e.when[0].labels_include.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
+            e.when[0].labels.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
             Some(vec!["auto_close_jira"])
         );
     }
