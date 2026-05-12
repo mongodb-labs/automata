@@ -12,50 +12,256 @@ GitHub repo  →  Argo Events EventSource  →  NATS EventBus  →  Sensor (http
 2. The Sensor POSTs the payload to `POST /webhook/github` with an `X-Automata-Token` header.
 3. automata matches the event against every automation file in the configured directory and runs the matching ones sequentially.
 
-## Automation files
+---
 
-One YAML file = one automation. Example:
+## Automation file reference
+
+One YAML file = one automation. The top-level structure is:
 
 ```yaml
-name: jira-lifecycle-atlascli
-pipeline:
-  - given:
-      trigger: github
-      repos:
-        - mongodb/mongodb-atlas-cli
-    when:
-      - event: pull_request
-        action: opened
-        actor_not: dependabot[bot]
-    then:
-      - jira.create_issue:
-          id: ticket
-          issue_type: Story
-          project: CLOUDP
-          component: AtlasCLI
-          summary: "[{payload.repository.name}] {payload.pull_request.title}"
-      - github.post_comment:
-          body: "Jira ticket: {ticket.url}"
-      - github.add_label:
-          label: auto_close_jira
+name: <string>          # unique identifier, must match the filename
+pipeline:               # list of trigger blocks (see below)
+  - given: ...
+    when: ...
+    then: ...
 ```
 
-`pipeline:` is a list of trigger blocks. `when:` items within a block are OR'd; keys within an item are AND'd. `event`, `action`, and `label` each accept a string or a list of strings. `then:` steps run sequentially; each step can reference outputs from previous steps via `{step-id.field}`.
+### `given:`
+
+Declares what triggers this pipeline entry.
+
+```yaml
+given:
+  trigger: github       # only "github" is supported today
+  repos:                # list of "owner/repo" strings this entry applies to
+    - mongodb/mongodb-atlas-cli
+    - mongodb-labs/automata
+```
+
+### `when:`
+
+A list of condition groups. The entry fires if **any** group matches (OR). Within a group every key is AND'd.
+
+```yaml
+when:
+  - event: pull_request         # string or list of strings
+    action: opened              # string or list of strings
+    actor: alice                # sender login must equal this
+    merged: true                # pull_request.merged must equal this
+    label: auto_close_jira      # string or list — all listed labels must be present (AND)
+    exclude:                    # list of condition groups; entry is skipped if any matches (OR)
+      - actor: dependabot[bot]
+```
+
+All `when:` keys are optional. Omitting a key means "match anything" for that dimension.
+
+#### `event`
+
+The GitHub event type string sent in the `X-GitHub-Event` header.
+
+```yaml
+event: pull_request             # single event
+event: [pull_request, issues]   # fires on either
+```
+
+Common values: `pull_request`, `issues`, `push`, `issue_comment`, `pull_request_review`.
+
+#### `action`
+
+The `action` field inside the webhook payload.
+
+```yaml
+action: opened
+action: [opened, reopened]
+```
+
+Common values depend on the event: `opened`, `closed`, `reopened`, `labeled`, `synchronize`, `submitted`.
+
+#### `actor`
+
+The `sender.login` field in the payload. Exact string match.
+
+```yaml
+actor: dependabot[bot]
+```
+
+#### `merged`
+
+Matches `pull_request.merged` (boolean). Useful for distinguishing a merged close from an abandoned close.
+
+```yaml
+merged: true
+```
+
+#### `label`
+
+All listed labels must be present on the pull request (AND semantics).
+
+```yaml
+label: auto_close_jira
+label: [auto_close_jira, reviewed]
+```
+
+#### `exclude:`
+
+A list of condition groups with the same shape as a `when:` item (minus `exclude:` itself). The entry is skipped if **any** exclude group matches.
+
+```yaml
+exclude:
+  - actor: dependabot[bot]
+  - action: labeled             # also skip labeled events
+```
+
+### `then:`
+
+A list of steps executed sequentially. Each step is a mapping with the function name as the only key:
+
+```yaml
+then:
+  - jira.create_issue:
+      id: ticket                # optional: name this step's output for later reference
+      if: action_is_opened      # optional: skip this step unless condition is true
+      project: CLOUDP
+      summary: "[{payload.repository.name}] {payload.pull_request.title}"
+```
+
+#### `id:`
+
+Names the step output so later steps can reference it via `{id.field}`.
+
+#### `if:`
+
+Skips the step unless the condition evaluates to true. Supported values:
+
+| Condition | Meaning |
+|---|---|
+| `action_is_opened` | `payload.action == "opened"` |
+| `action_is_closed` | `payload.action == "closed"` |
+| `action_is_reopened` | `payload.action == "reopened"` |
+| `action_not_opened` | `payload.action != "opened"` |
+
+#### Interpolation
+
+Any string value in a step's inputs can embed `{path}` expressions:
+
+| Expression | Resolves to |
+|---|---|
+| `{payload.repository.name}` | field from the GitHub webhook payload |
+| `{payload.pull_request.number}` | nested payload field |
+| `{step-id.field}` | named output from a previous step |
+
+---
 
 ## Built-in functions
 
-| Function | Key inputs | Outputs |
-|---|---|---|
-| `jira.create_issue` | `project`, `issue_type`, `component`, `summary`, `custom_fields` | `key`, `url` |
-| `jira.transition` | `key`, `transition_id` | — |
-| `github.post_comment` | `owner`, `repo`, `number`, `body` | `comment_id` |
-| `github.add_label` | `owner`, `repo`, `number`, `label` | — |
-| `github.approve_pr` | `owner`, `repo`, `number` | `review_id` |
-| `github.enable_auto_merge` | `owner`, `repo`, `number`, `strategy` | — |
-| `github.list_pr_comments` | `owner`, `repo`, `number` | `comments` (array) |
-| `builtin.jq` | `input` (step id), `expr` (jq expression) | fields of the object if `expr` returns one, otherwise `result` |
+### `jira.create_issue`
 
-`owner`, `repo`, and `number` are typically interpolated from the event payload:
+Creates a Jira issue and exposes its key and URL as step outputs.
+
+| Input | Required | Description |
+|---|---|---|
+| `project` | ✅ | Jira project key, e.g. `CLOUDP` |
+| `issue_type` | ✅ | e.g. `Story`, `Bug`, `Task` |
+| `summary` | ✅ | Issue title; supports `{payload.*}` interpolation |
+| `component` | | Jira component name |
+| `custom_fields` | | Map of custom field IDs to values |
+
+Outputs: `key` (e.g. `CLOUDP-1234`), `url` (full Jira URL).
+
+### `jira.transition`
+
+Moves a Jira issue to a new status.
+
+| Input | Required | Description |
+|---|---|---|
+| `key` | ✅ | Jira issue key |
+| `transition_id` | ✅ | Numeric transition ID from the Jira workflow |
+
+### `github.post_comment`
+
+Posts a comment on a PR or issue.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | Repository owner |
+| `repo` | ✅ | Repository name |
+| `number` | ✅ | PR or issue number |
+| `body` | ✅ | Comment body; supports interpolation |
+
+Outputs: `comment_id`.
+
+### `github.add_label`
+
+Adds a label to a PR or issue.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | |
+| `repo` | ✅ | |
+| `number` | ✅ | |
+| `label` | ✅ | Label name (must already exist on the repo) |
+
+### `github.approve_pr`
+
+Submits an approving review on a PR.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | |
+| `repo` | ✅ | |
+| `number` | ✅ | |
+
+Outputs: `review_id`.
+
+### `github.enable_auto_merge`
+
+Enables auto-merge on a PR.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | |
+| `repo` | ✅ | |
+| `number` | ✅ | |
+| `strategy` | | Merge strategy: `merge`, `squash` (default), `rebase` |
+
+### `github.list_pr_comments`
+
+Fetches all comments on a PR or issue.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | |
+| `repo` | ✅ | |
+| `number` | ✅ | |
+
+Outputs: `comments` — an array of comment objects with `body`, `id`, `user.login`, etc.
+
+### `builtin.jq`
+
+Runs a [jq](https://jqlang.github.io/jq/) expression against a previous step's output.
+
+| Input | Required | Description |
+|---|---|---|
+| `input` | ✅ | Step id whose output is the jq input |
+| `expr` | ✅ | jq expression |
+
+If the expression returns a JSON object, its fields become the step's named outputs directly. Otherwise the result is available as `result`.
+
+```yaml
+# scalar output → {find.result}
+- builtin.jq:
+    id: find
+    input: comments
+    expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
+
+# object output → {find.key}, {find.url}
+- builtin.jq:
+    id: find
+    input: comments
+    expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
+```
+
+`owner`, `repo`, and `number` for GitHub functions are typically interpolated from the payload:
 
 ```yaml
 owner: "{payload.repository.owner.login}"
@@ -63,10 +269,12 @@ repo: "{payload.repository.name}"
 number: "{payload.pull_request.number}"
 ```
 
+---
+
 ## Adding an automation
 
-1. Create `automations/my-automation.yaml` with `given:`, `when:`, and `then:`.
-2. Add the repo to `deploy/eventsource.yaml` under the appropriate owner if it isn't listed there yet.
+1. Create `automations/my-automation.yaml`.
+2. Add the repo to `deploy/eventsource.yaml` under the appropriate owner if not already listed.
 3. Open a PR — Drone builds and deploys automatically on merge to `main`.
 
 If the automation needs a new built-in function, add it to `src/functions/` in Rust and register it in `src/functions/mod.rs`.
@@ -76,6 +284,8 @@ If the automation needs a new built-in function, add it to `src/functions/` in R
 1. Add the repo to `deploy/eventsource.yaml` under the appropriate owner.
 2. Add it to the `given.repos:` list in whichever `automations/*.yaml` files apply.
 3. Open a PR — the EventSource will register the GitHub webhook automatically on deploy.
+
+---
 
 ## Running locally
 
@@ -118,6 +328,8 @@ curl -X POST http://localhost:8080/webhook/github \
 | `GET /health` | Liveness check |
 
 `/doctor` is also available at `/` (redirects).
+
+---
 
 ## Deployment
 
