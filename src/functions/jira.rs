@@ -20,6 +20,12 @@ pub async fn create_issue(
         .map(|tpl| interpolate(tpl, ctx))
         .transpose()?;
 
+    let assignee_raw = inputs.get("assignee")
+        .and_then(|v| v.as_str())
+        .map(|tpl| interpolate(tpl, ctx))
+        .transpose()?;
+    let assignee = assignee_raw.as_deref().filter(|s| !s.is_empty() && *s != "null");
+
     let mut custom_fields = HashMap::new();
     if let Some(cf) = inputs.get("custom_fields").and_then(|v| v.as_mapping()) {
         for (k, v) in cf {
@@ -31,7 +37,7 @@ pub async fn create_issue(
         }
     }
 
-    let (key, url) = client.create_issue(project, issue_type, component, &summary, description.as_deref(), &custom_fields).await?;
+    let (key, url) = client.create_issue(project, issue_type, component, &summary, description.as_deref(), assignee, &custom_fields).await?;
     Ok(json!({"key": key, "url": url}))
 }
 

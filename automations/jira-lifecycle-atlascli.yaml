@@ -17,6 +17,7 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
+          assignee: "apix-automation@mongodb.com"
           custom_fields:
             customfield_12751: [{id: "22223"}]
             customfield_10257: {value: "Not Needed"}
@@ -45,11 +46,21 @@ pipeline:
         action: labeled
         label: create_jira
     then:
+      - github.get_commit:
+          id: head_commit
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          sha: "{payload.pull_request.head.sha}"
+      - builtin.jq:
+          id: author
+          input: head_commit
+          expr: '.commit.author.email | if test("@mongodb\\.com$") then {email: .} else {email: null} end'
       - jira.create_issue:
           id: ticket
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
+          assignee: "{author.email}"
           custom_fields:
             customfield_12751: [{id: "22223"}]
             customfield_10257: {value: "Not Needed"}

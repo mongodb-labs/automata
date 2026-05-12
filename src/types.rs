@@ -133,7 +133,7 @@ mod tests {
         // Entry 1: create_jira label trigger
         let e1 = &a.pipeline[1];
         assert!(matches!(&e1.when[0].core.label, Some(StringFilter::One(l)) if l == "create_jira"));
-        assert_eq!(e1.then.len(), 4);
+        assert_eq!(e1.then.len(), 6);
         // Entry 2: auto_close_jira merged close trigger
         let e2 = &a.pipeline[2];
         assert!(matches!(&e2.when[0].core.label, Some(StringFilter::One(l)) if l == "auto_close_jira"));

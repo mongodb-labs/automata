@@ -48,6 +48,7 @@ async fn dispatch(
         "github.approve_pr"        => github::approve_pr(&clients.github, inputs, ctx).await,
         "github.enable_auto_merge" => github::enable_auto_merge(&clients.github, inputs, ctx).await,
         "github.list_pr_comments"  => github::list_pr_comments(&clients.github, inputs, ctx).await,
+        "github.get_commit"        => github::get_commit(&clients.github, inputs, ctx).await,
         _ => anyhow::bail!("unknown function: {func}"),
     }
 }
