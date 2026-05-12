@@ -29,6 +29,7 @@ spec:
         - owner: mongodb-labs
           names:
             - cobra2snooty
+            - automata
         - owner: mongodb-forks
           names:
             - chocolatey-packages
