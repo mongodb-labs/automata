@@ -1,3 +1,4 @@
+pub mod builtin;
 pub mod github;
 pub mod jira;
 
@@ -45,13 +46,14 @@ async fn dispatch(
     clients: &Clients,
 ) -> anyhow::Result<Value> {
     match func {
-        "jira.create_issue" => jira::create_issue(&clients.jira, inputs, ctx).await,
-        "jira.transition"   => jira::transition(&clients.jira, inputs, ctx).await,
-        "jira.find_key"     => jira::find_key(&clients.jira, &clients.http, inputs, ctx).await,
+        "builtin.jq"               => builtin::jq(inputs, ctx).await,
+        "jira.create_issue"        => jira::create_issue(&clients.jira, inputs, ctx).await,
+        "jira.transition"          => jira::transition(&clients.jira, inputs, ctx).await,
         "github.post_comment"      => github::post_comment(&clients.github, inputs, ctx).await,
         "github.add_label"         => github::add_label(&clients.github, inputs, ctx).await,
         "github.approve_pr"        => github::approve_pr(&clients.github, inputs, ctx).await,
         "github.enable_auto_merge" => github::enable_auto_merge(&clients.github, inputs, ctx).await,
+        "github.list_pr_comments"  => github::list_pr_comments(&clients.github, inputs, ctx).await,
         _ => anyhow::bail!("unknown function: {func}"),
     }
 }

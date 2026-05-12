@@ -15,11 +15,15 @@ when:
     merged: true
     labels_include: [auto_close_jira]
 then:
-  - jira.find_key:
+  - github.list_pr_comments:
+      id: comments
+      owner: "{payload.repository.owner.login}"
+      repo: "{payload.repository.name}"
+      number: "{payload.pull_request.number}"
+  - builtin.jq:
       id: find
-      pattern: "CLOUDP-\\d+"
-      branch: "{payload.pull_request.head.ref}"
-      comments_url: "{payload.pull_request.comments_url}"
+      input: comments
+      expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
   - jira.transition:
-      key: "{find.key}"
+      key: "{find.result}"
       transition_id: "1381"

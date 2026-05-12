@@ -88,16 +88,14 @@ impl GitHubClient {
         resp["node_id"].as_str().map(|s| s.to_string()).context("missing node_id")
     }
 
-    /// Fetch all comments on an issue/PR and return the body text of each.
-    pub async fn list_comments(&self, owner: &str, repo: &str, issue_number: u64) -> anyhow::Result<Vec<String>> {
+    /// Fetch all comments on an issue/PR and return the full comment objects.
+    pub async fn list_comments(&self, owner: &str, repo: &str, issue_number: u64) -> anyhow::Result<Vec<Value>> {
         let resp: Vec<Value> = self.client
             .get(format!("{}/issues/{}/comments", Self::base(owner, repo), issue_number))
             .headers(self.headers())
             .send().await?
             .error_for_status()?
             .json().await?;
-        Ok(resp.iter()
-            .filter_map(|c| c["body"].as_str().map(|s| s.to_string()))
-            .collect())
+        Ok(resp)
     }
 }

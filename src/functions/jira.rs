@@ -41,27 +41,3 @@ pub async fn transition(
     Ok(json!({}))
 }
 
-pub async fn find_key(
-    client: &JiraClient,
-    _gh_client: &reqwest::Client,
-    inputs: &HashMap<String, serde_yaml::Value>,
-    ctx: &ExecutionContext,
-) -> anyhow::Result<Value> {
-    let pattern = inputs["pattern"].as_str().context("pattern required")?;
-
-    // Try branch first, then comments_url
-    if let Some(branch_tpl) = inputs.get("branch").and_then(|v| v.as_str()) {
-        let branch = interpolate(branch_tpl, ctx)?;
-        if let Ok(key) = crate::jira::JiraClient::find_key_in_branch(&branch, pattern) {
-            return Ok(json!({"key": key}));
-        }
-    }
-
-    if let Some(url_tpl) = inputs.get("comments_url").and_then(|v| v.as_str()) {
-        let url = interpolate(url_tpl, ctx)?;
-        let key = client.find_key_in_comments(&url, pattern).await?;
-        return Ok(json!({"key": key}));
-    }
-
-    anyhow::bail!("find_key requires branch or comments_url")
-}

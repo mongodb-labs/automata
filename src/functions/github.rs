@@ -43,6 +43,18 @@ pub async fn approve_pr(
     Ok(json!({"review_id": review_id}))
 }
 
+pub async fn list_pr_comments(
+    client: &GitHubClient,
+    inputs: &HashMap<String, serde_yaml::Value>,
+    ctx: &ExecutionContext,
+) -> anyhow::Result<Value> {
+    let owner  = interpolate(inputs["owner"].as_str().context("owner must be a string")?, ctx)?;
+    let repo   = interpolate(inputs["repo"].as_str().context("repo must be a string")?, ctx)?;
+    let number: u64 = interpolate(inputs["number"].as_str().context("number must be a string")?, ctx)?.parse()?;
+    let comments = client.list_comments(&owner, &repo, number).await?;
+    Ok(json!({ "comments": comments }))
+}
+
 pub async fn enable_auto_merge(
     client: &GitHubClient,
     inputs: &HashMap<String, serde_yaml::Value>,
