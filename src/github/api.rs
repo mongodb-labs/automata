@@ -88,6 +88,15 @@ impl GitHubClient {
         resp["node_id"].as_str().map(|s| s.to_string()).context("missing node_id")
     }
 
+    pub async fn remove_label(&self, owner: &str, repo: &str, issue_number: u64, label: &str) -> anyhow::Result<()> {
+        self.client
+            .delete(format!("{}/issues/{}/labels/{}", Self::base(owner, repo), issue_number, label))
+            .headers(self.headers())
+            .send().await?
+            .error_for_status()?;
+        Ok(())
+    }
+
     /// Fetch all comments on an issue/PR and return the full comment objects.
     pub async fn list_comments(&self, owner: &str, repo: &str, issue_number: u64) -> anyhow::Result<Vec<Value>> {
         let resp: Vec<Value> = self.client

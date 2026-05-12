@@ -19,8 +19,10 @@ pub async fn create_issue(
     let mut custom_fields = HashMap::new();
     if let Some(cf) = inputs.get("custom_fields").and_then(|v| v.as_mapping()) {
         for (k, v) in cf {
-            if let (Some(k), Some(v)) = (k.as_str(), v.as_str()) {
-                custom_fields.insert(k.to_string(), v.to_string());
+            if let Some(k) = k.as_str() {
+                let json_val: serde_json::Value = serde_json::to_value(v)
+                    .unwrap_or(serde_json::Value::Null);
+                custom_fields.insert(k.to_string(), json_val);
             }
         }
     }

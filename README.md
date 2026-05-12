@@ -197,6 +197,17 @@ Adds a label to a PR or issue.
 | `number` | ✅ | |
 | `label` | ✅ | Label name (must already exist on the repo) |
 
+### `github.remove_label`
+
+Removes a label from a PR or issue.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | |
+| `repo` | ✅ | |
+| `number` | ✅ | |
+| `label` | ✅ | Label name to remove |
+
 ### `github.approve_pr`
 
 Submits an approving review on a PR.
@@ -285,43 +296,16 @@ If the automation needs a new built-in function, add it to `src/functions/` in R
 
 ## Running locally
 
-```bash
-export GITHUB_APP_ID=<id>
-export GITHUB_APP_PRIVATE_KEY="$(cat /path/to/private-key.pem)"
-export GITHUB_WEBHOOK_SECRET=<secret>
-export SENSOR_TOKEN=<token>
-export JIRA_BASE_URL=https://jira.mongodb.org
-export JIRA_API_TOKEN=<token>
-
-cargo run -- automations/
-```
-
-The first argument is the path to the automations directory (defaults to `.`).
-
-Simulate an event (Sensor envelope format):
-
-```bash
-curl -X POST http://localhost:8080/webhook/github \
-  -H "Content-Type: application/json" \
-  -H "X-Automata-Token: $SENSOR_TOKEN" \
-  -d '{
-    "github_event": "pull_request",
-    "body": {
-      "action": "opened",
-      "repository": {"full_name": "mongodb-labs/automata", "name": "automata"},
-      "pull_request": {"number": 1, "title": "Test PR", "head": {"ref": "fix/test"}},
-      "sender": {"login": "alice"}
-    }
-  }'
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full local setup with Docker Compose and ngrok.
 
 ## Endpoints
 
-| Endpoint | Description |
-|---|---|
-| `POST /webhook/github` | Receives Sensor-wrapped GitHub events |
-| `GET /doctor` | HTML table: GitHub App installation and webhook status per repo |
-| `GET /health` | Liveness check |
+| Endpoint | Auth | Description |
+|---|---|---|
+| `POST /webhook/github/raw` | HMAC-SHA256 (`X-Hub-Signature-256`) | Direct GitHub webhook — use for local testing with ngrok |
+| `POST /webhook/github/argo` | `X-Automata-Token` | Argo Events Sensor trigger — used in staging/prod |
+| `GET /doctor` | none | GitHub App installation and webhook status per repo |
+| `GET /health` | none | Liveness check |
 
 `/doctor` is also available at `/` (redirects).
 

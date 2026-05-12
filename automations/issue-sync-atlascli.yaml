@@ -15,6 +15,9 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
+          custom_fields:
+            customfield_12751: [{id: "22223"}]
+            customfield_10257: {value: "Not Needed"}
           summary: "[{payload.repository.name}] {payload.issue.title}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
@@ -43,7 +46,7 @@ pipeline:
           expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
           key: "{find.key}"
-          transition_id: "1381"
+          transition_id: "1371"
 
   - given:
       trigger: github
@@ -66,4 +69,4 @@ pipeline:
           expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
           key: "{find.key}"
-          transition_id: "1351"
+          transition_id: "3"

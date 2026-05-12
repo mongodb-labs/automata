@@ -31,6 +31,19 @@ pub async fn add_label(
     Ok(json!({}))
 }
 
+pub async fn remove_label(
+    client: &GitHubClient,
+    inputs: &HashMap<String, serde_yaml::Value>,
+    ctx: &ExecutionContext,
+) -> anyhow::Result<Value> {
+    let owner = interpolate(inputs["owner"].as_str().context("owner must be a string")?, ctx)?;
+    let repo  = interpolate(inputs["repo"].as_str().context("repo must be a string")?, ctx)?;
+    let number: u64 = interpolate(inputs["number"].as_str().context("number must be a string")?, ctx)?.parse()?;
+    let label = interpolate(inputs["label"].as_str().context("label must be a string")?, ctx)?;
+    client.remove_label(&owner, &repo, number, &label).await?;
+    Ok(json!({}))
+}
+
 pub async fn approve_pr(
     client: &GitHubClient,
     inputs: &HashMap<String, serde_yaml::Value>,
