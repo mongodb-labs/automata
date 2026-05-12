@@ -2,8 +2,6 @@
 kind: pipeline
 type: kubernetes
 name: default
-platform:
-  arch: amd64
 trigger:
   event:
     - push
