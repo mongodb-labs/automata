@@ -97,6 +97,16 @@ impl GitHubClient {
         Ok(())
     }
 
+    pub async fn get_commit(&self, owner: &str, repo: &str, sha: &str) -> anyhow::Result<Value> {
+        let resp: Value = self.client
+            .get(format!("{}/commits/{}", Self::base(owner, repo), sha))
+            .headers(self.headers())
+            .send().await?
+            .error_for_status()?
+            .json().await?;
+        Ok(resp)
+    }
+
     /// Fetch all comments on an issue/PR and return the full comment objects.
     pub async fn list_comments(&self, owner: &str, repo: &str, issue_number: u64) -> anyhow::Result<Vec<Value>> {
         let resp: Vec<Value> = self.client

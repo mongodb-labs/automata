@@ -68,6 +68,17 @@ pub async fn list_pr_comments(
     Ok(json!({ "comments": comments }))
 }
 
+pub async fn get_commit(
+    client: &GitHubClient,
+    inputs: &HashMap<String, serde_yaml::Value>,
+    ctx: &ExecutionContext,
+) -> anyhow::Result<Value> {
+    let owner = interpolate(inputs["owner"].as_str().context("owner must be a string")?, ctx)?;
+    let repo  = interpolate(inputs["repo"].as_str().context("repo must be a string")?, ctx)?;
+    let sha   = interpolate(inputs["sha"].as_str().context("sha must be a string")?, ctx)?;
+    client.get_commit(&owner, &repo, &sha).await
+}
+
 pub async fn enable_auto_merge(
     client: &GitHubClient,
     inputs: &HashMap<String, serde_yaml::Value>,
