@@ -108,7 +108,6 @@ pub async fn handle(
         github: GitHubClient::new(token),
         jira: JiraClient::new(
             &state.config.jira_base_url,
-            &state.config.jira_user,
             &state.config.jira_api_token,
         ),
         http: state.http.clone(),
@@ -146,7 +145,6 @@ mod tests {
                 github_webhook_secret: "secret".into(),
                 sensor_token: "test-sensor-token".into(),
                 jira_base_url: "https://jira.example.com".into(),
-                jira_user: "user@example.com".into(),
                 jira_api_token: "token".into(),
             },
             automations: Arc::new(vec![]),

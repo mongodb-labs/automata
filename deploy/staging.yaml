@@ -10,9 +10,7 @@ envSecrets:
   GITHUB_WEBHOOK_SECRET: automata-secrets
   SENSOR_TOKEN: automata-secrets
   JIRA_BASE_URL: automata-secrets
-  JIRA_USER: automata-secrets
   JIRA_API_TOKEN: automata-secrets
-  SLACK_BEARER_TOKEN: automata-secrets
 
 resources:
   requests:

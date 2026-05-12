@@ -5,26 +5,22 @@ use std::collections::HashMap;
 pub struct JiraClient {
     client: reqwest::Client,
     base_url: String,
-    user: String,
     api_token: String,
 }
 
 impl JiraClient {
-    pub fn new(base_url: &str, user: &str, api_token: &str) -> Self {
+    pub fn new(base_url: &str, api_token: &str) -> Self {
         Self {
             client: reqwest::Client::new(),
             base_url: base_url.trim_end_matches('/').to_string(),
-            user: user.to_string(),
             api_token: api_token.to_string(),
         }
     }
 
     fn auth(&self) -> reqwest::header::HeaderMap {
         use reqwest::header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE};
-        use base64::{engine::general_purpose::STANDARD, Engine};
-        let creds = STANDARD.encode(format!("{}:{}", self.user, self.api_token));
         let mut h = HeaderMap::new();
-        h.insert(AUTHORIZATION, format!("Basic {creds}").parse().unwrap());
+        h.insert(AUTHORIZATION, format!("Bearer {}", self.api_token).parse().unwrap());
         h.insert(CONTENT_TYPE, "application/json".parse().unwrap());
         h.insert("User-Agent", "automata/1.0".parse().unwrap());
         h

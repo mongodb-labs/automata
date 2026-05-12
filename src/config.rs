@@ -12,7 +12,6 @@ pub struct Config {
     pub github_webhook_secret: String,
     pub sensor_token: String,
     pub jira_base_url: String,
-    pub jira_user: String,
     pub jira_api_token: String,
 }
 
@@ -30,7 +29,6 @@ impl Config {
             github_webhook_secret: required("GITHUB_WEBHOOK_SECRET")?,
             sensor_token: required("SENSOR_TOKEN")?,
             jira_base_url: required("JIRA_BASE_URL")?,
-            jira_user: required("JIRA_USER")?,
             jira_api_token: required("JIRA_API_TOKEN")?,
         })
     }
@@ -50,7 +48,6 @@ mod tests {
         std::env::set_var("GITHUB_WEBHOOK_SECRET", "webhook-secret-value");
         std::env::set_var("SENSOR_TOKEN", "sensor-token-value");
         std::env::set_var("JIRA_BASE_URL", "https://jira.mongodb.org");
-        std::env::set_var("JIRA_USER", "test@mongodb.com");
         std::env::set_var("JIRA_API_TOKEN", "token");
     }
 
