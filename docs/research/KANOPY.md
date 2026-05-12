@@ -365,16 +365,9 @@ All new namespaces (including `skunkworks`) are **mesh-only** — Istio service 
 kubectl get namespace <ns> -o jsonpath='{.metadata.labels.kanopy-platform\.github\.io/traefik-enabled}'
 ```
 
-To expose a service externally in a mesh-only namespace, use `mesh: enabled: true` in the web-app values — do **not** set `ingress: true` on the service:
+To expose a service externally in a mesh-only namespace, set `ingress.enabled: true` with `hosts` and `mesh: enabled: true`. **Do not define a custom `services` block** — the chart's default service naming (`<release>-web-app`) is what the generated VirtualService routes to. A custom `services` entry appends the port number to the name (e.g. `<release>-web-app-80`), which the VirtualService won't find, causing 503s.
 
 ```yaml
-services:
-  - name: http
-    port: 8080
-    targetPort: 8080
-    protocol: TCP
-    type: ClusterIP
-
 ingress:
   enabled: true
   hosts:
@@ -399,7 +392,7 @@ automata runs as a long-lived HTTP server deployed via `mongodb/web-app`. Argo E
 ```
 automata/
 ├── .drone.yml                   # build image → deploy web-app + eventbus + k8s manifests
-├── Dockerfile                   # multi-stage: cargo build → distroless/static
+├── Dockerfile                   # multi-stage: cargo build → distroless/cc-debian12 (glibc required)
 ├── Cargo.toml
 ├── src/                         # Rust source
 ├── automations/                 # declarative automation YAML files
@@ -417,3 +410,9 @@ Helm releases in `skunkworks` namespace:
 - `automata-eventbus` — the NATS event bus (`mongodb/argo-eventbus`)
 
 EventSource and Sensor are applied via `kubectl apply` (no Helm chart available yet per Kanopy roadmap).
+
+**Gotchas discovered in practice:**
+- Use `distroless/cc-debian12` not `distroless/static` — Rust binaries are dynamically linked to glibc by default.
+- Pass the automations directory as a CLI argument: `ENTRYPOINT ["/automata", "/automations"]`. The binary defaults to CWD (`.`) which is unpredictable in a container.
+- Do not set a custom `services` block in web-app values — it renames the service and breaks the VirtualService routing (503). Let the chart use its defaults.
+- `platform: arch: amd64` in `.drone.yml` — skunkworks nodes are amd64; arm64 produces `exec format error`.
