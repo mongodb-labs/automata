@@ -20,7 +20,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
     struct Row {
         repo: String,
         github_access: bool,
-        webhook: bool,
+        webhook: Option<bool>,
         permissions: Vec<(String, String)>,
     }
 
@@ -39,11 +39,20 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
             Err(_) => Row {
                 repo: repo.clone(),
                 github_access: false,
-                webhook: false,
+                webhook: None,
                 permissions: vec![],
             },
             Ok(i) => {
-                let webhook = check_webhook(&state.http, &i.token, owner, name).await;
+                let can_check_hooks = i
+                    .permissions
+                    .get("administration")
+                    .and_then(|v| v.as_str())
+                    .is_some();
+                let webhook = if can_check_hooks {
+                    check_webhook(&state.http, &i.token, owner, name).await
+                } else {
+                    None
+                };
                 let permissions = i
                     .permissions
                     .iter()
@@ -76,7 +85,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                  <td class='center'>{}</td>\
                  <td class='perms'>{perms}</td></tr>",
                 icon(r.github_access),
-                icon(r.webhook),
+                webhook_icon(r.webhook),
                 repo = r.repo,
             )
         })
@@ -139,7 +148,7 @@ fn error_page(msg: &str) -> String {
     )
 }
 
-async fn check_webhook(client: &reqwest::Client, token: &str, owner: &str, repo: &str) -> bool {
+async fn check_webhook(client: &reqwest::Client, token: &str, owner: &str, repo: &str) -> Option<bool> {
     let resp = client
         .get(format!("https://api.github.com/repos/{owner}/{repo}/hooks"))
         .bearer_auth(token)
@@ -152,9 +161,16 @@ async fn check_webhook(client: &reqwest::Client, token: &str, owner: &str, repo:
             .json::<Vec<Value>>()
             .await
             .ok()
-            .map(|hooks| hooks.iter().any(|h| h["active"].as_bool().unwrap_or(false)))
-            .unwrap_or(false),
-        _ => false,
+            .map(|hooks| hooks.iter().any(|h| h["active"].as_bool().unwrap_or(false))),
+        _ => None,
+    }
+}
+
+fn webhook_icon(status: Option<bool>) -> &'static str {
+    match status {
+        Some(true) => "<span title='Active webhook found'>✅</span>",
+        Some(false) => "<span title='No active webhook'>❌</span>",
+        None => "<span title='Cannot check: administration permission not granted'>❓</span>",
     }
 }
 
