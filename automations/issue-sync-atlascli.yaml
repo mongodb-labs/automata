@@ -19,6 +19,9 @@ then:
       summary: "[{payload.repository.name}] {payload.issue.title}"
   - github.post_comment:
       if: action_is_opened
+      owner: "{payload.repository.owner.login}"
+      repo: "{payload.repository.name}"
+      number: "{payload.issue.number}"
       body: "Jira ticket: {ticket.url}"
   - jira.find_key:
       id: find

@@ -4,22 +4,15 @@ use serde_json::{json, Value};
 pub struct GitHubClient {
     client: reqwest::Client,
     token: String,
-    owner: String,
-    repo: String,
 }
 
 impl GitHubClient {
-    pub fn new(token: String, owner: &str, repo: &str) -> Self {
-        Self {
-            client: reqwest::Client::new(),
-            token,
-            owner: owner.to_string(),
-            repo: repo.to_string(),
-        }
+    pub fn new(token: String) -> Self {
+        Self { client: reqwest::Client::new(), token }
     }
 
-    fn base(&self) -> String {
-        format!("https://api.github.com/repos/{}/{}", self.owner, self.repo)
+    fn base(owner: &str, repo: &str) -> String {
+        format!("https://api.github.com/repos/{owner}/{repo}")
     }
 
     fn headers(&self) -> reqwest::header::HeaderMap {
@@ -31,9 +24,9 @@ impl GitHubClient {
         h
     }
 
-    pub async fn post_comment(&self, issue_number: u64, body: &str) -> anyhow::Result<u64> {
+    pub async fn post_comment(&self, owner: &str, repo: &str, issue_number: u64, body: &str) -> anyhow::Result<u64> {
         let resp: Value = self.client
-            .post(format!("{}/issues/{}/comments", self.base(), issue_number))
+            .post(format!("{}/issues/{}/comments", Self::base(owner, repo), issue_number))
             .headers(self.headers())
             .json(&json!({"body": body}))
             .send().await?
@@ -42,9 +35,9 @@ impl GitHubClient {
         resp["id"].as_u64().context("missing comment id")
     }
 
-    pub async fn add_label(&self, issue_number: u64, label: &str) -> anyhow::Result<()> {
+    pub async fn add_label(&self, owner: &str, repo: &str, issue_number: u64, label: &str) -> anyhow::Result<()> {
         self.client
-            .post(format!("{}/issues/{}/labels", self.base(), issue_number))
+            .post(format!("{}/issues/{}/labels", Self::base(owner, repo), issue_number))
             .headers(self.headers())
             .json(&json!({"labels": [label]}))
             .send().await?
@@ -52,9 +45,9 @@ impl GitHubClient {
         Ok(())
     }
 
-    pub async fn approve_pr(&self, pr_number: u64) -> anyhow::Result<u64> {
+    pub async fn approve_pr(&self, owner: &str, repo: &str, pr_number: u64) -> anyhow::Result<u64> {
         let resp: Value = self.client
-            .post(format!("{}/pulls/{}/reviews", self.base(), pr_number))
+            .post(format!("{}/pulls/{}/reviews", Self::base(owner, repo), pr_number))
             .headers(self.headers())
             .json(&json!({"event": "APPROVE"}))
             .send().await?
@@ -63,7 +56,7 @@ impl GitHubClient {
         resp["id"].as_u64().context("missing review id")
     }
 
-    pub async fn enable_auto_merge(&self, pr_number: u64, strategy: &str) -> anyhow::Result<()> {
+    pub async fn enable_auto_merge(&self, owner: &str, repo: &str, pr_number: u64, strategy: &str) -> anyhow::Result<()> {
         let merge_method = match strategy {
             "squash" => "SQUASH",
             "merge" => "MERGE",
@@ -73,7 +66,7 @@ impl GitHubClient {
         // Uses GraphQL since REST doesn't support auto-merge
         let query = format!(
             r#"mutation {{ enablePullRequestAutoMerge(input: {{ pullRequestId: "{}", mergeMethod: {} }}) {{ clientMutationId }} }}"#,
-            self.pr_node_id(pr_number).await?,
+            self.pr_node_id(owner, repo, pr_number).await?,
             merge_method
         );
         self.client
@@ -85,9 +78,9 @@ impl GitHubClient {
         Ok(())
     }
 
-    async fn pr_node_id(&self, pr_number: u64) -> anyhow::Result<String> {
+    async fn pr_node_id(&self, owner: &str, repo: &str, pr_number: u64) -> anyhow::Result<String> {
         let resp: Value = self.client
-            .get(format!("{}/pulls/{}", self.base(), pr_number))
+            .get(format!("{}/pulls/{}", Self::base(owner, repo), pr_number))
             .headers(self.headers())
             .send().await?
             .error_for_status()?
@@ -96,9 +89,9 @@ impl GitHubClient {
     }
 
     /// Fetch all comments on an issue/PR and return the body text of each.
-    pub async fn list_comments(&self, issue_number: u64) -> anyhow::Result<Vec<String>> {
+    pub async fn list_comments(&self, owner: &str, repo: &str, issue_number: u64) -> anyhow::Result<Vec<String>> {
         let resp: Vec<Value> = self.client
-            .get(format!("{}/issues/{}/comments", self.base(), issue_number))
+            .get(format!("{}/issues/{}/comments", Self::base(owner, repo), issue_number))
             .headers(self.headers())
             .send().await?
             .error_for_status()?

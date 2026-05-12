@@ -105,7 +105,7 @@ pub async fn handle(
     };
 
     let clients = Clients {
-        github: GitHubClient::new(token, owner, repo_name),
+        github: GitHubClient::new(token),
         jira: JiraClient::new(
             &state.config.jira_base_url,
             &state.config.jira_user,

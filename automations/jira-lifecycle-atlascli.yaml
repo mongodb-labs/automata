@@ -21,6 +21,12 @@ then:
         customfield_12751: "<JIRA_TEAM_APIX_2>"
       summary: "[{payload.repository.name}] {payload.pull_request.title}"
   - github.post_comment:
+      owner: "{payload.repository.owner.login}"
+      repo: "{payload.repository.name}"
+      number: "{payload.pull_request.number}"
       body: "Jira ticket: {ticket.url}"
   - github.add_label:
+      owner: "{payload.repository.owner.login}"
+      repo: "{payload.repository.name}"
+      number: "{payload.pull_request.number}"
       label: auto_close_jira

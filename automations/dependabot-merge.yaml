@@ -15,6 +15,12 @@ when:
     action: opened
     actor: dependabot[bot]
 then:
-  - github.approve_pr: {}
+  - github.approve_pr:
+      owner: "{payload.repository.owner.login}"
+      repo: "{payload.repository.name}"
+      number: "{payload.pull_request.number}"
   - github.enable_auto_merge:
+      owner: "{payload.repository.owner.login}"
+      repo: "{payload.repository.name}"
+      number: "{payload.pull_request.number}"
       strategy: squash
