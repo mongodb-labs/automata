@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use tracing::info;
 
 use crate::app_state::AppState;
-use crate::github::{app_jwt, installation_token};
+use crate::github::{app_jwt, installation_info};
 
 pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
     let jwt = match app_jwt(state.config.github_app_id, &state.config.github_app_private_key) {
@@ -23,21 +23,27 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
         }
         let (owner, name) = (parts[0], parts[1]);
 
-        let token = installation_token(&state.http, &jwt, owner, name).await;
+        let info = installation_info(&state.http, &jwt, owner, name).await;
 
-        let (github_access, webhook) = match token {
-            Err(_) => (false, false),
-            Ok(t) => {
-                let has_hook = check_webhook(&state.http, &t, owner, name).await;
-                (true, has_hook)
+        let status = match info {
+            Err(_) => json!({
+                "repo": repo,
+                "github_access": false,
+                "webhook": false,
+                "permissions": {},
+            }),
+            Ok(i) => {
+                let webhook = check_webhook(&state.http, &i.token, owner, name).await;
+                json!({
+                    "repo": repo,
+                    "github_access": true,
+                    "webhook": webhook,
+                    "permissions": i.permissions,
+                })
             }
         };
 
-        statuses.push(json!({
-            "repo": repo,
-            "github_access": github_access,
-            "webhook": webhook,
-        }));
+        statuses.push(status);
     }
 
     Json(json!({ "repos": statuses }))

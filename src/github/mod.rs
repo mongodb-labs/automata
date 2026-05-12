@@ -28,9 +28,16 @@ pub fn app_jwt(app_id: u64, private_key_pem: &str) -> anyhow::Result<String> {
         .context("failed to encode JWT")
 }
 
+pub struct InstallationInfo {
+    pub token: String,
+    pub permissions: serde_json::Map<String, serde_json::Value>,
+}
+
 #[derive(Debug, Deserialize)]
 struct Installation {
     id: u64,
+    #[serde(default)]
+    permissions: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -70,6 +77,41 @@ pub async fn installation_token(
         .await?;
 
     Ok(token.token)
+}
+
+/// Like `installation_token` but also returns the app's permissions on the repo.
+pub async fn installation_info(
+    client: &reqwest::Client,
+    jwt: &str,
+    owner: &str,
+    repo: &str,
+) -> anyhow::Result<InstallationInfo> {
+    let install: Installation = client
+        .get(format!("https://api.github.com/repos/{owner}/{repo}/installation"))
+        .bearer_auth(jwt)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    let token_resp: InstallationToken = client
+        .post(format!("https://api.github.com/app/installations/{}/access_tokens", install.id))
+        .bearer_auth(jwt)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    Ok(InstallationInfo {
+        token: token_resp.token,
+        permissions: install.permissions,
+    })
 }
 
 #[cfg(test)]
