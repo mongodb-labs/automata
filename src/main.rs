@@ -9,7 +9,11 @@ mod handlers;
 mod jira;
 mod types;
 
-use axum::{response::Redirect, routing::{get, post}, Router};
+use axum::{
+    response::Redirect,
+    routing::{get, post},
+    Router,
+};
 use std::sync::Arc;
 use tracing::info;
 
@@ -17,7 +21,10 @@ use app_state::AppState;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt().json().init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
 
     let config = config::Config::from_env()?;
     info!("starting automata");

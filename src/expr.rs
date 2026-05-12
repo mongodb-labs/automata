@@ -41,8 +41,7 @@ pub fn resolve(path: &str, ctx: &ExecutionContext) -> anyhow::Result<String> {
                 rest.starts_with("AUTOMATA_"),
                 "env var must be prefixed with AUTOMATA_: {rest}"
             );
-            return std::env::var(rest)
-                .map_err(|_| anyhow::anyhow!("env var not set: {rest}"));
+            return std::env::var(rest).map_err(|_| anyhow::anyhow!("env var not set: {rest}"));
         }
         step_id => {
             let outputs = ctx
@@ -102,16 +101,26 @@ mod tests {
 
     #[test]
     fn interpolate_in_string() {
-        let result = interpolate("[{payload.repository.name}] {payload.pull_request.title}", &ctx()).unwrap();
+        let result = interpolate(
+            "[{payload.repository.name}] {payload.pull_request.title}",
+            &ctx(),
+        )
+        .unwrap();
         assert_eq!(result, "[mongodb-atlas-cli] Fix bug");
     }
 
     #[test]
     fn interpolate_step_output() {
         let mut c = ctx();
-        c.outputs.insert("ticket".to_string(), json!({"url": "https://jira.mongodb.org/browse/CLOUDP-123", "key": "CLOUDP-123"}));
+        c.outputs.insert(
+            "ticket".to_string(),
+            json!({"url": "https://jira.mongodb.org/browse/CLOUDP-123", "key": "CLOUDP-123"}),
+        );
         let result = interpolate("Jira ticket: {ticket.url}", &c).unwrap();
-        assert_eq!(result, "Jira ticket: https://jira.mongodb.org/browse/CLOUDP-123");
+        assert_eq!(
+            result,
+            "Jira ticket: https://jira.mongodb.org/browse/CLOUDP-123"
+        );
     }
 
     #[test]
@@ -158,6 +167,9 @@ mod tests {
     #[test]
     fn resolve_nested_path() {
         let c = ctx();
-        assert_eq!(resolve("payload.pull_request.head.ref", &c).unwrap(), "fix/my-branch");
+        assert_eq!(
+            resolve("payload.pull_request.head.ref", &c).unwrap(),
+            "fix/my-branch"
+        );
     }
 }

@@ -12,6 +12,15 @@ trigger:
     - main
 
 steps:
+  - name: lint
+    image: rust:1.94-slim
+    commands:
+      - rustup component add clippy rustfmt
+      - cargo fmt --check
+      - cargo clippy -- -D warnings
+    when:
+      event: [push, pull_request]
+
   - name: test
     image: rust:1.94-slim
     commands:

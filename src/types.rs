@@ -16,6 +16,7 @@ pub struct PipelineEntry {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Given {
+    #[allow(dead_code)]
     pub trigger: String,
     pub repos: Vec<String>,
 }
@@ -99,7 +100,9 @@ impl Step {
                 let key = k.as_str().unwrap_or_default();
                 match key {
                     "id" => id = v.as_str().map(|s| s.to_string()),
-                    _ => { inputs.insert(key.to_string(), v.clone()); }
+                    _ => {
+                        inputs.insert(key.to_string(), v.clone());
+                    }
                 }
             }
         }
@@ -113,17 +116,15 @@ mod tests {
     use super::*;
 
     fn load(path: &str) -> Automation {
-        let src = std::fs::read_to_string(path)
-            .unwrap_or_else(|_| panic!("cannot read {path}"));
-        serde_yaml::from_str(&src)
-            .unwrap_or_else(|e| panic!("parse error in {path}: {e}"))
+        let src = std::fs::read_to_string(path).unwrap_or_else(|_| panic!("cannot read {path}"));
+        serde_yaml::from_str(&src).unwrap_or_else(|e| panic!("parse error in {path}: {e}"))
     }
 
     #[test]
     fn parse_jira_lifecycle_atlascli() {
         let a = load("automations/jira-lifecycle-atlascli.yaml");
         assert_eq!(a.name, "jira-lifecycle-atlascli");
-        assert_eq!(a.pipeline.len(), 2);
+        assert_eq!(a.pipeline.len(), 4);
         // Entry 0: dependabot actor trigger
         let e0 = &a.pipeline[0];
         assert_eq!(e0.given.trigger, "github");
@@ -133,7 +134,21 @@ mod tests {
         // Entry 1: create_jira label trigger
         let e1 = &a.pipeline[1];
         assert!(matches!(&e1.when[0].core.label, Some(StringFilter::One(l)) if l == "create_jira"));
-        assert_eq!(e1.then.len(), 4);
+        assert_eq!(e1.then.len(), 6);
+        // Entry 2: auto_close_jira merged close trigger
+        let e2 = &a.pipeline[2];
+        assert!(
+            matches!(&e2.when[0].core.label, Some(StringFilter::One(l)) if l == "auto_close_jira")
+        );
+        assert_eq!(e2.when[0].core.merged, Some(true));
+        assert_eq!(e2.then.len(), 3);
+        // Entry 3: auto_close_jira closed-without-merge trigger
+        let e3 = &a.pipeline[3];
+        assert!(
+            matches!(&e3.when[0].core.label, Some(StringFilter::One(l)) if l == "auto_close_jira")
+        );
+        assert_eq!(e3.when[0].core.merged, Some(false));
+        assert_eq!(e3.then.len(), 3);
     }
 
     #[test]
@@ -149,15 +164,27 @@ mod tests {
     fn parse_issue_sync() {
         let a = load("automations/issue-sync-atlascli.yaml");
         assert_eq!(a.pipeline.len(), 3);
-        assert!(matches!(a.pipeline[0].when[0].core.action, StringFilter::One(_)));
-        assert!(matches!(a.pipeline[1].when[0].core.action, StringFilter::One(_)));
-        assert!(matches!(a.pipeline[2].when[0].core.action, StringFilter::One(_)));
+        assert!(matches!(
+            a.pipeline[0].when[0].core.action,
+            StringFilter::One(_)
+        ));
+        assert!(matches!(
+            a.pipeline[1].when[0].core.action,
+            StringFilter::One(_)
+        ));
+        assert!(matches!(
+            a.pipeline[2].when[0].core.action,
+            StringFilter::One(_)
+        ));
     }
 
     #[test]
     fn parse_dependabot_merge() {
         let a = load("automations/dependabot-merge.yaml");
-        assert_eq!(a.pipeline[0].when[0].core.actor.as_deref(), Some("dependabot[bot]"));
+        assert_eq!(
+            a.pipeline[0].when[0].core.actor.as_deref(),
+            Some("dependabot[bot]")
+        );
     }
 
     #[test]

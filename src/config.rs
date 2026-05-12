@@ -64,7 +64,10 @@ mod tests {
         set_all_vars();
         std::env::remove_var("GITHUB_APP_ID");
         let err = Config::from_env().unwrap_err();
-        assert!(err.to_string().contains("GITHUB_APP_ID"), "error should name the missing var: {err}");
+        assert!(
+            err.to_string().contains("GITHUB_APP_ID"),
+            "error should name the missing var: {err}"
+        );
     }
 
     #[test]

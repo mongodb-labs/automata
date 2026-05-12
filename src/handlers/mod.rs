@@ -66,7 +66,6 @@ pub async fn dispatch(
     let clients = Clients {
         github: GitHubClient::new(token),
         jira: JiraClient::new(&state.config.jira_base_url, &state.config.jira_api_token),
-        http: state.http.clone(),
     };
 
     for (name, entry) in matched {

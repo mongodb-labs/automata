@@ -3,11 +3,31 @@ use anyhow::Context as _;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
+pub async fn lookup(
+    inputs: &HashMap<String, serde_yaml::Value>,
+    ctx: &ExecutionContext,
+) -> anyhow::Result<Value> {
+    use crate::expr::interpolate;
+    let key_tpl = inputs["key"].as_str().context("key required")?;
+    let key = interpolate(key_tpl, ctx)?;
+    let table = inputs["table"].as_mapping().context("table required")?;
+    let result = table
+        .iter()
+        .find(|(k, _)| k.as_str().is_some_and(|s| s == key))
+        .map(|(_, v)| v);
+    match result {
+        Some(v) => Ok(json!({ "value": serde_json::to_value(v)? })),
+        None => anyhow::bail!("lookup: key {key:?} not found in table"),
+    }
+}
+
 pub async fn jq(
     inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
-    let input_id = inputs["input"].as_str().context("input must be a string (step id)")?;
+    let input_id = inputs["input"]
+        .as_str()
+        .context("input must be a string (step id)")?;
     let expr = inputs["expr"].as_str().context("expr must be a string")?;
     let input_val = ctx.outputs.get(input_id).cloned().unwrap_or(Value::Null);
     let result = run_jq(expr, input_val)?;
