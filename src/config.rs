@@ -25,7 +25,7 @@ impl Config {
             github_app_id: required("GITHUB_APP_ID")?
                 .parse()
                 .context("GITHUB_APP_ID must be a valid u64")?,
-            github_app_private_key: required("GITHUB_APP_PRIVATE_KEY")?,
+            github_app_private_key: required("GITHUB_APP_PRIVATE_KEY")?.replace("\\n", "\n"),
             github_webhook_secret: required("GITHUB_WEBHOOK_SECRET")?,
             sensor_token: required("SENSOR_TOKEN")?,
             jira_base_url: required("JIRA_BASE_URL")?,

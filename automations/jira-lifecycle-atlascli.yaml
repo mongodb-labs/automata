@@ -10,8 +10,7 @@ pipeline:
     when:
       - event: pull_request
         action: opened
-        exclude:
-          - actor: dependabot[bot]
+        actor: "dependabot[bot]"
     then:
       - jira.create_issue:
           id: ticket
@@ -19,15 +18,79 @@ pipeline:
           project: CLOUDP
           component: AtlasCLI
           custom_fields:
-            customfield_12751: "APIx DevTools"
+            customfield_12751: [{id: "22223"}]
+            customfield_10257: {value: "Not Needed"}
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
+          description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.pull_request.number}"
-          body: "Jira ticket: {ticket.url}"
+          body: "The ticket [{ticket.key}]({ticket.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
       - github.add_label:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.pull_request.number}"
           label: auto_close_jira
+
+  # Manual trigger for testing: add the `create_jira` label to any PR in this repo
+  # to fire ticket creation. The label is removed after the ticket is posted.
+  - given:
+      trigger: github
+      repos:
+        - mongodb-labs/automata
+    when:
+      - event: pull_request
+        action: labeled
+        label: create_jira
+    then:
+      - jira.create_issue:
+          id: ticket
+          issue_type: Story
+          project: CLOUDP
+          component: AtlasCLI
+          custom_fields:
+            customfield_12751: [{id: "22223"}]
+            customfield_10257: {value: "Not Needed"}
+          summary: "[{payload.repository.name}] {payload.pull_request.title}"
+          description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
+      - github.post_comment:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+          body: "The ticket [{ticket.key}]({ticket.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
+      - github.add_label:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+          label: auto_close_jira
+      - github.remove_label:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+          label: create_jira
+
+  - given:
+      trigger: github
+      repos:
+        - mongodb-labs/automata
+        # - mongodb/mongodb-atlas-cli
+        # - mongodb/atlas-github-action
+        # - mongodb-labs/cobra2snooty
+    when:
+      - event: pull_request
+        action: closed
+        label: auto_close_jira
+    then:
+      - github.list_pr_comments:
+          id: comments
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+      - builtin.jq:
+          id: find
+          input: comments
+          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}'
+      - jira.transition:
+          key: "{find.key}"
+          transition_id: "1371"

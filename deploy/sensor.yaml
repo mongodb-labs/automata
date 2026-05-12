@@ -13,7 +13,7 @@ spec:
     - template:
         name: call-automata
         http:
-          url: http://automata.skunkworks.svc.cluster.local/webhook/github
+          url: http://automata.skunkworks.svc.cluster.local/webhook/github/argo
           method: POST
           headers:
             Content-Type: application/json

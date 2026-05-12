@@ -15,17 +15,23 @@ pub async fn create_issue(
     let component = inputs["component"].as_str().context("component required")?;
     let summary_tpl = inputs["summary"].as_str().context("summary required")?;
     let summary = interpolate(summary_tpl, ctx)?;
+    let description = inputs.get("description")
+        .and_then(|v| v.as_str())
+        .map(|tpl| interpolate(tpl, ctx))
+        .transpose()?;
 
     let mut custom_fields = HashMap::new();
     if let Some(cf) = inputs.get("custom_fields").and_then(|v| v.as_mapping()) {
         for (k, v) in cf {
-            if let (Some(k), Some(v)) = (k.as_str(), v.as_str()) {
-                custom_fields.insert(k.to_string(), v.to_string());
+            if let Some(k) = k.as_str() {
+                let json_val: serde_json::Value = serde_json::to_value(v)
+                    .unwrap_or(serde_json::Value::Null);
+                custom_fields.insert(k.to_string(), json_val);
             }
         }
     }
 
-    let (key, url) = client.create_issue(project, issue_type, component, &summary, &custom_fields).await?;
+    let (key, url) = client.create_issue(project, issue_type, component, &summary, description.as_deref(), &custom_fields).await?;
     Ok(json!({"key": key, "url": url}))
 }
 

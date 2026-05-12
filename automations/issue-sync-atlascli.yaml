@@ -15,12 +15,16 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
+          custom_fields:
+            customfield_12751: [{id: "22223"}]
+            customfield_10257: {value: "Not Needed"}
           summary: "[{payload.repository.name}] {payload.issue.title}"
+          description: "This ticket tracks the following GitHub issue: {payload.issue.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.issue.number}"
-          body: "Jira ticket: {ticket.url}"
+          body: "Thanks for opening this issue. The ticket [{ticket.key}]({ticket.url}) was created for internal tracking."
 
   - given:
       trigger: github
@@ -40,10 +44,10 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
+          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
           key: "{find.key}"
-          transition_id: "1381"
+          transition_id: "1371"
 
   - given:
       trigger: github
@@ -63,7 +67,7 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
+          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}'
       - jira.transition:
           key: "{find.key}"
-          transition_id: "1351"
+          transition_id: "3"

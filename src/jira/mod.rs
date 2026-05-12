@@ -32,7 +32,8 @@ impl JiraClient {
         issue_type: &str,
         component: &str,
         summary: &str,
-        custom_fields: &HashMap<String, String>,
+        description: Option<&str>,
+        custom_fields: &HashMap<String, Value>,
     ) -> anyhow::Result<(String, String)> {
         let mut fields = json!({
             "project": {"key": project},
@@ -40,16 +41,25 @@ impl JiraClient {
             "summary": summary,
             "components": [{"name": component}],
         });
-        for (field_id, value) in custom_fields {
-            fields[field_id] = json!({"id": value});
+        if let Some(desc) = description {
+            fields["description"] = json!(desc);
         }
-        let resp: Value = self.client
+        for (field_id, value) in custom_fields {
+            fields[field_id] = value.clone();
+        }
+        let body = json!({"fields": fields});
+        tracing::debug!(body = %body, "jira create_issue request");
+        let response = self.client
             .post(format!("{}/rest/api/2/issue", self.base_url))
             .headers(self.auth())
-            .json(&json!({"fields": fields}))
-            .send().await?
-            .error_for_status()?
-            .json().await?;
+            .json(&body)
+            .send().await?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            anyhow::bail!("Jira create_issue {status}: {body}");
+        }
+        let resp: Value = response.json().await?;
         let key = resp["key"].as_str().context("missing key")?.to_string();
         let url = format!("{}/browse/{}", self.base_url, key);
         Ok((key, url))

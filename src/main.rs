@@ -36,7 +36,8 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(|| async { Redirect::permanent("/doctor") }))
         .route("/health", get(|| async { "ok" }))
-        .route("/webhook/github", post(handlers::github::handle))
+        .route("/webhook/github/argo", post(handlers::github::handle))
+        .route("/webhook/github/raw", post(handlers::github_raw::handle))
         .route("/doctor", get(handlers::doctor::handle))
         .with_state(state);
 

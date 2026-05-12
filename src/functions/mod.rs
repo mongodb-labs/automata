@@ -43,6 +43,7 @@ async fn dispatch(
         "jira.transition"          => jira::transition(&clients.jira, inputs, ctx).await,
         "github.post_comment"      => github::post_comment(&clients.github, inputs, ctx).await,
         "github.add_label"         => github::add_label(&clients.github, inputs, ctx).await,
+        "github.remove_label"      => github::remove_label(&clients.github, inputs, ctx).await,
         "github.approve_pr"        => github::approve_pr(&clients.github, inputs, ctx).await,
         "github.enable_auto_merge" => github::enable_auto_merge(&clients.github, inputs, ctx).await,
         "github.list_pr_comments"  => github::list_pr_comments(&clients.github, inputs, ctx).await,

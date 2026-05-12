@@ -75,10 +75,10 @@ mod tests {
     #[test]
     fn jq_scan_finds_jira_key() {
         let v = run_jq(
-            r#"first(.comments[].body | scan("CLOUDP-[0-9]+"))"#,
+            r#"first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+"))"#,
             json!({"comments": [
-                {"body": "some unrelated comment"},
-                {"body": "Jira ticket: https://jira.mongodb.org/browse/CLOUDP-1234"}
+                {"body": "some unrelated comment mentioning CLOUDP-9999"},
+                {"body": "Thanks for opening this issue. The ticket [CLOUDP-1234](https://jira.mongodb.org/browse/CLOUDP-1234) was created for internal tracking."}
             ]}),
         )
         .unwrap();
@@ -99,8 +99,9 @@ mod tests {
 
     #[test]
     fn jq_object_output_returned_directly() {
-        let v = run_jq(r#"first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}"#,
-            json!({"comments": [{"body": "Jira ticket: CLOUDP-1234"}]}),
+        let v = run_jq(
+            r#"first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}"#,
+            json!({"comments": [{"body": "The ticket [CLOUDP-1234](https://jira.mongodb.org/browse/CLOUDP-1234) was created for internal tracking."}]}),
         ).unwrap();
         assert_eq!(v, json!({"key": "CLOUDP-1234"}));
     }

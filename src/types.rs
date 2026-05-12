@@ -123,13 +123,17 @@ mod tests {
     fn parse_jira_lifecycle_atlascli() {
         let a = load("automations/jira-lifecycle-atlascli.yaml");
         assert_eq!(a.name, "jira-lifecycle-atlascli");
-        assert_eq!(a.pipeline.len(), 1);
-        let e = &a.pipeline[0];
-        assert_eq!(e.given.trigger, "github");
-        assert_eq!(e.given.repos.len(), 1);
-        assert_eq!(e.when.len(), 1);
-        assert!(matches!(&e.when[0].core.event, StringFilter::One(ev) if ev == "pull_request"));
-        assert_eq!(e.then.len(), 3);
+        assert_eq!(a.pipeline.len(), 2);
+        // Entry 0: dependabot actor trigger
+        let e0 = &a.pipeline[0];
+        assert_eq!(e0.given.trigger, "github");
+        assert!(matches!(&e0.when[0].core.event, StringFilter::One(ev) if ev == "pull_request"));
+        assert_eq!(e0.when[0].core.actor.as_deref(), Some("dependabot[bot]"));
+        assert_eq!(e0.then.len(), 3);
+        // Entry 1: create_jira label trigger
+        let e1 = &a.pipeline[1];
+        assert!(matches!(&e1.when[0].core.label, Some(StringFilter::One(l)) if l == "create_jira"));
+        assert_eq!(e1.then.len(), 4);
     }
 
     #[test]

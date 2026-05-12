@@ -1,0 +1,25 @@
+services:
+  automata:
+    build: .
+    env_file: .env
+    environment:
+      RUST_LOG: debug
+    volumes:
+      - ./automations:/automations:ro
+    ports:
+      - "8080:8080"
+    develop:
+      watch:
+        - path: ./automations
+          action: sync+restart
+          target: /automations
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    command: http automata:8080 --log stdout
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    depends_on:
+      - automata
