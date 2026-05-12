@@ -12,7 +12,7 @@ pipeline:
       - event: pull_request
         action: closed
         merged: true
-        labels: [auto_close_jira]
+        label: auto_close_jira
     then:
       - github.list_pr_comments:
           id: comments

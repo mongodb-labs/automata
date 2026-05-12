@@ -22,40 +22,52 @@ pub struct Given {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Exclude {
-    pub event: Option<String>,
     #[serde(default)]
-    pub action: ActionFilter,
+    pub event: StringFilter,
+    #[serde(default)]
+    pub action: StringFilter,
     pub actor: Option<String>,
     pub merged: Option<bool>,
-    pub labels: Option<Vec<String>>,
+    pub label: Option<StringFilter>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct WhenGroup {
-    pub event: Option<String>,
     #[serde(default)]
-    pub action: ActionFilter,
+    pub event: StringFilter,
+    #[serde(default)]
+    pub action: StringFilter,
     pub actor: Option<String>,
     pub merged: Option<bool>,
-    pub labels: Option<Vec<String>>,
+    pub label: Option<StringFilter>,
     pub exclude: Option<Exclude>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(untagged)]
-pub enum ActionFilter {
+pub enum StringFilter {
     One(String),
     Many(Vec<String>),
     #[default]
     Any,
 }
 
-impl ActionFilter {
-    pub fn matches(&self, action: &str) -> bool {
+impl StringFilter {
+    /// OR semantics: matches if value equals any of the specified strings.
+    pub fn matches(&self, value: &str) -> bool {
         match self {
-            ActionFilter::One(a) => a == action,
-            ActionFilter::Many(v) => v.iter().any(|a| a == action),
-            ActionFilter::Any => true,
+            StringFilter::One(s) => s == value,
+            StringFilter::Many(v) => v.iter().any(|s| s == value),
+            StringFilter::Any => true,
+        }
+    }
+
+    /// Returns the list of required values (for AND label checks).
+    pub fn values(&self) -> Vec<&str> {
+        match self {
+            StringFilter::One(s) => vec![s.as_str()],
+            StringFilter::Many(v) => v.iter().map(|s| s.as_str()).collect(),
+            StringFilter::Any => vec![],
         }
     }
 }
@@ -123,7 +135,7 @@ mod tests {
         assert_eq!(e.given.trigger, "github");
         assert_eq!(e.given.repos.len(), 1);
         assert_eq!(e.when.len(), 1);
-        assert_eq!(e.when[0].event.as_deref(), Some("pull_request"));
+        assert!(matches!(&e.when[0].event, StringFilter::One(ev) if ev == "pull_request"));
         assert_eq!(e.then.len(), 3);
     }
 
@@ -131,21 +143,18 @@ mod tests {
     fn parse_jira_lifecycle_close() {
         let a = load("automations/jira-lifecycle-close.yaml");
         assert_eq!(a.name, "jira-lifecycle-close");
-        let e = &a.pipeline[0];
-        assert!(e.when[0].merged == Some(true));
-        assert_eq!(
-            e.when[0].labels.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
-            Some(vec!["auto_close_jira"])
-        );
+        let w = &a.pipeline[0].when[0];
+        assert!(w.merged == Some(true));
+        assert!(matches!(&w.label, Some(StringFilter::One(l)) if l == "auto_close_jira"));
     }
 
     #[test]
     fn parse_issue_sync() {
         let a = load("automations/issue-sync-atlascli.yaml");
         assert_eq!(a.pipeline.len(), 3);
-        assert!(matches!(a.pipeline[0].when[0].action, ActionFilter::One(_)));
-        assert!(matches!(a.pipeline[1].when[0].action, ActionFilter::One(_)));
-        assert!(matches!(a.pipeline[2].when[0].action, ActionFilter::One(_)));
+        assert!(matches!(a.pipeline[0].when[0].action, StringFilter::One(_)));
+        assert!(matches!(a.pipeline[1].when[0].action, StringFilter::One(_)));
+        assert!(matches!(a.pipeline[2].when[0].action, StringFilter::One(_)));
     }
 
     #[test]

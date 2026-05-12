@@ -40,7 +40,7 @@ pipeline:
           label: auto_close_jira
 ```
 
-`pipeline:` is a list of trigger blocks. `when:` items within a block are OR'd; keys within an item are AND'd. `then:` steps run sequentially; each step can reference outputs from previous steps via `{step-id.field}`.
+`pipeline:` is a list of trigger blocks. `when:` items within a block are OR'd; keys within an item are AND'd. `event`, `action`, and `label` each accept a string or a list of strings. `then:` steps run sequentially; each step can reference outputs from previous steps via `{step-id.field}`.
 
 ## Built-in functions
 

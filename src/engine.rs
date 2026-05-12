@@ -1,6 +1,6 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{ActionFilter, Automation, PipelineEntry, WhenGroup};
+use crate::types::{Automation, PipelineEntry, StringFilter, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
@@ -33,18 +33,11 @@ pub fn matches_when(entry: &PipelineEntry, event_type: &str, repo: &str, payload
 }
 
 fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
-    if let Some(ev) = &group.event {
-        if ev != event_type {
-            return false;
-        }
-    }
-    if !matches_conditions(&group.action, &group.actor, group.merged, &group.labels, payload) {
+    if !matches_conditions(&group.event, &group.action, &group.actor, group.merged, &group.label, event_type, payload) {
         return false;
     }
     if let Some(excl) = &group.exclude {
-        if excl.event.as_deref().map_or(true, |ev| ev == event_type)
-            && matches_conditions(&excl.action, &excl.actor, excl.merged, &excl.labels, payload)
-        {
+        if matches_conditions(&excl.event, &excl.action, &excl.actor, excl.merged, &excl.label, event_type, payload) {
             return false;
         }
     }
@@ -52,12 +45,18 @@ fn matches_group(group: &WhenGroup, event_type: &str, payload: &Value) -> bool {
 }
 
 fn matches_conditions(
-    action: &ActionFilter,
+    event: &StringFilter,
+    action: &StringFilter,
     actor: &Option<String>,
     merged: Option<bool>,
-    labels: &Option<Vec<String>>,
+    label: &Option<StringFilter>,
+    event_type: &str,
     payload: &Value,
 ) -> bool {
+    if !event.matches(event_type) {
+        return false;
+    }
+
     let payload_action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
     if !action.matches(payload_action) {
         return false;
@@ -83,7 +82,7 @@ fn matches_conditions(
         }
     }
 
-    if let Some(required_labels) = labels {
+    if let Some(label_filter) = label {
         let present: Vec<&str> = payload
             .pointer("/pull_request/labels")
             .and_then(|v| v.as_array())
@@ -93,7 +92,7 @@ fn matches_conditions(
                     .collect()
             })
             .unwrap_or_default();
-        if !required_labels.iter().all(|req| present.contains(&req.as_str())) {
+        if !label_filter.values().iter().all(|req| present.contains(req)) {
             return false;
         }
     }
@@ -132,7 +131,7 @@ pub async fn run_automation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ActionFilter, PipelineEntry};
+    use crate::types::{PipelineEntry, StringFilter};
     use serde_json::json;
 
     fn make_entry(event: &str, action: &str, repo: &str) -> PipelineEntry {
@@ -174,9 +173,9 @@ mod tests {
     }
 
     #[test]
-    fn labels_filter() {
+    fn label_filter() {
         let e: PipelineEntry = serde_yaml::from_str(
-            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    labels: [auto_close_jira]\nthen: []\n"
+            "given:\n  trigger: github\n  repos:\n    - mongodb/atlas-cli\nwhen:\n  - event: pull_request\n    action: closed\n    merged: true\n    label: auto_close_jira\nthen: []\n"
         ).unwrap();
         let with_label = json!({
             "action": "closed",
@@ -217,16 +216,16 @@ mod tests {
     }
 
     #[test]
-    fn action_filter_many_matches_any_listed_action() {
-        let f = ActionFilter::Many(vec!["opened".into(), "closed".into(), "reopened".into()]);
+    fn string_filter_many_matches_any_listed() {
+        let f = StringFilter::Many(vec!["opened".into(), "closed".into(), "reopened".into()]);
         assert!(f.matches("opened"));
         assert!(f.matches("reopened"));
         assert!(!f.matches("labeled"));
     }
 
     #[test]
-    fn action_filter_any_matches_everything() {
-        assert!(ActionFilter::Any.matches("anything"));
-        assert!(ActionFilter::Any.matches(""));
+    fn string_filter_any_matches_everything() {
+        assert!(StringFilter::Any.matches("anything"));
+        assert!(StringFilter::Any.matches(""));
     }
 }
