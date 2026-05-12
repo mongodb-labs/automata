@@ -72,7 +72,6 @@ impl StringFilter {
 pub struct Step {
     pub func: String,
     pub id: Option<String>,
-    pub if_cond: Option<String>,
     pub inputs: HashMap<String, serde_yaml::Value>,
 }
 
@@ -94,20 +93,18 @@ impl Step {
 
         let mut inputs = HashMap::new();
         let mut id = None;
-        let mut if_cond = None;
 
         if let Some(m) = inner.as_mapping() {
             for (k, v) in m {
                 let key = k.as_str().unwrap_or_default();
                 match key {
                     "id" => id = v.as_str().map(|s| s.to_string()),
-                    "if" => if_cond = v.as_str().map(|s| s.to_string()),
                     _ => { inputs.insert(key.to_string(), v.clone()); }
                 }
             }
         }
 
-        Ok(Step { func, id, if_cond, inputs })
+        Ok(Step { func, id, inputs })
     }
 }
 

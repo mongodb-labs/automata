@@ -3,7 +3,6 @@ pub mod github;
 pub mod jira;
 
 use crate::context::ExecutionContext;
-use crate::engine::eval_if;
 use crate::github::api::GitHubClient;
 use crate::jira::JiraClient;
 use crate::types::Step;
@@ -22,13 +21,6 @@ pub fn execute_step<'a>(
     clients: &'a Clients,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send + 'a>> {
     Box::pin(async move {
-        if let Some(cond) = &step.if_cond {
-            if !eval_if(cond, &ctx.payload) {
-                info!(cond, "step skipped");
-                return Ok(());
-            }
-        }
-
         info!(func = step.func, "executing step");
         let outputs = dispatch(&step.func, &step.inputs, ctx, clients).await?;
 

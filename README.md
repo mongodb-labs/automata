@@ -129,17 +129,6 @@ then:
 
 Names the step output so later steps can reference it via `{id.field}`.
 
-#### `if:`
-
-Skips the step unless the condition evaluates to true. Supported values:
-
-| Condition | Meaning |
-|---|---|
-| `action_is_opened` | `payload.action == "opened"` |
-| `action_is_closed` | `payload.action == "closed"` |
-| `action_is_reopened` | `payload.action == "reopened"` |
-| `action_not_opened` | `payload.action != "opened"` |
-
 #### Interpolation
 
 Any string value in a step's inputs can embed `{path}` expressions:

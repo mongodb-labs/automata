@@ -1,10 +1,9 @@
 use crate::context::ExecutionContext;
 use crate::functions::Clients;
-use crate::types::{Automation, PipelineEntry, StringFilter, WhenCore, WhenGroup};
+use crate::types::{Automation, PipelineEntry, WhenCore, WhenGroup};
 use anyhow::Context as _;
 use glob::glob;
 use serde_json::Value;
-use tracing::warn;
 
 pub fn load_automations(dir: &str) -> anyhow::Result<Vec<Automation>> {
     anyhow::ensure!(
@@ -90,20 +89,6 @@ fn matches_core(core: &WhenCore, event_type: &str, payload: &Value) -> bool {
     true
 }
 
-/// Evaluate a step `if:` condition against the payload.
-pub fn eval_if(cond: &str, payload: &Value) -> bool {
-    let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
-    match cond {
-        "action_is_opened" => action == "opened",
-        "action_is_closed" => action == "closed",
-        "action_is_reopened" => action == "reopened",
-        "action_not_opened" => action != "opened",
-        _ => {
-            warn!(cond, "unknown if condition, skipping step");
-            false
-        }
-    }
-}
 
 pub async fn run_automation(
     entry: &PipelineEntry,
@@ -122,6 +107,8 @@ pub async fn run_automation(
 mod tests {
     use super::*;
     use crate::types::{PipelineEntry, StringFilter};
+    #[allow(unused_imports)]
+    use super::*;
     use serde_json::json;
 
     fn make_entry(event: &str, action: &str, repo: &str) -> PipelineEntry {
@@ -182,16 +169,6 @@ mod tests {
         });
         assert!(matches_when(&e, "pull_request", "mongodb/atlas-cli", &with_label));
         assert!(!matches_when(&e, "pull_request", "mongodb/atlas-cli", &without_label));
-    }
-
-    #[test]
-    fn eval_if_conditions() {
-        let opened = json!({"action": "opened"});
-        let closed = json!({"action": "closed"});
-        assert!(eval_if("action_is_opened", &opened));
-        assert!(!eval_if("action_is_opened", &closed));
-        assert!(eval_if("action_not_opened", &closed));
-        assert!(eval_if("action_is_closed", &closed));
     }
 
     #[test]
