@@ -54,7 +54,7 @@ pipeline:
       - builtin.jq:
           id: author
           input: head_commit
-          expr: '.commit.author.email | if test("@mongodb\\.com$") then {email: .} else {email: null} end'
+          expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {email: .} else {email: "apix-automation@mongodb.com"} end'
       - jira.create_issue:
           id: ticket
           issue_type: Story
