@@ -16,13 +16,17 @@ spec:
             - mongodb-atlas-local
             - apix-action
             - atlas-github-action
+            - atlas-cli-core
+            - atlas-cli-plugin-example
             - atlas-local-lib
             - atlas-local-cli
-            - openapi
         - owner: mongodb-js
           names:
             - mongodb-mcp-server
             - atlas-local-lib-js
+        - owner: 10gen
+          names:
+            - apix-dashboards
         - owner: mongodb-labs
           names:
             - cobra2snooty
