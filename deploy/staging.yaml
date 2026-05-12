@@ -20,7 +20,6 @@ envSecrets:
   SENSOR_TOKEN: automata-secrets
   JIRA_BASE_URL: automata-secrets
   JIRA_API_TOKEN: automata-secrets
-  AUTOMATA_JIRA_TEAM: automata-secrets
 
 resources:
   requests:

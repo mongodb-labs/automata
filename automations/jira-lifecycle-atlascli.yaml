@@ -19,7 +19,7 @@ pipeline:
           project: CLOUDP
           component: AtlasCLI
           custom_fields:
-            customfield_12751: "{env.AUTOMATA_JIRA_TEAM}"
+            customfield_12751: "APIx DevTools"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
