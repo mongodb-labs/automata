@@ -1,5 +1,8 @@
-use axum::{extract::State, response::IntoResponse, Json};
-use serde_json::{json, Value};
+use axum::{
+    extract::State,
+    response::{Html, IntoResponse},
+};
+use serde_json::Value;
 use tracing::info;
 
 use crate::app_state::AppState;
@@ -8,13 +11,20 @@ use crate::github::{app_jwt, installation_info};
 pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
     let jwt = match app_jwt(state.config.github_app_id, &state.config.github_app_private_key) {
         Ok(j) => j,
-        Err(e) => return Json(json!({"error": format!("jwt error: {e}")})),
+        Err(e) => return Html(error_page(&format!("JWT error: {e}"))),
     };
 
     let repos = collect_repos(&state.automations);
     info!(count = repos.len(), "checking repos");
 
-    let mut statuses: Vec<Value> = Vec::new();
+    struct Row {
+        repo: String,
+        github_access: bool,
+        webhook: bool,
+        permissions: Vec<(String, String)>,
+    }
+
+    let mut rows: Vec<Row> = Vec::new();
 
     for repo in &repos {
         let parts: Vec<&str> = repo.splitn(2, '/').collect();
@@ -25,28 +35,108 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
 
         let info = installation_info(&state.http, &jwt, owner, name).await;
 
-        let status = match info {
-            Err(_) => json!({
-                "repo": repo,
-                "github_access": false,
-                "webhook": false,
-                "permissions": {},
-            }),
+        let row = match info {
+            Err(_) => Row {
+                repo: repo.clone(),
+                github_access: false,
+                webhook: false,
+                permissions: vec![],
+            },
             Ok(i) => {
                 let webhook = check_webhook(&state.http, &i.token, owner, name).await;
-                json!({
-                    "repo": repo,
-                    "github_access": true,
-                    "webhook": webhook,
-                    "permissions": i.permissions,
-                })
+                let permissions = i
+                    .permissions
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string()))
+                    .collect();
+                Row {
+                    repo: repo.clone(),
+                    github_access: true,
+                    webhook,
+                    permissions,
+                }
             }
         };
 
-        statuses.push(status);
+        rows.push(row);
     }
 
-    Json(json!({ "repos": statuses }))
+    let table_rows: String = rows
+        .iter()
+        .map(|r| {
+            let perms: String = r
+                .permissions
+                .iter()
+                .map(|(k, v)| format!("<span class='perm'>{k}: {v}</span>"))
+                .collect::<Vec<_>>()
+                .join(" ");
+            format!(
+                "<tr><td><a href='https://github.com/{repo}'>{repo}</a></td>\
+                 <td class='center'>{}</td>\
+                 <td class='center'>{}</td>\
+                 <td class='perms'>{perms}</td></tr>",
+                icon(r.github_access),
+                icon(r.webhook),
+                repo = r.repo,
+            )
+        })
+        .collect();
+
+    Html(format!(
+        r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>automata — doctor</title>
+<style>
+  body {{ font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #222; }}
+  h1 {{ font-size: 1.4rem; margin-bottom: 1rem; }}
+  table {{ width: 100%; border-collapse: collapse; }}
+  th {{ text-align: left; border-bottom: 2px solid #ddd; padding: 8px 12px; font-size: .85rem; color: #666; text-transform: uppercase; letter-spacing: .05em; }}
+  td {{ padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: .9rem; vertical-align: middle; }}
+  td.center {{ text-align: center; font-size: 1.1rem; }}
+  td.perms {{ font-size: .8rem; color: #555; }}
+  .perm {{ display: inline-block; background: #f4f4f4; border-radius: 3px; padding: 1px 6px; margin: 2px; }}
+  a {{ color: #0366d6; text-decoration: none; }}
+  a:hover {{ text-decoration: underline; }}
+  .empty {{ color: #999; font-style: italic; padding: 20px 0; }}
+</style>
+</head>
+<body>
+<h1>automata — doctor</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Repo</th>
+      <th>GitHub Access</th>
+      <th>Webhook</th>
+      <th>Permissions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {table_rows}
+  </tbody>
+</table>
+{empty}
+</body>
+</html>"#,
+        empty = if rows.is_empty() {
+            "<p class='empty'>No automations loaded.</p>"
+        } else {
+            ""
+        },
+    ))
+}
+
+fn icon(ok: bool) -> &'static str {
+    if ok { "✅" } else { "❌" }
+}
+
+fn error_page(msg: &str) -> String {
+    format!(
+        r#"<!DOCTYPE html><html><head><title>automata — error</title></head>
+<body><h1>Error</h1><pre>{msg}</pre></body></html>"#
+    )
 }
 
 async fn check_webhook(client: &reqwest::Client, token: &str, owner: &str, repo: &str) -> bool {
