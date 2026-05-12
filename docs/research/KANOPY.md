@@ -356,6 +356,37 @@ spec:
 
 ---
 
+## Ingress: Mesh-Only Namespaces
+
+All new namespaces (including `skunkworks`) are **mesh-only** — Istio service mesh, no Traefik. Kubernetes `Ingress` resources are rejected by the admission controller in these namespaces.
+
+```
+# Check if namespace is Traefik-enabled (empty = mesh-only)
+kubectl get namespace <ns> -o jsonpath='{.metadata.labels.kanopy-platform\.github\.io/traefik-enabled}'
+```
+
+To expose a service externally in a mesh-only namespace, use `mesh: enabled: true` in the web-app values — do **not** set `ingress: true` on the service:
+
+```yaml
+services:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+    type: ClusterIP
+
+mesh:
+  enabled: true
+```
+
+The hostname is auto-assigned as `<release>.<namespace>.<env>.corp.mongodb.com`:
+- Staging: `automata.skunkworks.staging.corp.mongodb.com`
+- Production: `automata.skunkworks.prod.corp.mongodb.com`
+
+Traffic routes through the Istio user ingress gateway (`ig-u.staging.corp.mongodb.com`). All mesh hostnames are HTTPS-only and protected by CorpSecure (Okta).
+
+---
+
 ## Automation Hub Deployment Model
 
 automata runs as a long-lived HTTP server deployed via `mongodb/web-app`. Argo Events delivers GitHub webhooks to it via a Sensor `http` trigger.
