@@ -133,10 +133,11 @@ mod tests {
 
     #[test]
     fn app_jwt_structure_with_valid_key() {
-        // Use a test RSA key (2048-bit, generated for testing only)
-        let pem = include_str!("../../tests/fixtures/test_rsa_key.pem");
-        let token = app_jwt(12345, pem).unwrap();
-        // JWT has 3 dot-separated parts
+        use rsa::{pkcs8::EncodePrivateKey, RsaPrivateKey};
+        let mut rng = rsa::rand_core::OsRng;
+        let key = RsaPrivateKey::new(&mut rng, 2048).unwrap();
+        let pem = key.to_pkcs8_pem(rsa::pkcs8::LineEnding::LF).unwrap();
+        let token = app_jwt(12345, pem.as_str()).unwrap();
         assert_eq!(token.split('.').count(), 3);
     }
 }
