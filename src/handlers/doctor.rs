@@ -9,7 +9,10 @@ use crate::app_state::AppState;
 use crate::github::{app_jwt, installation_info};
 
 pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
-    let jwt = match app_jwt(state.config.github_app_id, &state.config.github_app_private_key) {
+    let jwt = match app_jwt(
+        state.config.github_app_id,
+        &state.config.github_app_private_key,
+    ) {
         Ok(j) => j,
         Err(e) => return Html(error_page(&format!("JWT error: {e}"))),
     };
@@ -138,7 +141,11 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 fn icon(ok: bool) -> &'static str {
-    if ok { "✅" } else { "❌" }
+    if ok {
+        "✅"
+    } else {
+        "❌"
+    }
 }
 
 fn error_page(msg: &str) -> String {
@@ -148,7 +155,12 @@ fn error_page(msg: &str) -> String {
     )
 }
 
-async fn check_webhook(client: &reqwest::Client, token: &str, owner: &str, repo: &str) -> Option<bool> {
+async fn check_webhook(
+    client: &reqwest::Client,
+    token: &str,
+    owner: &str,
+    repo: &str,
+) -> Option<bool> {
     let resp = client
         .get(format!("https://api.github.com/repos/{owner}/{repo}/hooks"))
         .bearer_auth(token)
@@ -178,7 +190,11 @@ fn webhook_icon(status: Option<bool>) -> &'static str {
 pub fn collect_repos(automations: &[crate::types::Automation]) -> Vec<String> {
     let mut repos: Vec<String> = automations
         .iter()
-        .flat_map(|a| a.pipeline.iter().flat_map(|e| e.given.repos.iter().cloned()))
+        .flat_map(|a| {
+            a.pipeline
+                .iter()
+                .flat_map(|e| e.given.repos.iter().cloned())
+        })
         .collect();
     repos.sort();
     repos.dedup();
