@@ -17,6 +17,7 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
+          assignee: "cloud-apix-escalation@mongodb.com"
           custom_fields:
             customfield_12751:
               - id: "22223"
