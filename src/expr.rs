@@ -32,16 +32,20 @@ pub fn interpolate_value(
 }
 
 /// Replace all `{path}` spans in `template` with values resolved from `ctx`.
-/// Returns an error if any path cannot be resolved.
+/// Use `{{` / `}}` to emit a literal `{` / `}` without triggering interpolation.
 pub fn interpolate(template: &str, ctx: &ExecutionContext) -> anyhow::Result<String> {
-    let mut result = template.to_string();
-    for cap in path_re().captures_iter(template) {
+    // Shield {{ and }} before regex runs, then restore them after.
+    const L: &str = "\x00L";
+    const R: &str = "\x00R";
+    let escaped = template.replace("{{", L).replace("}}", R);
+    let mut result = escaped.clone();
+    for cap in path_re().captures_iter(&escaped) {
         let span = &cap[0]; // e.g. "{payload.pull_request.title}"
         let path = &cap[1]; // e.g. "payload.pull_request.title"
         let value = resolve(path, ctx)?;
         result = result.replacen(span, &value, 1);
     }
-    Ok(result)
+    Ok(result.replace(L, "{").replace(R, "}"))
 }
 
 /// Resolve a dotted path like "payload.pull_request.title" against the context.
@@ -185,6 +189,25 @@ mod tests {
     fn interpolate_no_expressions_is_passthrough() {
         let result = interpolate("plain string", &ctx()).unwrap();
         assert_eq!(result, "plain string");
+    }
+
+    #[test]
+    fn double_braces_escape_to_literal_braces() {
+        let result = interpolate("{{key: .}}", &ctx()).unwrap();
+        assert_eq!(result, "{key: .}");
+    }
+
+    #[test]
+    fn double_braces_mixed_with_interpolation() {
+        // {{...}} produces literal braces; {path} interpolates
+        let result = interpolate("name={payload.repository.name} jq={{key: .}}", &ctx()).unwrap();
+        assert_eq!(result, "name=mongodb-atlas-cli jq={key: .}");
+    }
+
+    #[test]
+    fn double_open_brace_only() {
+        let result = interpolate("{{", &ctx()).unwrap();
+        assert_eq!(result, "{");
     }
 
     #[test]
