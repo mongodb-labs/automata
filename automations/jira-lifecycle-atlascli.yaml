@@ -57,7 +57,7 @@ pipeline:
       - builtin.jq:
           id: author
           input: head_commit
-          expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {email: .} else {email: "apix-automation@mongodb.com"} end'
+          expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {{email: .}} else {{email: "apix-automation@mongodb.com"}} end'
       - jira.create_issue:
           id: ticket
           issue_type: Story
@@ -110,7 +110,7 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}'
+          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
       - jira.transition:
           key: "{find.key}"
           transition_id: "1381"
@@ -139,7 +139,7 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {key: .}'
+          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
       - jira.transition:
           key: "{find.key}"
           transition_id: "1371"
