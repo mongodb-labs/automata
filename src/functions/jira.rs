@@ -1,5 +1,5 @@
 use crate::context::ExecutionContext;
-use crate::expr::interpolate;
+use crate::expr::{interpolate, interpolate_value};
 use crate::jira::{CreateIssueParams, JiraClient};
 use anyhow::Context as _;
 use serde_json::{json, Value};
@@ -39,7 +39,7 @@ pub async fn create_issue(
             if let Some(k) = k.as_str() {
                 let json_val: serde_json::Value =
                     serde_json::to_value(v).unwrap_or(serde_json::Value::Null);
-                custom_fields.insert(k.to_string(), json_val);
+                custom_fields.insert(k.to_string(), interpolate_value(&json_val, ctx)?);
             }
         }
     }
@@ -69,8 +69,12 @@ pub async fn transition(
         .as_str()
         .context("transition_id required")?;
     let transition_id = interpolate(transition_id_tpl, ctx)?;
-    let fields: Option<serde_json::Value> =
-        inputs.get("fields").map(serde_json::to_value).transpose()?;
+    let fields: Option<serde_json::Value> = inputs
+        .get("fields")
+        .map(serde_json::to_value)
+        .transpose()?
+        .map(|v| interpolate_value(&v, ctx))
+        .transpose()?;
     client
         .transition(&key, &transition_id, fields.as_ref())
         .await?;

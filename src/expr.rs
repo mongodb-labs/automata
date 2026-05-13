@@ -8,6 +8,29 @@ fn path_re() -> &'static Regex {
     PATH_RE.get_or_init(|| Regex::new(r"\{([\w.]+)\}").unwrap())
 }
 
+/// Recursively interpolate all string values inside a JSON value.
+pub fn interpolate_value(
+    v: &serde_json::Value,
+    ctx: &ExecutionContext,
+) -> anyhow::Result<serde_json::Value> {
+    match v {
+        serde_json::Value::String(s) => Ok(serde_json::Value::String(interpolate(s, ctx)?)),
+        serde_json::Value::Array(arr) => {
+            let out: anyhow::Result<Vec<_>> =
+                arr.iter().map(|v| interpolate_value(v, ctx)).collect();
+            Ok(serde_json::Value::Array(out?))
+        }
+        serde_json::Value::Object(map) => {
+            let out: anyhow::Result<serde_json::Map<_, _>> = map
+                .iter()
+                .map(|(k, v)| interpolate_value(v, ctx).map(|v| (k.clone(), v)))
+                .collect();
+            Ok(serde_json::Value::Object(out?))
+        }
+        other => Ok(other.clone()),
+    }
+}
+
 /// Replace all `{path}` spans in `template` with values resolved from `ctx`.
 /// Returns an error if any path cannot be resolved.
 pub fn interpolate(template: &str, ctx: &ExecutionContext) -> anyhow::Result<String> {
@@ -171,5 +194,41 @@ mod tests {
             resolve("payload.pull_request.head.ref", &c).unwrap(),
             "fix/my-branch"
         );
+    }
+
+    #[test]
+    fn interpolate_value_string() {
+        let v = json!("{payload.repository.name}");
+        let result = interpolate_value(&v, &ctx()).unwrap();
+        assert_eq!(result, json!("mongodb-atlas-cli"));
+    }
+
+    #[test]
+    fn interpolate_value_nested_object() {
+        let mut c = ctx();
+        c.outputs
+            .insert("find".to_string(), json!({"key": "CLOUDP-123"}));
+        let v = json!({"resolution": {"name": "Fixed"}, "key": "{find.key}"});
+        let result = interpolate_value(&v, &c).unwrap();
+        assert_eq!(
+            result,
+            json!({"resolution": {"name": "Fixed"}, "key": "CLOUDP-123"})
+        );
+    }
+
+    #[test]
+    fn interpolate_value_array_of_objects() {
+        let mut c = ctx();
+        c.outputs.insert("item".to_string(), json!({"id": "99"}));
+        let v = json!([{"id": "{item.id}"}]);
+        let result = interpolate_value(&v, &c).unwrap();
+        assert_eq!(result, json!([{"id": "99"}]));
+    }
+
+    #[test]
+    fn interpolate_value_non_string_passthrough() {
+        let v = json!({"count": 42, "active": true, "data": null});
+        let result = interpolate_value(&v, &ctx()).unwrap();
+        assert_eq!(result, v);
     }
 }
