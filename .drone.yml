@@ -27,7 +27,7 @@ steps:
     commands:
       - apt-get update -qq && apt-get install -y curl ca-certificates
       - rustup component add llvm-tools-preview
-      - curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-musl.tar.gz | tar xzf - -C ~/.cargo/bin
+      - curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-musl.tar.gz | tar xzf - -C /usr/local/cargo/bin
       - curl -sL https://coveralls.io/coveralls-linux.tar.gz | tar xz -C /usr/local/bin
       - cargo llvm-cov --lcov --output-path lcov.info
       - coveralls report --repo-token "$COVERALLS_REPO_TOKEN" --service-name drone --service-job-id "$DRONE_BUILD_NUMBER" lcov.info
