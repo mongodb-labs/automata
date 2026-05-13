@@ -507,18 +507,21 @@ automata runs as a long-lived HTTP server deployed via `mongodb/web-app`. Argo E
 
 ```
 automata/
-├── .drone.yml                   # build image → deploy web-app + eventbus + kubectl apply
-├── Dockerfile                   # multi-stage: cargo build → distroless/cc-debian12 (glibc required)
-├── Cargo.toml
-├── src/                         # Rust source
-├── automations/                 # declarative automation YAML files
-└── deploy/
-    ├── staging.yaml             # mongodb/web-app Helm values for staging
-    ├── eventbus-values.yaml     # mongodb/argo-eventbus Helm values
-    ├── eventsource.yaml         # GitHub EventSource (kubectl apply, no Helm chart)
-    ├── eventsource-sce.yaml     # ServiceCatalogEntry — opens external webhook path via argoslower
-    └── sensor.yaml              # Sensor with http trigger (kubectl apply, no Helm chart)
+├── .drone.yml                       # build image → deploy web-app + eventbus + kubectl apply
+├── Dockerfile
+├── src/
+├── automations/
+└── environments/
+    ├── staging.yaml                 # mongodb/web-app Helm values for staging
+    ├── production.yaml              # mongodb/web-app Helm values for prod
+    └── common/
+        ├── eventbus-values.yaml     # mongodb/argo-eventbus Helm values
+        ├── eventsource.yaml         # GitHub EventSource (kubectl apply, no Helm chart)
+        ├── eventsource-sce.yaml     # ServiceCatalogEntry — opens external webhook path
+        └── sensor.yaml              # Sensor with http trigger (kubectl apply, no Helm chart)
 ```
+
+> **Company convention**: across the org, Kanopy projects use an `environments/` folder with `staging.yaml` and `production.yaml` for per-environment Helm values, and a `environments/common/` subfolder for resources shared across environments.
 
 Helm releases in `skunkworks` namespace:
 - `automata` — the web service (`mongodb/web-app`)
@@ -531,5 +534,4 @@ EventSource and Sensor are applied via `kubectl apply` (no Helm chart available 
 - Pass the automations directory as a CLI argument: `ENTRYPOINT ["/automata", "/automations"]`. The binary defaults to CWD (`.`) which is unpredictable in a container.
 - Do not set a custom `services` block in web-app values — it renames the service and breaks the VirtualService routing (503). Let the chart use its defaults.
 - `platform: arch: amd64` in `.drone.yml` — skunkworks nodes are amd64; arm64 produces `exec format error`.
-- Set `RUST_LOG=info` (or more specific filter) in `staging.yaml` env — `tracing`'s `EnvFilter::from_default_env()` filters everything out if the env var is missing, producing zero log output.
 - Sensor pod should show `2/2` containers when Istio sidecar injection is working. If it shows `1/1`, the `sidecar.istio.io/inject: "true"` annotation is missing from `spec.template.metadata.annotations`.
