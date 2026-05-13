@@ -50,7 +50,7 @@ steps:
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: skunkworks
       release: automata
-      values_files: ["deploy/staging.yaml"]
+      values_files: ["environments/staging.yaml"]
       values: image.tag=git-${DRONE_COMMIT_SHA:0:7}
       api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
@@ -66,7 +66,7 @@ steps:
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: skunkworks
       release: automata-eventbus
-      values_files: ["deploy/eventbus-values.yaml"]
+      values_files: ["environments/common/eventbus-values.yaml"]
       api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
         from_secret: staging_kubernetes_token
@@ -83,8 +83,8 @@ steps:
       - kubectl config set-cluster staging --server=https://api.staging.corp.mongodb.com
       - kubectl config set-context default --cluster=staging --user=cicd --namespace=skunkworks
       - kubectl config use-context default
-      - kubectl apply -f deploy/eventsource.yaml
-      - kubectl apply -f deploy/eventsource-sce.yaml
-      - kubectl apply -f deploy/sensor.yaml
+      - kubectl apply -f environments/common/eventsource.yaml
+      - kubectl apply -f environments/common/eventsource-sce.yaml
+      - kubectl apply -f environments/common/sensor.yaml
     when:
       event: [push]
