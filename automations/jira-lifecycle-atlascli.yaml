@@ -17,7 +17,6 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
-          assignee: "apix-automation@mongodb.com"
           custom_fields:
             customfield_12751:
               - id: "22223"
