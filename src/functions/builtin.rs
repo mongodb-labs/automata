@@ -1,4 +1,5 @@
 use crate::context::ExecutionContext;
+use crate::expr::{interpolate, interpolate_value};
 use anyhow::Context as _;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -7,16 +8,18 @@ pub async fn lookup(
     inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
-    use crate::expr::interpolate;
     let key_tpl = inputs["key"].as_str().context("key required")?;
     let key = interpolate(key_tpl, ctx)?;
-    let table = inputs["table"].as_mapping().context("table required")?;
-    let result = table
-        .iter()
-        .find(|(k, _)| k.as_str().is_some_and(|s| s == key))
-        .map(|(_, v)| v);
+    let table_yaml = inputs["table"].as_mapping().context("table required")?;
+    let table_json: Value = serde_json::to_value(table_yaml)?;
+    let table = interpolate_value(&table_json, ctx)?;
+    let result = table.as_object().and_then(|m| {
+        m.iter()
+            .find(|(k, _)| k.as_str() == key)
+            .map(|(_, v)| v.clone())
+    });
     match result {
-        Some(v) => Ok(json!({ "value": serde_json::to_value(v)? })),
+        Some(v) => Ok(json!({ "value": v })),
         None => anyhow::bail!("lookup: key {key:?} not found in table"),
     }
 }
@@ -25,12 +28,14 @@ pub async fn jq(
     inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
-    let input_id = inputs["input"]
+    let input_id_tpl = inputs["input"]
         .as_str()
         .context("input must be a string (step id)")?;
-    let expr = inputs["expr"].as_str().context("expr must be a string")?;
-    let input_val = ctx.outputs.get(input_id).cloned().unwrap_or(Value::Null);
-    let result = run_jq(expr, input_val)?;
+    let input_id = interpolate(input_id_tpl, ctx)?;
+    let expr_tpl = inputs["expr"].as_str().context("expr must be a string")?;
+    let expr = interpolate(expr_tpl, ctx)?;
+    let input_val = ctx.outputs.get(&input_id).cloned().unwrap_or(Value::Null);
+    let result = run_jq(&expr, input_val)?;
     match result {
         Value::Object(_) => Ok(result),
         other => Ok(json!({ "result": other })),
