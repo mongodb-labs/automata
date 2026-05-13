@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse,
 };
 use subtle::ConstantTimeEq;
-use tracing::{error, warn};
+use tracing::{debug, error, warn};
 
 use crate::app_state::AppState;
 
@@ -47,12 +47,27 @@ pub async fn handle(
         }
     };
 
-    let payload = match envelope.get("body") {
+    let body_value = match envelope.get("body") {
         Some(p) => p.clone(),
         None => {
             warn!("missing body in envelope");
             return StatusCode::BAD_REQUEST;
         }
+    };
+
+    // body may arrive as a JSON-encoded string; parse it if so
+    let payload = if let Some(s) = body_value.as_str() {
+        debug!(body_type = "string", "body is a JSON string, parsing");
+        match serde_json::from_str::<serde_json::Value>(s) {
+            Ok(v) => v,
+            Err(e) => {
+                error!(%e, "invalid JSON in body string");
+                return StatusCode::BAD_REQUEST;
+            }
+        }
+    } else {
+        debug!(body_type = "object", "body is already a JSON object");
+        body_value
     };
 
     super::dispatch(&state, &event_type, payload).await

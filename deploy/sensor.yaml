@@ -5,6 +5,10 @@ metadata:
   namespace: skunkworks
 spec:
   eventBusName: automata-bus
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
   dependencies:
     - name: github-dep
       eventSourceName: automata-github
@@ -13,7 +17,7 @@ spec:
     - template:
         name: call-automata
         http:
-          url: http://automata.skunkworks.svc.cluster.local/webhook/github/argo
+          url: http://automata-web-app.skunkworks.svc.cluster.local/webhook/github/argo
           method: POST
           headers:
             Content-Type: application/json
