@@ -43,37 +43,49 @@ pub async fn jq(
 }
 
 fn run_jq(expr: &str, input: Value) -> anyhow::Result<Value> {
-    use jaq_interpret::{Ctx, FilterT, ParseCtx, RcIter, Val};
+    use jaq_core::load::{Arena, File, Loader};
+    use jaq_core::{data, unwrap_valr, Compiler, Ctx, Vars};
+    use jaq_json::{read, Val};
 
-    let mut defs = ParseCtx::new(Vec::new());
-    defs.insert_natives(jaq_core::core());
-    defs.insert_defs(jaq_std::std());
+    let input_bytes = serde_json::to_vec(&input)?;
+    let input_val =
+        read::parse_single(&input_bytes).map_err(|e| anyhow::anyhow!("jq input: {e}"))?;
 
-    let (f, errs) = jaq_parse::parse(expr, jaq_parse::main());
-    if !errs.is_empty() {
-        anyhow::bail!("jq parse errors: {} error(s)", errs.len());
+    let program = File {
+        code: expr,
+        path: (),
+    };
+    let defs = jaq_core::defs()
+        .chain(jaq_std::defs())
+        .chain(jaq_json::defs());
+    let funs = jaq_core::funs()
+        .chain(jaq_std::funs())
+        .chain(jaq_json::funs());
+
+    let loader = Loader::new(defs);
+    let arena = Arena::default();
+    let modules = loader
+        .load(&arena, program)
+        .map_err(|e| anyhow::anyhow!("jq load: {} error(s)", e.len()))?;
+    let filter = Compiler::default()
+        .with_funs(funs)
+        .compile(modules)
+        .map_err(|e| anyhow::anyhow!("jq compile: {} error(s)", e.len()))?;
+
+    let ctx = Ctx::<data::JustLut<Val>>::new(&filter.lut, Vars::new([]));
+    let mut results: Vec<_> = filter.id.run((ctx, input_val)).map(unwrap_valr).collect();
+
+    fn to_json(v: Val) -> anyhow::Result<Value> {
+        serde_json::from_str(&v.to_string()).map_err(|e| anyhow::anyhow!("{e}"))
     }
-    let f = f.context("jq parse failed")?;
-    let f = defs.compile(f);
-    if !defs.errs.is_empty() {
-        anyhow::bail!("jq compile errors: {} error(s)", defs.errs.len());
-    }
 
-    let jq_inputs = RcIter::new(std::iter::empty::<Result<Val, String>>());
-    let val = Val::from(input);
-    let run_ctx = Ctx::new([], &jq_inputs);
-
-    let mut results: Vec<_> = f.run((run_ctx, val)).collect();
     match results.len() {
         0 => Ok(Value::Null),
-        1 => {
-            let v = results.remove(0).map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            Ok(Value::from(v))
-        }
+        1 => to_json(results.remove(0).map_err(|e| anyhow::anyhow!("{e:?}"))?),
         _ => {
             let vals: anyhow::Result<Vec<Value>> = results
                 .into_iter()
-                .map(|r| r.map(Value::from).map_err(|e| anyhow::anyhow!("{e:?}")))
+                .map(|r| r.map_err(|e| anyhow::anyhow!("{e:?}")).and_then(to_json))
                 .collect();
             Ok(Value::Array(vals?))
         }
