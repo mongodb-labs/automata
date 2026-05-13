@@ -258,34 +258,41 @@ Event-driven automation framework: detect events from external sources → trigg
 | `argoWorkflow` | Submit an Argo Workflow |
 | `k8s` | Create/patch a k8s resource — max 1/s on Kanopy |
 
-### GitHub as a well-known source
+### External GitHub webhooks: all three resources required
 
-**GitHub is pre-approved** — no ENTSEC ticket needed. Self-service via annotation:
+To receive GitHub webhooks from outside the cluster you need **exactly three resources**. Missing any one causes a silent failure (403, DNS failure, or connection reset):
+
+#### 1. EventSource
+
+Must include a `service.ports` block so argoslower creates the external-facing Service and URL. Without it, no Service is created and the webhook URL never becomes reachable.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
   name: automata-github
-  namespace: <namespace>
+  namespace: skunkworks
   annotations:
     v1alpha1.argoslower.kanopy-platform/known-source: "github"
 spec:
   eventBusName: automata-bus
+  service:
+    ports:
+      - port: 80
+        targetPort: 12000        # must match webhook.port below
   github:
     automata:
       repositories:
         - owner: mongodb
           names:
-            - mongodb-atlas-cli
-            # ... other repos
+            - my-repo
       webhook:
-        endpoint: /push
+        endpoint: /github
         port: "12000"
         method: POST
       webhookSecret:
-        name: automata-github-secret
-        key: secret
+        name: automata-secrets
+        key: GITHUB_WEBHOOK_SECRET   # must be ≥ 12 characters
       events:
         - "*"
       insecure: false
@@ -293,16 +300,109 @@ spec:
       contentType: json
 ```
 
-**Webhook URL format:**
+**External webhook URL:**
 ```
-https://webhooks.prod.corp.mongodb.com/<namespace>/<eventsource-name>/<endpoint>
+https://webhooks.staging.corp.mongodb.com/<namespace>/<eventsource-name>/<endpoint>
+# e.g. https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
 ```
 
-**Requirements:**
-- `WebhookSecret` must be ≥ 12 characters
-- GitHub type EventSources must include a WebhookSecret
+#### 2. ServiceCatalogEntry
 
-### Sensor with http trigger (calls automata web service)
+Creates the Istio AuthorizationPolicy that allows GitHub's IP ranges through the mesh. Without this, every request gets **403 from `istio-envoy`** before the EventSource pod even sees it.
+
+```yaml
+apiVersion: service.kanopy-platform.github.io/v1beta1
+kind: ServiceCatalogEntry
+metadata:
+  name: automata-github
+  namespace: skunkworks
+spec:
+  authorization:
+    allowVanity: true   # this is what tells argoslower to open the external path
+    groups: []
+    scopes: []
+  selector:
+    matchLabels:
+      controller: eventsource-controller
+      eventsource-name: automata-github
+      owner-name: automata-github
+```
+
+#### 3. EventBus
+
+Must have `streamConfig: "replicas: 1"` set **at install time** — this is **immutable**. The default `replicas: 3` causes CrashLoopBackOff on Kanopy's single-node NATS: `nats: replicas > 1 not supported in non-clustered mode`.
+
+```yaml
+# eventbus-values.yaml
+jetstreams:
+  automata-bus:
+    version: 2.10.10
+    replicas: 1
+    streamConfig: |
+      replicas: 1
+```
+
+**If you need to change streamConfig on an existing EventBus** (immutable field — `helm upgrade` won't touch it):
+```bash
+helm uninstall automata-eventbus -n skunkworks
+# EventBus CRD gets stuck with a finalizer — force remove it:
+kubectl patch eventbus/automata-bus -n skunkworks --type=json \
+  -p '[{"op":"remove","path":"/metadata/finalizers"}]'
+helm install automata-eventbus mongodb/argo-eventbus \
+  -f deploy/eventbus-values.yaml -n skunkworks
+```
+
+### Sensor: Istio sidecar injection required
+
+The sensor pod **must** have the Istio sidecar injected. Without it the sensor sends plaintext HTTP; the target service's Istio sidecar enforces mTLS and resets the connection (`read: connection reset by peer`).
+
+Add this to the Sensor spec — it makes the sensor a mesh participant so mTLS works and same-namespace traffic is allowed:
+
+```yaml
+spec:
+  eventBusName: automata-bus
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+  dependencies: ...
+```
+
+When sidecar injection is working the sensor pod shows `2/2` containers (app + `istio-proxy`). Without it: `1/1`.
+
+No extra AuthorizationPolicy is needed — Kanopy allows same-namespace mTLS traffic by default once the sidecar is injected.
+
+### Sensor: correct headers and payload format
+
+`headers` under the `http` trigger is a **map**, not an array:
+
+```yaml
+# correct
+http:
+  headers:
+    Content-Type: application/json
+
+# wrong — causes deploy errors
+http:
+  headers:
+    - name: Content-Type
+      value: application/json
+```
+
+### Sensor: body arrives as a JSON-encoded string
+
+When sensor payload extraction uses `dataKey: body`, the body field in the envelope posted to your service arrives as a **JSON-encoded string**, not a JSON object. You must parse it:
+
+```rust
+// envelope["body"] is a serde_json::Value::String, not Value::Object
+let payload = if let Some(s) = body_value.as_str() {
+    serde_json::from_str::<serde_json::Value>(s)?
+} else {
+    body_value
+};
+```
+
+### Sensor: full working example
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -311,6 +411,11 @@ metadata:
   name: automata-sensor
   namespace: skunkworks
 spec:
+  eventBusName: automata-bus
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
   dependencies:
     - name: github-dep
       eventSourceName: automata-github
@@ -319,11 +424,10 @@ spec:
     - template:
         name: call-automata
         http:
-          url: http://automata.skunkworks.svc.cluster.local/webhook/github
+          url: http://automata-web-app.skunkworks.svc.cluster.local/webhook/github/argo
           method: POST
           headers:
-            - name: Content-Type
-              value: application/json
+            Content-Type: application/json
           payload:
             - src:
                 dependencyName: github-dep
@@ -341,6 +445,18 @@ spec:
                   key: SENSOR_TOKEN
           timeoutSeconds: 30
 ```
+
+### Service DNS naming
+
+The `mongodb/web-app` Helm chart names the Kubernetes Service `<release>-web-app`, not `<release>`. The cluster-internal DNS is:
+```
+http://<release>-web-app.<namespace>.svc.cluster.local
+# e.g. http://automata-web-app.skunkworks.svc.cluster.local
+```
+
+### CorpSecure: do not use the web-app service as a webhook target
+
+Services deployed with `mesh: enabled: true` are behind CorpSecure (Okta SSO). External systems (GitHub, etc.) will get a **302 redirect to `login.corp.mongodb.com`** — they cannot authenticate. Always use the argoslower EventSource URL for external webhooks, and use the sensor `http` trigger for internal calls to the web-app.
 
 **Rate limits:**
 - `k8s` triggers: Kanopy enforces max 1/s; request exception via KANOPY ticket if needed
@@ -391,18 +507,17 @@ automata runs as a long-lived HTTP server deployed via `mongodb/web-app`. Argo E
 
 ```
 automata/
-├── .drone.yml                   # build image → deploy web-app + eventbus + k8s manifests
+├── .drone.yml                   # build image → deploy web-app + eventbus + kubectl apply
 ├── Dockerfile                   # multi-stage: cargo build → distroless/cc-debian12 (glibc required)
 ├── Cargo.toml
 ├── src/                         # Rust source
 ├── automations/                 # declarative automation YAML files
-├── functions/                   # reusable named step sequences
-├── k8s/
-│   ├── eventsource.yaml         # GitHub EventSource (well-known source, hand-written)
-│   └── sensor.yaml              # Sensor with http trigger (hand-written)
 └── deploy/
     ├── staging.yaml             # mongodb/web-app Helm values for staging
-    └── eventbus-values.yaml     # mongodb/argo-eventbus Helm values
+    ├── eventbus-values.yaml     # mongodb/argo-eventbus Helm values
+    ├── eventsource.yaml         # GitHub EventSource (kubectl apply, no Helm chart)
+    ├── eventsource-sce.yaml     # ServiceCatalogEntry — opens external webhook path via argoslower
+    └── sensor.yaml              # Sensor with http trigger (kubectl apply, no Helm chart)
 ```
 
 Helm releases in `skunkworks` namespace:
@@ -416,3 +531,5 @@ EventSource and Sensor are applied via `kubectl apply` (no Helm chart available 
 - Pass the automations directory as a CLI argument: `ENTRYPOINT ["/automata", "/automations"]`. The binary defaults to CWD (`.`) which is unpredictable in a container.
 - Do not set a custom `services` block in web-app values — it renames the service and breaks the VirtualService routing (503). Let the chart use its defaults.
 - `platform: arch: amd64` in `.drone.yml` — skunkworks nodes are amd64; arm64 produces `exec format error`.
+- Set `RUST_LOG=info` (or more specific filter) in `staging.yaml` env — `tracing`'s `EnvFilter::from_default_env()` filters everything out if the env var is missing, producing zero log output.
+- Sensor pod should show `2/2` containers when Istio sidecar injection is working. If it shows `1/1`, the `sidecar.istio.io/inject: "true"` annotation is missing from `spec.template.metadata.annotations`.
