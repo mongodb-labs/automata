@@ -19,9 +19,12 @@ pipeline:
           component: AtlasCLI
           assignee: "apix-automation@mongodb.com"
           custom_fields:
-            customfield_12751: [{id: "22223"}]
-            customfield_10257: {value: "Not Needed"}
-            fixVersions: [{id: "50180"}]
+            customfield_12751:
+              - id: "22223"
+            customfield_10257:
+              value: "Not Needed"
+            fixVersions:
+              - id: "50180"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
           description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
@@ -62,9 +65,12 @@ pipeline:
           component: AtlasCLI
           assignee: "{author.email}"
           custom_fields:
-            customfield_12751: [{id: "22223"}]
-            customfield_10257: {value: "Not Needed"}
-            fixVersions: [{id: "50180"}]
+            customfield_12751:
+              - id: "22223"
+            customfield_10257:
+              value: "Not Needed"
+            fixVersions:
+              - id: "50180"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
           description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
