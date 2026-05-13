@@ -17,7 +17,7 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
-          assignee: "cloud-apix-escalation@mongodb.com"
+          assignee: "cloud-atlascli-escalation"
           custom_fields:
             customfield_12751:
               - id: "22223"
@@ -57,13 +57,13 @@ pipeline:
       - builtin.jq:
           id: author
           input: head_commit
-          expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {{email: .}} else {{email: "cloud-apix-escalation@mongodb.com"}} end'
+          expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {{name: .}} else {{name: "cloud-atlascli-escalation"}} end'
       - jira.create_issue:
           id: ticket
           issue_type: Story
           project: CLOUDP
           component: AtlasCLI
-          assignee: "{author.email}"
+          assignee: "{author.name}"
           custom_fields:
             customfield_12751:
               - id: "22223"
