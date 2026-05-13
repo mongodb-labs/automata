@@ -10,12 +10,18 @@ pub async fn create_issue(
     inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
-    let project = inputs["project"].as_str().context("project required")?;
-    let issue_type = inputs
-        .get("issue_type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("Story");
-    let component = inputs["component"].as_str().context("component required")?;
+    let project = interpolate(inputs["project"].as_str().context("project required")?, ctx)?;
+    let issue_type = interpolate(
+        inputs
+            .get("issue_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Story"),
+        ctx,
+    )?;
+    let component = interpolate(
+        inputs["component"].as_str().context("component required")?,
+        ctx,
+    )?;
     let summary_tpl = inputs["summary"].as_str().context("summary required")?;
     let summary = interpolate(summary_tpl, ctx)?;
     let description = inputs
@@ -46,9 +52,9 @@ pub async fn create_issue(
 
     let (key, url) = client
         .create_issue(CreateIssueParams {
-            project,
-            issue_type,
-            component,
+            project: &project,
+            issue_type: &issue_type,
+            component: &component,
             summary: &summary,
             description: description.as_deref(),
             assignee,
