@@ -11,7 +11,7 @@ use crate::github::{app_jwt, list_app_repos};
 
 enum WebhookStatus {
     Ok,
-    WrongUrl(Vec<String>),
+    WrongUrl,
     Missing,
     NoPermission,
 }
@@ -110,21 +110,16 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
     let table_rows: String = rows
         .iter()
         .map(|r| {
-            let perms: String = r
-                .permissions
-                .iter()
-                .map(|(k, v)| format!("<span class='perm'>{k}: {v}</span>"))
-                .collect::<Vec<_>>()
-                .join(" ");
             format!(
                 "<tr><td><a href='https://github.com/{repo}'>{repo}</a></td>\
                  <td class='center'>{}</td>\
                  <td class='center'>{}</td>\
                  <td class='center'>{}</td>\
-                 <td class='perms'>{perms}</td></tr>",
+                 <td class='center'>{}</td></tr>",
                 icon(r.app_installed),
                 webhook_icon(&r.webhook),
                 icon(r.has_automations),
+                permissions_icon(&r.permissions),
                 repo = r.repo,
             )
         })
@@ -222,12 +217,12 @@ async fn check_webhook(
         return WebhookStatus::Missing;
     }
     match expected_url {
-        None => WebhookStatus::WrongUrl(active),
+        None => WebhookStatus::WrongUrl,
         Some(want) => {
             if active.iter().any(|u| u == want) {
                 WebhookStatus::Ok
             } else {
-                WebhookStatus::WrongUrl(active)
+                WebhookStatus::WrongUrl
             }
         }
     }
@@ -240,10 +235,41 @@ fn webhook_icon(status: &WebhookStatus) -> String {
         WebhookStatus::NoPermission => {
             "<span title='Cannot check: repository_hooks permission not granted'>❓</span>".into()
         }
-        WebhookStatus::WrongUrl(found) => {
-            let list = found.join(", ");
-            format!("<span title='No automata webhook found — active hooks: {list}'>⚠️</span>")
-        }
+        WebhookStatus::WrongUrl => "<span title='No automata webhook found'>❌</span>".into(),
+    }
+}
+
+fn permissions_icon(perms: &[(String, String)]) -> String {
+    // (permission, required_value) — None means any non-empty value is acceptable
+    const REQUIRED: &[(&str, Option<&str>)] = &[
+        ("actions", Some("write")),
+        ("contents", None),
+        ("issues", Some("write")),
+        ("metadata", Some("read")),
+        ("pull_requests", Some("write")),
+        ("repository_hooks", Some("write")),
+    ];
+    let perm_map: std::collections::HashMap<&str, &str> = perms
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    let missing: Vec<String> = REQUIRED
+        .iter()
+        .filter_map(|(name, required_val)| match perm_map.get(name) {
+            None => Some(format!("{name}: missing")),
+            Some(actual) => match required_val {
+                Some(want) if *actual != *want => {
+                    Some(format!("{name}: got {actual}, want {want}"))
+                }
+                _ => None,
+            },
+        })
+        .collect();
+    if missing.is_empty() {
+        "<span title='All required permissions granted'>✅</span>".into()
+    } else {
+        let list = missing.join(", ");
+        format!("<span title='Missing permissions: {list}'>⚠️</span>")
     }
 }
 
