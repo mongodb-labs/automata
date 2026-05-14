@@ -84,6 +84,7 @@ mod tests {
                 sensor_token: "test-sensor-token".into(),
                 jira_base_url: "https://jira.example.com".into(),
                 jira_api_token: "token".into(),
+                webhook_url: None,
             },
             automations: Arc::new(vec![]),
             http: reqwest::Client::new(),
