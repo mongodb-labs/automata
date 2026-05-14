@@ -15,6 +15,7 @@ mesh:
 
 env:
   RUST_LOG: info,automata::handlers=debug
+  WEBHOOK_URL: https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
 
 envSecrets:
   GITHUB_APP_ID: automata-secrets

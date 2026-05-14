@@ -13,6 +13,7 @@ pub struct Config {
     pub sensor_token: String,
     pub jira_base_url: String,
     pub jira_api_token: String,
+    pub webhook_url: Option<String>,
 }
 
 impl Config {
@@ -30,6 +31,7 @@ impl Config {
             sensor_token: required("SENSOR_TOKEN")?,
             jira_base_url: required("JIRA_BASE_URL")?,
             jira_api_token: required("JIRA_API_TOKEN")?,
+            webhook_url: std::env::var("WEBHOOK_URL").ok(),
         })
     }
 }

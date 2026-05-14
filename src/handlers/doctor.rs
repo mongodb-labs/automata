@@ -8,6 +8,13 @@ use tracing::info;
 use crate::app_state::AppState;
 use crate::github::{app_jwt, installation_info};
 
+enum WebhookStatus {
+    Ok,
+    WrongUrl(Vec<String>),
+    Missing,
+    NoPermission,
+}
+
 pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
     let jwt = match app_jwt(
         state.config.github_app_id,
@@ -23,7 +30,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
     struct Row {
         repo: String,
         github_access: bool,
-        webhook: Option<bool>,
+        webhook: WebhookStatus,
         permissions: Vec<(String, String)>,
     }
 
@@ -42,7 +49,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
             Err(_) => Row {
                 repo: repo.clone(),
                 github_access: false,
-                webhook: None,
+                webhook: WebhookStatus::NoPermission,
                 permissions: vec![],
             },
             Ok(i) => {
@@ -52,9 +59,16 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                     .and_then(|v| v.as_str())
                     .is_some();
                 let webhook = if can_check_hooks {
-                    check_webhook(&state.http, &i.token, owner, name).await
+                    check_webhook(
+                        &state.http,
+                        &i.token,
+                        owner,
+                        name,
+                        state.config.webhook_url.as_deref(),
+                    )
+                    .await
                 } else {
-                    None
+                    WebhookStatus::NoPermission
                 };
                 let permissions = i
                     .permissions
@@ -88,7 +102,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                  <td class='center'>{}</td>\
                  <td class='perms'>{perms}</td></tr>",
                 icon(r.github_access),
-                webhook_icon(r.webhook),
+                webhook_icon(&r.webhook),
                 repo = r.repo,
             )
         })
@@ -160,7 +174,8 @@ async fn check_webhook(
     token: &str,
     owner: &str,
     repo: &str,
-) -> Option<bool> {
+    expected_url: Option<&str>,
+) -> WebhookStatus {
     let resp = client
         .get(format!("https://api.github.com/repos/{owner}/{repo}/hooks"))
         .bearer_auth(token)
@@ -168,21 +183,44 @@ async fn check_webhook(
         .header("User-Agent", "automata/1.0")
         .send()
         .await;
-    match resp {
-        Ok(r) if r.status().is_success() => r
-            .json::<Vec<Value>>()
-            .await
-            .ok()
-            .map(|hooks| hooks.iter().any(|h| h["active"].as_bool().unwrap_or(false))),
-        _ => None,
+    let hooks = match resp {
+        Ok(r) if r.status().is_success() => match r.json::<Vec<Value>>().await {
+            Ok(h) => h,
+            Err(_) => return WebhookStatus::Missing,
+        },
+        _ => return WebhookStatus::Missing,
+    };
+    let active: Vec<String> = hooks
+        .iter()
+        .filter(|h| h["active"].as_bool().unwrap_or(false))
+        .filter_map(|h| h["config"]["url"].as_str().map(str::to_owned))
+        .collect();
+    if active.is_empty() {
+        return WebhookStatus::Missing;
+    }
+    match expected_url {
+        None => WebhookStatus::Ok,
+        Some(want) => {
+            if active.iter().any(|u| u == want) {
+                WebhookStatus::Ok
+            } else {
+                WebhookStatus::WrongUrl(active)
+            }
+        }
     }
 }
 
-fn webhook_icon(status: Option<bool>) -> &'static str {
+fn webhook_icon(status: &WebhookStatus) -> String {
     match status {
-        Some(true) => "<span title='Active webhook found'>✅</span>",
-        Some(false) => "<span title='No active webhook'>❌</span>",
-        None => "<span title='Cannot check: repository_hooks permission not granted'>❓</span>",
+        WebhookStatus::Ok => "<span title='Active webhook found'>✅</span>".into(),
+        WebhookStatus::Missing => "<span title='No active webhook'>❌</span>".into(),
+        WebhookStatus::NoPermission => {
+            "<span title='Cannot check: repository_hooks permission not granted'>❓</span>".into()
+        }
+        WebhookStatus::WrongUrl(found) => {
+            let list = found.join(", ");
+            format!("<span title='Active webhook found but URL does not match expected — found: {list}'>⚠️</span>")
+        }
     }
 }
 
