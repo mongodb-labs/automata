@@ -48,7 +48,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
             Ok(i) => {
                 let can_check_hooks = i
                     .permissions
-                    .get("administration")
+                    .get("repository_hooks")
                     .and_then(|v| v.as_str())
                     .is_some();
                 let webhook = if can_check_hooks {
@@ -182,7 +182,7 @@ fn webhook_icon(status: Option<bool>) -> &'static str {
     match status {
         Some(true) => "<span title='Active webhook found'>✅</span>",
         Some(false) => "<span title='No active webhook'>❌</span>",
-        None => "<span title='Cannot check: administration permission not granted'>❓</span>",
+        None => "<span title='Cannot check: repository_hooks permission not granted'>❓</span>",
     }
 }
 
