@@ -222,7 +222,7 @@ async fn check_webhook(
         return WebhookStatus::Missing;
     }
     match expected_url {
-        None => WebhookStatus::Ok,
+        None => WebhookStatus::WrongUrl(active),
         Some(want) => {
             if active.iter().any(|u| u == want) {
                 WebhookStatus::Ok
@@ -242,7 +242,7 @@ fn webhook_icon(status: &WebhookStatus) -> String {
         }
         WebhookStatus::WrongUrl(found) => {
             let list = found.join(", ");
-            format!("<span title='Active webhook found but URL does not match expected — found: {list}'>⚠️</span>")
+            format!("<span title='No automata webhook found — active hooks: {list}'>⚠️</span>")
         }
     }
 }
