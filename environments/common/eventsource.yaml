@@ -12,7 +12,7 @@ spec:
       - port: 80
         targetPort: 12000
   github:
-    mongodb:
+    automata:
       repositories:
         - owner: mongodb
           names:
@@ -24,111 +24,21 @@ spec:
             - atlas-cli-plugin-example
             - atlas-local-lib
             - atlas-local-cli
-      githubApp:
-        appID: 885509
-        installationID: 50074214
-        privateKey:
-          name: automata-secrets
-          key: GITHUB_APP_PRIVATE_KEY
-      webhook:
-        endpoint: /github
-        port: "12000"
-        method: POST
-      webhookSecret:
-        name: automata-secrets
-        key: GITHUB_WEBHOOK_SECRET
-      events:
-        - "*"
-      insecure: false
-      active: true
-      contentType: json
-
-    mongodb-js:
-      repositories:
         - owner: mongodb-js
           names:
             - mongodb-mcp-server
             - atlas-local-lib-js
-      githubApp:
-        appID: 885509
-        installationID: 89234134
-        privateKey:
-          name: automata-secrets
-          key: GITHUB_APP_PRIVATE_KEY
-      webhook:
-        endpoint: /github
-        port: "12000"
-        method: POST
-      webhookSecret:
-        name: automata-secrets
-        key: GITHUB_WEBHOOK_SECRET
-      events:
-        - "*"
-      insecure: false
-      active: true
-      contentType: json
-
-    10gen:
-      repositories:
         - owner: 10gen
           names:
             - apix-dashboards
-      githubApp:
-        appID: 885509
-        installationID: 55008255
-        privateKey:
-          name: automata-secrets
-          key: GITHUB_APP_PRIVATE_KEY
-      webhook:
-        endpoint: /github
-        port: "12000"
-        method: POST
-      webhookSecret:
-        name: automata-secrets
-        key: GITHUB_WEBHOOK_SECRET
-      events:
-        - "*"
-      insecure: false
-      active: true
-      contentType: json
-
-    mongodb-labs:
-      repositories:
         - owner: mongodb-labs
           names:
             - cobra2snooty
             - automata
-      githubApp:
-        appID: 885509
-        installationID: 130018138
-        privateKey:
-          name: automata-secrets
-          key: GITHUB_APP_PRIVATE_KEY
-      webhook:
-        endpoint: /github
-        port: "12000"
-        method: POST
-      webhookSecret:
-        name: automata-secrets
-        key: GITHUB_WEBHOOK_SECRET
-      events:
-        - "*"
-      insecure: false
-      active: true
-      contentType: json
-
-    mongodb-forks:
-      repositories:
         - owner: mongodb-forks
           names:
             - chocolatey-packages
             - digest
-      githubApp:
-        appID: 885509
-        installationID: 132347220
-        privateKey:
-          name: automata-secrets
-          key: GITHUB_APP_PRIVATE_KEY
       webhook:
         endpoint: /github
         port: "12000"
@@ -139,5 +49,4 @@ spec:
       events:
         - "*"
       insecure: false
-      active: true
       contentType: json

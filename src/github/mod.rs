@@ -25,7 +25,8 @@ pub fn app_jwt(app_id: u64, private_key_pem: &str) -> anyhow::Result<String> {
     encode(&Header::new(Algorithm::RS256), &claims, &key).context("failed to encode JWT")
 }
 
-pub struct InstallationInfo {
+pub struct AppRepo {
+    pub full_name: String,
     pub token: String,
     pub permissions: serde_json::Map<String, serde_json::Value>,
 }
@@ -40,6 +41,16 @@ struct Installation {
 #[derive(Debug, Deserialize)]
 struct InstallationToken {
     pub token: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReposPage {
+    repositories: Vec<RepoEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RepoEntry {
+    full_name: String,
 }
 
 /// Exchange a GitHub App JWT for an installation access token for the given repo.
@@ -81,17 +92,12 @@ pub async fn installation_token(
     Ok(token.token)
 }
 
-/// Like `installation_token` but also returns the app's permissions on the repo.
-pub async fn installation_info(
-    client: &reqwest::Client,
-    jwt: &str,
-    owner: &str,
-    repo: &str,
-) -> anyhow::Result<InstallationInfo> {
-    let install: Installation = client
-        .get(format!(
-            "https://api.github.com/repos/{owner}/{repo}/installation"
-        ))
+/// List every repo accessible to the GitHub App, across all installations.
+/// Returns one entry per repo with a short-lived installation token and the
+/// installation-level permissions (same for all repos in an org).
+pub async fn list_app_repos(client: &reqwest::Client, jwt: &str) -> anyhow::Result<Vec<AppRepo>> {
+    let installations: Vec<Installation> = client
+        .get("https://api.github.com/app/installations?per_page=100")
         .bearer_auth(jwt)
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "automata/1.0")
@@ -101,24 +107,43 @@ pub async fn installation_info(
         .json()
         .await?;
 
-    let token_resp: InstallationToken = client
-        .post(format!(
-            "https://api.github.com/app/installations/{}/access_tokens",
-            install.id
-        ))
-        .bearer_auth(jwt)
-        .header("Accept", "application/vnd.github+json")
-        .header("User-Agent", "automata/1.0")
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let mut result = Vec::new();
+    for install in installations {
+        let tok: InstallationToken = client
+            .post(format!(
+                "https://api.github.com/app/installations/{}/access_tokens",
+                install.id
+            ))
+            .bearer_auth(jwt)
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "automata/1.0")
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
 
-    Ok(InstallationInfo {
-        token: token_resp.token,
-        permissions: install.permissions,
-    })
+        let page: ReposPage = client
+            .get("https://api.github.com/installation/repositories?per_page=100")
+            .bearer_auth(&tok.token)
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "automata/1.0")
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+
+        for repo in page.repositories {
+            result.push(AppRepo {
+                full_name: repo.full_name,
+                token: tok.token.clone(),
+                permissions: install.permissions.clone(),
+            });
+        }
+    }
+    result.sort_by(|a, b| a.full_name.cmp(&b.full_name));
+    Ok(result)
 }
 
 #[cfg(test)]

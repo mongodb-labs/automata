@@ -3,10 +3,11 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 use tracing::info;
 
 use crate::app_state::AppState;
-use crate::github::{app_jwt, installation_info};
+use crate::github::{app_jwt, list_app_repos};
 
 enum WebhookStatus {
     Ok,
@@ -24,36 +25,54 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
         Err(e) => return Html(error_page(&format!("JWT error: {e}"))),
     };
 
-    let repos = collect_repos(&state.automations);
-    info!(count = repos.len(), "checking repos");
+    let automation_repos: HashSet<String> = collect_repos(&state.automations).into_iter().collect();
+
+    let app_repos = list_app_repos(&state.http, &jwt).await.unwrap_or_default();
+    info!(count = app_repos.len(), "GitHub App repos");
+
+    let app_repo_map: HashMap<String, crate::github::AppRepo> = app_repos
+        .into_iter()
+        .map(|r| (r.full_name.clone(), r))
+        .collect();
+
+    let mut all_repos: Vec<String> = automation_repos
+        .iter()
+        .cloned()
+        .chain(app_repo_map.keys().cloned())
+        .collect();
+    all_repos.sort();
+    all_repos.dedup();
+
+    info!(count = all_repos.len(), "checking repos");
 
     struct Row {
         repo: String,
-        github_access: bool,
+        app_installed: bool,
         webhook: WebhookStatus,
+        has_automations: bool,
         permissions: Vec<(String, String)>,
     }
 
     let mut rows: Vec<Row> = Vec::new();
 
-    for repo in &repos {
+    for repo in &all_repos {
+        let has_automations = automation_repos.contains(repo);
         let parts: Vec<&str> = repo.splitn(2, '/').collect();
         if parts.len() != 2 {
             continue;
         }
         let (owner, name) = (parts[0], parts[1]);
 
-        let info = installation_info(&state.http, &jwt, owner, name).await;
-
-        let row = match info {
-            Err(_) => Row {
+        let row = match app_repo_map.get(repo) {
+            None => Row {
                 repo: repo.clone(),
-                github_access: false,
+                app_installed: false,
                 webhook: WebhookStatus::NoPermission,
+                has_automations,
                 permissions: vec![],
             },
-            Ok(i) => {
-                let can_check_hooks = i
+            Some(app_repo) => {
+                let can_check_hooks = app_repo
                     .permissions
                     .get("repository_hooks")
                     .and_then(|v| v.as_str())
@@ -61,7 +80,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 let webhook = if can_check_hooks {
                     check_webhook(
                         &state.http,
-                        &i.token,
+                        &app_repo.token,
                         owner,
                         name,
                         state.config.webhook_url.as_deref(),
@@ -70,15 +89,16 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 } else {
                     WebhookStatus::NoPermission
                 };
-                let permissions = i
+                let permissions = app_repo
                     .permissions
                     .iter()
                     .map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string()))
                     .collect();
                 Row {
                     repo: repo.clone(),
-                    github_access: true,
+                    app_installed: true,
                     webhook,
+                    has_automations,
                     permissions,
                 }
             }
@@ -100,9 +120,11 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 "<tr><td><a href='https://github.com/{repo}'>{repo}</a></td>\
                  <td class='center'>{}</td>\
                  <td class='center'>{}</td>\
+                 <td class='center'>{}</td>\
                  <td class='perms'>{perms}</td></tr>",
-                icon(r.github_access),
+                icon(r.app_installed),
                 webhook_icon(&r.webhook),
+                icon(r.has_automations),
                 repo = r.repo,
             )
         })
@@ -115,7 +137,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
 <meta charset="utf-8">
 <title>automata — doctor</title>
 <style>
-  body {{ font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #222; }}
+  body {{ font-family: system-ui, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 20px; color: #222; }}
   h1 {{ font-size: 1.4rem; margin-bottom: 1rem; }}
   table {{ width: 100%; border-collapse: collapse; }}
   th {{ text-align: left; border-bottom: 2px solid #ddd; padding: 8px 12px; font-size: .85rem; color: #666; text-transform: uppercase; letter-spacing: .05em; }}
@@ -134,8 +156,9 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
   <thead>
     <tr>
       <th>Repo</th>
-      <th>GitHub Access</th>
+      <th>App Installed</th>
       <th>Webhook</th>
+      <th>Automations</th>
       <th>Permissions</th>
     </tr>
   </thead>
@@ -147,7 +170,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
 </body>
 </html>"#,
         empty = if rows.is_empty() {
-            "<p class='empty'>No automations loaded.</p>"
+            "<p class='empty'>No repos found.</p>"
         } else {
             ""
         },
