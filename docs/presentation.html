@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>automata — demo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+  <style>
+    :root {
+      --accent: #00ed64;
+      --dim: #888;
+    }
+    .reveal h1, .reveal h2 {
+      color: var(--accent);
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+    .reveal h1 { font-size: 2.4em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal p, .reveal li { font-size: 0.88em; line-height: 1.6; }
+    .reveal ul { list-style: none; padding: 0; }
+    .reveal ul li::before { content: "→ "; color: var(--accent); }
+    .reveal .dim { color: var(--dim); font-size: 0.75em; }
+    .reveal .tag {
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      padding: 0.1em 0.5em;
+      border-radius: 4px;
+      font-size: 0.7em;
+      vertical-align: middle;
+    }
+    .reveal pre { font-size: 0.6em !important; }
+    .reveal pre code { max-height: 420px; overflow: hidden; }
+    .slide-yaml pre { font-size: 0.45em !important; }
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      flex-wrap: wrap;
+      margin-top: 1em;
+    }
+    .flow-box {
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 0.4em 0.8em;
+      font-size: 0.72em;
+      color: #ccc;
+    }
+    .flow-arrow { color: var(--accent); font-size: 1.1em; }
+    .live-badge {
+      display: inline-block;
+      background: #1a3a1a;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 0.6em;
+      padding: 0.15em 0.6em;
+      border-radius: 999px;
+      vertical-align: middle;
+      margin-left: 0.5em;
+    }
+  </style>
+</head>
+<body>
+<img src="https://upload.wikimedia.org/wikipedia/commons/9/93/MongoDB_Logo.svg" alt="MongoDB" style="position: fixed; top: 1em; left: 1.2em; height: 2em; filter: brightness(0) invert(1); opacity: 0.85; z-index: 100;" />
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ── Slide 1: Title ── -->
+    <section>
+      <h1>automata</h1>
+      <p style="font-size:1.1em; color:#ccc;">GitHub automation for the APIx DevTools team</p>
+      <br />
+      <p class="dim">Declarative · YAML-first · No code required for common cases</p>
+      <br />
+      <p class="dim"><a href="https://github.com/mongodb-labs/automata" style="color: var(--accent); text-decoration: none;">github.com/mongodb-labs/automata</a></p>
+    </section>
+
+    <!-- ── Slide 2: Problem ── -->
+    <section>
+      <h2>The same workflow, reimplemented everywhere</h2>
+      <ul style="margin-top: 1em;">
+        <li>Every repo duplicates secrets, scripts, and GitHub Actions</li>
+        <li>Integrations drift — some repos handle <code>reopened</code> issues, others don't</li>
+        <li>One change means touching every repo individually</li>
+      </ul>
+      <br />
+      <p class="dim">No single source of truth · inconsistent behaviour across the org</p>
+    </section>
+
+    <!-- ── Slide 3: Solution ── -->
+    <section class="slide-yaml">
+      <h2>One YAML file = one automation</h2>
+      <pre><code class="language-yaml" data-trim data-noescape>
+name: dependabot-automerge
+pipeline:
+  - given:
+      trigger: github
+      repos:
+        - mongodb/mongodb-atlas-cli
+        - mongodb/mongodb-atlas-local
+        - mongodb/apix-action
+    when:
+      - event: pull_request
+        action: opened
+        actor: dependabot[bot]
+    then:
+      - github.approve_pr:
+          owner: "{payload.repository.owner.login}"
+          repo:  "{payload.repository.name}"
+          number: "{payload.pull_request.number}"
+      - github.enable_auto_merge:
+          strategy: squash
+      </code></pre>
+      <p class="dim" style="margin-top:0.5em;"><span class="tag">given</span> what repo &amp; trigger &nbsp; <span class="tag">when</span> which event &nbsp; <span class="tag">then</span> what to do</p>
+    </section>
+
+    <!-- ── Slide 4: Architecture ── -->
+    <section>
+      <h2>How it works</h2>
+      <div class="flow" style="margin-bottom: 1.2em;">
+        <div class="flow-box">GitHub webhook</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Kanopy</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Argo Events</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="border-color: var(--accent); color: var(--accent);">automata</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">GitHub / Jira</div>
+      </div>
+      <ul>
+        <li>Argo Events validates the HMAC signature and routes the event</li>
+        <li>automata matches it against every YAML automation and runs the steps</li>
+        <li>Built-ins: <code>github.*</code>, <code>jira.*</code>, <code>builtin.jq</code></li>
+      </ul>
+    </section>
+
+    <!-- ── Slide 5: Onboarding ── -->
+    <section>
+      <h2>Onboarding a new repo</h2>
+      <ul style="margin-top: 0.8em;">
+        <li>Install <a href="https://github.com/apps/apix-bot" style="color: var(--accent);">github.com/apps/apix-bot</a> on the repo</li>
+        <li>Open a PR adding the repo to <code>deploy/eventsource.yaml</code></li>
+        <li>Add the repo to the relevant <code>automations/*.yaml</code> files</li>
+      </ul>
+      <br />
+      <p class="dim">The webhook is registered automatically on deploy — nothing else needed</p>
+    </section>
+
+    <!-- ── Slide 6: Status ── -->
+    <section>
+      <h2>Status</h2>
+      <ul style="margin-top: 0.8em;">
+        <li>Automations written: dependabot approve/merge, Jira issue sync, PR lifecycle</li>
+        <li>Infrastructure deployed to staging on Kanopy</li>
+        <li>Waiting on an external team to update GitHub App permissions (<a href="https://jira.mongodb.org/browse/ENTSEC-4594" style="color: var(--accent);">ENTSEC-4594</a>)</li>
+      </ul>
+      <br />
+      <p class="dim">New built-in? Add it in <code>src/functions/</code> (Rust)</p>
+    </section>
+
+    <!-- ── Slide 7: Next steps ── -->
+    <section>
+      <h2>Next steps</h2>
+      <ul style="margin-top: 0.8em;">
+        <li>Unblock <a href="https://jira.mongodb.org/browse/ENTSEC-4594" style="color: var(--accent);">ENTSEC-4594</a> — get GitHub App permissions approved</li>
+        <li>Onboard all APIx DevTools repos as the first wave</li>
+        <li>Delete duplicated automations from individual repos</li>
+        <li>Explore new trigger types: cron, Evergreen webhooks, Slack bot</li>
+      </ul>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    controls: false,
+    progress: true,
+    plugins: [RevealHighlight],
+  });
+</script>
+</body>
+</html>
