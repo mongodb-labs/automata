@@ -4,8 +4,13 @@ pipeline:
       trigger: github
       repos:
         - mongodb-labs/automata
-        # - mongodb/mongodb-atlas-cli
-        # - mongodb/atlas-github-action
+        - mongodb/mongodb-atlas-local
+        - mongodb/atlas-local-lib
+        - mongodb/atlas-local-cli
+        - mongodb-js/atlas-local-lib-js
+        - mongodb-labs/cobra2snooty
+        # - mongodb/mongodb-atlas-cli    # covered by GHA: https://github.com/mongodb/mongodb-atlas-cli/blob/930d652c327f4486f53eaa632b399ddc5ce224f7/.github/workflows/issues.yml
+        # - mongodb/atlas-github-action  # covered by GHA: https://github.com/mongodb/atlas-github-action/blob/01887d54ec53b9635ac74917f265748e8ca8fd3d/.github/workflows/jira-issue.yml
     when:
       - event: issues
         action: opened
@@ -48,8 +53,13 @@ pipeline:
       trigger: github
       repos:
         - mongodb-labs/automata
-        # - mongodb/mongodb-atlas-cli
-        # - mongodb/atlas-github-action
+        - mongodb/mongodb-atlas-local
+        - mongodb/atlas-local-lib
+        - mongodb/atlas-local-cli
+        - mongodb-js/atlas-local-lib-js
+        - mongodb-labs/cobra2snooty
+        # - mongodb/mongodb-atlas-cli    # covered by GHA: https://github.com/mongodb/mongodb-atlas-cli/blob/930d652c327f4486f53eaa632b399ddc5ce224f7/.github/workflows/issues.yml
+        # - mongodb/atlas-github-action  # covered by GHA: https://github.com/mongodb/atlas-github-action/blob/01887d54ec53b9635ac74917f265748e8ca8fd3d/.github/workflows/jira-issue.yml
     when:
       - event: issues
         action: closed
@@ -71,8 +81,13 @@ pipeline:
       trigger: github
       repos:
         - mongodb-labs/automata
-        # - mongodb/mongodb-atlas-cli
-        # - mongodb/atlas-github-action
+        - mongodb/mongodb-atlas-local
+        - mongodb/atlas-local-lib
+        - mongodb/atlas-local-cli
+        - mongodb-js/atlas-local-lib-js
+        - mongodb-labs/cobra2snooty
+        # - mongodb/mongodb-atlas-cli    # covered by GHA: https://github.com/mongodb/mongodb-atlas-cli/blob/930d652c327f4486f53eaa632b399ddc5ce224f7/.github/workflows/issues.yml
+        # - mongodb/atlas-github-action  # covered by GHA: https://github.com/mongodb/atlas-github-action/blob/01887d54ec53b9635ac74917f265748e8ca8fd3d/.github/workflows/jira-issue.yml
     when:
       - event: issues
         action: reopened
