@@ -46,6 +46,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/webhook/github/argo", post(handlers::github::handle))
         .route("/webhook/github/raw", post(handlers::github_raw::handle))
         .route("/doctor", get(handlers::doctor::handle))
+        .route(
+            "/doctor/install-webhook",
+            post(handlers::doctor::install_webhook),
+        )
         .with_state(state);
 
     let addr = format!("0.0.0.0:{port}");

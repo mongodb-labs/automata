@@ -1,13 +1,18 @@
 use axum::{
     extract::State,
-    response::{Html, IntoResponse},
+    response::{Html, IntoResponse, Redirect},
 };
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use tracing::info;
 
 use crate::app_state::AppState;
-use crate::github::{app_jwt, list_app_repos};
+use crate::github::{app_jwt, installation_token, list_app_repos};
+
+#[derive(serde::Deserialize)]
+pub struct InstallWebhookForm {
+    pub repo: String,
+}
 
 enum WebhookStatus {
     Ok,
@@ -51,6 +56,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
         webhook: WebhookStatus,
         has_automations: bool,
         permissions: Vec<(String, String)>,
+        can_install: bool,
     }
 
     let mut rows: Vec<Row> = Vec::new();
@@ -70,6 +76,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 webhook: WebhookStatus::NoPermission,
                 has_automations,
                 permissions: vec![],
+                can_install: false,
             },
             Some(app_repo) => {
                 let can_check_hooks = app_repo
@@ -89,6 +96,9 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 } else {
                     WebhookStatus::NoPermission
                 };
+                let can_install = can_check_hooks
+                    && state.config.webhook_url.is_some()
+                    && matches!(webhook, WebhookStatus::Missing | WebhookStatus::WrongUrl);
                 let permissions = app_repo
                     .permissions
                     .iter()
@@ -100,6 +110,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                     webhook,
                     has_automations,
                     permissions,
+                    can_install,
                 }
             }
         };
@@ -117,7 +128,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                  <td class='center'>{}</td>\
                  <td class='center'>{}</td></tr>",
                 icon(r.app_installed),
-                webhook_icon(&r.webhook),
+                webhook_cell(&r.webhook, &r.repo, r.can_install),
                 icon(r.has_automations),
                 permissions_icon(&r.permissions),
                 repo = r.repo,
@@ -143,6 +154,8 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
   a {{ color: #0366d6; text-decoration: none; }}
   a:hover {{ text-decoration: underline; }}
   .empty {{ color: #999; font-style: italic; padding: 20px 0; }}
+  .btn-install {{ font-size: .75rem; padding: 2px 8px; border: 1px solid #0366d6; background: none; color: #0366d6; border-radius: 3px; cursor: pointer; vertical-align: middle; margin-left: 6px; }}
+  .btn-install:hover {{ background: #0366d6; color: #fff; }}
 </style>
 </head>
 <body>
@@ -228,15 +241,136 @@ async fn check_webhook(
     }
 }
 
-fn webhook_icon(status: &WebhookStatus) -> String {
+fn webhook_icon(status: &WebhookStatus) -> &'static str {
     match status {
-        WebhookStatus::Ok => "<span title='Active webhook found'>✅</span>".into(),
-        WebhookStatus::Missing => "<span title='No active webhook'>❌</span>".into(),
+        WebhookStatus::Ok => "<span title='Active webhook found'>✅</span>",
+        WebhookStatus::Missing => "<span title='No active webhook'>❌</span>",
         WebhookStatus::NoPermission => {
-            "<span title='Cannot check: repository_hooks permission not granted'>❓</span>".into()
+            "<span title='Cannot check: repository_hooks permission not granted'>❓</span>"
         }
-        WebhookStatus::WrongUrl => "<span title='No automata webhook found'>❌</span>".into(),
+        WebhookStatus::WrongUrl => "<span title='No automata webhook found'>❌</span>",
     }
+}
+
+fn webhook_cell(status: &WebhookStatus, repo: &str, can_install: bool) -> String {
+    let icon = webhook_icon(status);
+    if can_install {
+        format!(
+            "{icon}<form method='post' action='/doctor/install-webhook' style='display:inline'>\
+            <input type='hidden' name='repo' value='{repo}'>\
+            <button type='submit' class='btn-install'>Install</button></form>"
+        )
+    } else {
+        icon.to_string()
+    }
+}
+
+pub async fn install_webhook(
+    State(state): State<AppState>,
+    axum::extract::Form(params): axum::extract::Form<InstallWebhookForm>,
+) -> impl IntoResponse {
+    match do_install_webhook(&state, &params.repo).await {
+        Ok(()) => Redirect::to("/doctor").into_response(),
+        Err(e) => Html(error_page(&format!(
+            "Failed to install webhook for {}: {e}",
+            params.repo
+        )))
+        .into_response(),
+    }
+}
+
+async fn do_install_webhook(state: &AppState, repo: &str) -> anyhow::Result<()> {
+    let parts: Vec<&str> = repo.splitn(2, '/').collect();
+    anyhow::ensure!(parts.len() == 2, "invalid repo: {repo}");
+    let (owner, name) = (parts[0], parts[1]);
+
+    let webhook_url = state
+        .config
+        .webhook_url
+        .as_deref()
+        .ok_or_else(|| anyhow::anyhow!("WEBHOOK_URL not configured"))?;
+
+    let jwt = app_jwt(
+        state.config.github_app_id,
+        &state.config.github_app_private_key,
+    )?;
+    let token = installation_token(&state.http, &jwt, owner, name).await?;
+
+    let config = serde_json::json!({
+        "url": webhook_url,
+        "content_type": "json",
+        "secret": state.config.github_webhook_secret,
+        "insecure_ssl": "0"
+    });
+    let hook_body = serde_json::json!({
+        "name": "web",
+        "active": true,
+        "events": ["issues", "pull_request"],
+        "config": config,
+    });
+
+    // Fetch existing hooks to find one that already points to our URL.
+    // If found but inactive → activate it (PATCH).
+    // If not found → create it (POST).
+    // This avoids 422 "Hook already exists" on both verbs.
+    let hooks: Vec<Value> = state
+        .http
+        .get(format!("https://api.github.com/repos/{owner}/{name}/hooks"))
+        .bearer_auth(&token)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    let existing = hooks
+        .iter()
+        .find(|h| h["config"]["url"].as_str() == Some(webhook_url));
+
+    let resp = match existing {
+        Some(h) if h["active"].as_bool().unwrap_or(false) => {
+            // Already active and correct — nothing to do.
+            return Ok(());
+        }
+        Some(h) => {
+            // Exists but inactive — activate it.
+            let id = h["id"]
+                .as_u64()
+                .ok_or_else(|| anyhow::anyhow!("hook missing id"))?;
+            state
+                .http
+                .patch(format!(
+                    "https://api.github.com/repos/{owner}/{name}/hooks/{id}"
+                ))
+                .bearer_auth(&token)
+                .header("Accept", "application/vnd.github+json")
+                .header("User-Agent", "automata/1.0")
+                .json(&serde_json::json!({"active": true, "config": config}))
+                .send()
+                .await?
+        }
+        None => {
+            state
+                .http
+                .post(format!("https://api.github.com/repos/{owner}/{name}/hooks"))
+                .bearer_auth(&token)
+                .header("Accept", "application/vnd.github+json")
+                .header("User-Agent", "automata/1.0")
+                .json(&hook_body)
+                .send()
+                .await?
+        }
+    };
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        anyhow::bail!("GitHub {status}: {body}");
+    }
+
+    Ok(())
 }
 
 fn permissions_icon(perms: &[(String, String)]) -> String {
