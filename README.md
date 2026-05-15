@@ -268,6 +268,42 @@ If the expression returns a JSON object, its fields become the step's named outp
     expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
 ```
 
+### `builtin.lookup`
+
+Looks up a value from a static table using a dynamic key. Useful for mapping a repo name (or any payload field) to per-repo configuration.
+
+| Input | Required | Description |
+|---|---|---|
+| `input` | ✅ | Key to look up — supports `{path}` interpolation |
+| `table` | ✅ | YAML mapping of key → value |
+| `default` | | Value to return when the key is not in the table. Omitting this makes a missing key an error. |
+
+The matched value is available as `{id.value}`. Since interpolation only resolves scalar leaf fields, store per-repo config as flat key/value pairs and reference them with `{id.value.field}`.
+
+```yaml
+- builtin.lookup:
+    id: repo_config
+    input: "{payload.repository.name}"
+    table:
+      mongodb-atlas-cli:
+        component: AtlasCLI
+        fix_version_name: next-atlascli-release
+      mongodb-atlas-local:
+        component: local-atlas-experience
+        fix_version_name: next-atlas-local-release
+    default:
+      component: AtlasCLI
+      fix_version_name: next-atlascli-release
+
+- jira.create_issue:
+    component: "{repo_config.value.component}"
+    custom_fields:
+      fixVersions:
+        - name: "{repo_config.value.fix_version_name}"
+```
+
+---
+
 `owner`, `repo`, and `number` for GitHub functions are typically interpolated from the payload:
 
 ```yaml

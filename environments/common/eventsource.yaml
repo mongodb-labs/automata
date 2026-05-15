@@ -26,7 +26,6 @@ spec:
             - atlas-local-cli
         - owner: mongodb-js
           names:
-            - mongodb-mcp-server
             - atlas-local-lib-js
         - owner: 10gen
           names:

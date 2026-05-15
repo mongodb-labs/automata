@@ -8,19 +8,27 @@ pub async fn lookup(
     inputs: &HashMap<String, serde_yaml::Value>,
     ctx: &ExecutionContext,
 ) -> anyhow::Result<Value> {
-    let key_tpl = inputs["key"].as_str().context("key required")?;
-    let key = interpolate(key_tpl, ctx)?;
+    let input_tpl = inputs["input"].as_str().context("input required")?;
+    let input = interpolate(input_tpl, ctx)?;
     let table_yaml = inputs["table"].as_mapping().context("table required")?;
     let table_json: Value = serde_json::to_value(table_yaml)?;
     let table = interpolate_value(&table_json, ctx)?;
     let result = table.as_object().and_then(|m| {
         m.iter()
-            .find(|(k, _)| k.as_str() == key)
+            .find(|(k, _)| k.as_str() == input)
             .map(|(_, v)| v.clone())
     });
     match result {
         Some(v) => Ok(json!({ "value": v })),
-        None => anyhow::bail!("lookup: key {key:?} not found in table"),
+        None => {
+            if let Some(default_yaml) = inputs.get("default") {
+                let default_json: Value = serde_json::to_value(default_yaml)?;
+                let default_val = interpolate_value(&default_json, ctx)?;
+                Ok(json!({ "value": default_val }))
+            } else {
+                anyhow::bail!("lookup: input {input:?} not found in table and no default provided")
+            }
+        }
     }
 }
 
@@ -95,7 +103,72 @@ fn run_jq(expr: &str, input: Value) -> anyhow::Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::context::ExecutionContext;
     use serde_json::json;
+
+    fn empty_ctx() -> ExecutionContext {
+        ExecutionContext {
+            payload: json!({"repository": {"name": "mongodb-atlas-cli"}}),
+            outputs: std::collections::HashMap::new(),
+            inputs: std::collections::HashMap::new(),
+        }
+    }
+
+    fn yaml_inputs(s: &str) -> HashMap<String, serde_yaml::Value> {
+        serde_yaml::from_str(s).unwrap()
+    }
+
+    #[tokio::test]
+    async fn lookup_returns_scalar_value() {
+        let inputs = yaml_inputs(
+            r#"
+input: "{payload.repository.name}"
+table:
+  mongodb-atlas-cli:
+    component: AtlasCLI
+    fix_version_name: next-atlascli-release
+  mongodb-atlas-local:
+    component: local-atlas-experience
+    fix_version_name: next-atlas-local-release
+"#,
+        );
+        let result = lookup(&inputs, &empty_ctx()).await.unwrap();
+        assert_eq!(result["value"]["component"], "AtlasCLI");
+        assert_eq!(result["value"]["fix_version_name"], "next-atlascli-release");
+    }
+
+    #[tokio::test]
+    async fn lookup_missing_key_uses_default() {
+        let inputs = yaml_inputs(
+            r#"
+input: unknown-repo
+table:
+  known-repo:
+    component: KnownComponent
+default:
+  component: DefaultComponent
+  fix_version_name: default-release
+"#,
+        );
+        let result = lookup(&inputs, &empty_ctx()).await.unwrap();
+        assert_eq!(result["value"]["component"], "DefaultComponent");
+        assert_eq!(result["value"]["fix_version_name"], "default-release");
+    }
+
+    #[tokio::test]
+    async fn lookup_missing_key_no_default_errors() {
+        let inputs = yaml_inputs(
+            r#"
+input: unknown-repo
+table:
+  known-repo:
+    component: KnownComponent
+"#,
+        );
+        let result = lookup(&inputs, &empty_ctx()).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
 
     #[test]
     fn jq_identity() {

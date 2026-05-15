@@ -10,18 +10,32 @@ pipeline:
       - event: issues
         action: opened
     then:
+      - builtin.lookup:
+          id: repo_config
+          input: "{payload.repository.name}"
+          table:
+            mongodb-atlas-local:
+              component: local-atlas-experience
+            atlas-local-lib:
+              component: local-atlas-experience
+            atlas-local-cli:
+              component: local-atlas-experience
+            atlas-local-lib-js:
+              component: local-atlas-experience
+          default:
+            component: AtlasCLI
       - jira.create_issue:
           id: ticket
           issue_type: Story
           project: CLOUDP
-          component: AtlasCLI
+          component: "{repo_config.value.component}"
           custom_fields:
             customfield_12751:
               - id: "22223"
             customfield_10257:
               value: "Not Needed"
             fixVersions:
-              - id: "50180"
+              - name: "Not Applicable"
           summary: "[{payload.repository.name}] {payload.issue.title}"
           description: "This ticket tracks the following GitHub issue: {payload.issue.html_url}"
       - github.post_comment:
@@ -51,7 +65,7 @@ pipeline:
           expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
       - jira.transition:
           key: "{find.key}"
-          transition_id: "1371"
+          transition_id: "1381"
 
   - given:
       trigger: github
@@ -74,4 +88,4 @@ pipeline:
           expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
       - jira.transition:
           key: "{find.key}"
-          transition_id: "3"
+          transition_id: "1351"

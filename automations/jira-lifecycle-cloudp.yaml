@@ -1,22 +1,44 @@
-name: jira-lifecycle-atlascli
+name: jira-lifecycle-cloudp
 pipeline:
   - given:
       trigger: github
       repos:
         - mongodb-labs/automata
         # - mongodb/mongodb-atlas-cli
-        # - mongodb/atlas-github-action
+        # - mongodb/mongodb-atlas-local
         # - mongodb-labs/cobra2snooty
     when:
       - event: pull_request
         action: opened
         actor: "dependabot[bot]"
     then:
+      - builtin.lookup:
+          id: repo_config
+          input: "{payload.repository.name}"
+          table:
+            mongodb-atlas-cli:
+              component: AtlasCLI
+              fix_version_name: next-atlascli-release
+            mongodb-atlas-local:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            atlas-local-lib:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            atlas-local-cli:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            atlas-local-lib-js:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+          default:
+            component: AtlasCLI
+            fix_version_name: Not Applicable
       - jira.create_issue:
           id: ticket
           issue_type: Story
           project: CLOUDP
-          component: AtlasCLI
+          component: "{repo_config.value.component}"
           assignee: "cloud-atlascli-escalation"
           custom_fields:
             customfield_12751:
@@ -24,7 +46,7 @@ pipeline:
             customfield_10257:
               value: "Not Needed"
             fixVersions:
-              - id: "50180"
+              - name: "{repo_config.value.fix_version_name}"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
           description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
@@ -58,11 +80,36 @@ pipeline:
           id: author
           input: head_commit
           expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {{name: .}} else {{name: "cloud-atlascli-escalation"}} end'
+      - builtin.lookup:
+          id: repo_config
+          input: "{payload.repository.name}"
+          table:
+            mongodb-atlas-cli:
+              component: AtlasCLI
+              fix_version_name: next-atlascli-release
+            mongodb-atlas-local:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            atlas-local-lib:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            atlas-local-cli:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            atlas-local-lib-js:
+              component: local-atlas-experience
+              fix_version_name: Not Applicable
+            cobra2snooty:
+              component: AtlasCLI
+              fix_version_name: Not Applicable
+          default:
+            component: AtlasCLI
+            fix_version_name: Not Applicable
       - jira.create_issue:
           id: ticket
           issue_type: Story
           project: CLOUDP
-          component: AtlasCLI
+          component: "{repo_config.value.component}"
           assignee: "{author.name}"
           custom_fields:
             customfield_12751:
@@ -70,7 +117,7 @@ pipeline:
             customfield_10257:
               value: "Not Needed"
             fixVersions:
-              - id: "50180"
+              - name: "{repo_config.value.fix_version_name}"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
           description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
@@ -94,7 +141,7 @@ pipeline:
       repos:
         - mongodb-labs/automata
         # - mongodb/mongodb-atlas-cli
-        # - mongodb/atlas-github-action
+        # - mongodb/mongodb-atlas-local
         # - mongodb-labs/cobra2snooty
     when:
       - event: pull_request
@@ -123,8 +170,7 @@ pipeline:
       repos:
         - mongodb-labs/automata
         # - mongodb/mongodb-atlas-cli
-        # - mongodb/atlas-github-action
-        # - mongodb-labs/cobra2snooty
+        # - mongodb/mongodb-atlas-local
     when:
       - event: pull_request
         action: closed

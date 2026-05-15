@@ -1,6 +1,6 @@
 # APIx DevTools — GitHub Actions Workflow Research
 
-> Audited: 2026-05-11  
+> Audited: 2026-05-11 (Jira fields section updated: 2026-05-15)
 > Scope: 16 repositories, ~120 workflow files  
 > Groups: AtlasCLI, Atlas Local, MCP & Internal, Misc
 
@@ -28,7 +28,7 @@
 ### MCP & Internal Group
 | Repo | Org | Language | Workflows |
 |---|---|---|---|
-| mongodb-mcp-server | mongodb-js | TypeScript | 21 |
+| mongodb-mcp-server | mongodb-js | TypeScript | 21 | **excluded from automata scope** |
 | apix-bot | 10gen | TypeScript | 2 |
 | apix-dashboards | 10gen | — | 0 |
 | apix-devtools | 10gen | — | 0 |
@@ -478,3 +478,230 @@ Present in: `apix-action` (all 8 workflows), `cobra2snooty`.
 | `GitHubSecurityLab/actions-permissions/monitor` | Runtime permissions auditing | apix-action, cobra2snooty |
 | `stoplightio/spectral-action` | OpenAPI Spectral linting | openapi |
 | `peter-evans/create-or-update-comment` | PR comment create/update | cobra2snooty |
+
+---
+
+## Jira Fields Per Repo — Automata Integration Audit
+
+> Scope: all repos in `environments/common/eventsource.yaml`
+> Purpose: determine exact Jira field values needed per repo before enabling automata automations
+> `jira-lifecycle-close.yaml` removed 2026-05-15 (duplicate of close path already in `jira-lifecycle-atlascli.yaml`)
+
+### Repos with existing GitHub Actions Jira automation
+
+These repos already run Jira workflows via GHA. The automata automations are intended to replace or mirror them.
+
+#### `mongodb/mongodb-atlas-cli`
+
+| Trigger | Field | Value |
+|---|---|---|
+| Dependabot PR open | project | `CLOUDP` |
+| | component | `AtlasCLI` |
+| | issuetype | `Story` |
+| | summary | `AtlasCLI Dependency Update n. {number}` |
+| | assignee | `${{ secrets.ASSIGNEE_JIRA_TICKET }}` |
+| | fixVersions | name: `"next-atlascli-release"` (**by name**) |
+| | customfield_12751 | id: `"22223"` (from `library_owners_jira.json`, always this value) |
+| | customfield_10257 | id: `"11861"` |
+| GitHub Issue open | project | `CLOUDP` |
+| | component | `AtlasCLI` |
+| | issuetype | `Story` |
+| | summary | `HELP: GitHub Issue n. {number}` |
+| | assignee | `${{ vars.ASSIGNEE_JIRA_TICKET }}` |
+| | fixVersions | name: `"Not Applicable"` |
+| | customfield_12751 | id: `"22223"` |
+| | customfield_10257 | id: `"11861"` |
+| Transition — merged | transition_id | `1381` (Resolved) |
+| Transition — reopen | transition_id | `1351` (Reopened) |
+| Ticket scan pattern | regex | `CLOUDP-[0-9]+` (branch name prefix or PR comment grep) |
+
+#### `mongodb/atlas-github-action`
+
+Identical to atlas-cli issue workflow; no Dependabot→Jira path in GHA.
+
+| Trigger | Field | Value |
+|---|---|---|
+| GitHub Issue open | project | `CLOUDP` |
+| | component | `AtlasCLI` |
+| | issuetype | `Story` |
+| | summary | `HELP: GitHub Issue n. {number}` |
+| | assignee | `${{ vars.ASSIGNEE_JIRA_TICKET }}` |
+| | fixVersions | name: `"Not Applicable"` |
+| | customfield_12751 | id: `"22223"` |
+| | customfield_10257 | id: `"11861"` |
+| Transition — close | transition_id | `1381` (Resolved) |
+| Transition — reopen | transition_id | `1351` (Reopened) |
+| Ticket lookup | JQL | `project = CLOUDP AND description ~ '<issue_url>'` |
+
+#### `mongodb/mongodb-atlas-local`
+
+| Trigger | Field | Value |
+|---|---|---|
+| Dependabot PR open | project | `CLOUDP` |
+| | component | `local-atlas-experience` (**different from AtlasCLI**) |
+| | issuetype | `Story` |
+| | summary | `LocalDev Dependency Update n. {number}` |
+| | assignee | `${{ secrets.JIRA_ASSIGNEE }}` (different secret name) |
+| | fixVersions | id: `"17641"` (numeric ID, **different from atlas-cli**) |
+| | customfield_12751 | id: `"22223"` |
+| | customfield_10257 | id: `"11861"` |
+| Transition — merged | transition_id | `1381` (Resolve Issue / Fixed) |
+| Transition — not merged | transition_id | `1371` (Close Issue / Won't Fix) |
+| Ticket scan pattern | regex | `CLOUDP-[0-9]+` |
+
+#### `mongodb-labs/cobra2snooty`
+
+| Trigger | Field | Value |
+|---|---|---|
+| Dependabot PR open | project | `CLOUDP` |
+| | component | `AtlasCLI` |
+| | issuetype | `Story` |
+| | summary | `cobra2snooty Dependency Update n. {number}` |
+| | assignee | `${{ secrets.ASSIGNEE_JIRA_TICKET }}` |
+| | fixVersions | id: `"41805"` (**different from all other repos**) |
+| | customfield_12751 | `${{ vars.JIRA_TEAM_APIX_2 }}` (variable, not hardcoded — same team ID `"22223"` at runtime) |
+| | customfield_10257 | id: `"11861"` |
+| Transition — merged only | transition_id | `1381` (Resolved / Fixed) |
+| | | **No "Won't Fix" path** (unlike atlas-local) |
+| Ticket scan pattern | regex | `CLOUDP-[0-9]+` |
+
+#### `mongodb-js/mongodb-mcp-server`
+
+**Excluded from automata scope** — shared with other teams, uses a separate `MCP` Jira project with different field IDs and transition IDs. Removed from `eventsource.yaml` 2026-05-15. Retained here for reference only.
+
+| Trigger | Field | Value |
+|---|---|---|
+| GitHub Issue open | project | `MCP` |
+| | component | *(none)* |
+| | issuetype | `Bug` |
+| | customfield_12751 | ids: `"27247"` and `"27326"` |
+| | customfield_10257 | *(not set)* |
+| Transition — close | transition_id | `61` |
+| Ticket lookup | JQL | `project = MCP AND description ~ '<issue_url>'` |
+
+---
+
+### Repos with NO Jira automation
+
+These repos either have no Jira workflows at all or are not plausible candidates.
+
+| Repo | Has Dependabot | Notes |
+|---|---|---|
+| `mongodb/atlas-local-lib` | Yes (cargo + github-actions, weekly Mon) | Rust library; no Jira in GHA |
+| `mongodb/atlas-local-cli` | Yes (cargo only, weekly Mon) | Rust CLI; no Jira in GHA |
+| `mongodb-js/atlas-local-lib-js` | Yes (cargo + npm + github-actions, weekly Mon) | NAPI-RS; no Jira in GHA |
+| `mongodb/apix-action` | Yes (github-actions + npm ×2, weekly) | IS the Jira action library; only mock values in CI tests |
+| `mongodb/atlas-cli-core` | Yes (gomod + github-actions, weekly Tue; reviewer: `apix-2`) | No Jira in GHA |
+| `mongodb/atlas-cli-plugin-example` | No | Single release workflow only |
+| `10gen/apix-dashboards` | N/A | Repo inaccessible / does not exist at this path |
+| `mongodb-forks/chocolatey-packages` | No | Chocolatey test + publish only |
+| `mongodb-forks/digest` | Yes (gomod + github-actions, weekly Tue) | Go lib; no Jira in GHA |
+
+---
+
+### GitHub Issue sync — per-repo analysis
+
+Both repos that have issue→Jira automation in GHA use **identical** Jira parameters, so no `builtin.lookup` is needed in `issue-sync-atlascli.yaml`.
+
+| Field | `mongodb/mongodb-atlas-cli` | `mongodb/atlas-github-action` |
+|---|---|---|
+| project | `CLOUDP` | `CLOUDP` |
+| component | `AtlasCLI` | `AtlasCLI` |
+| issuetype | `Story` | `Story` |
+| summary | `HELP: GitHub Issue n. {number}` | `HELP: GitHub Issue n. {number}` |
+| assignee | `vars.ASSIGNEE_JIRA_TICKET` | `vars.ASSIGNEE_JIRA_TICKET` |
+| fixVersions | name: `"Not Applicable"` | name: `"Not Applicable"` |
+| customfield_12751 | id: `"22223"` | id: `"22223"` |
+| customfield_10257 | id: `"11861"` = `value: "Not Needed"` | id: `"11861"` = `value: "Not Needed"` |
+| Transition — close | `1381` (Resolved) | `1381` (Resolved) |
+| Transition — reopen | `1351` (Reopened) | `1351` (Reopened) |
+| Ticket lookup strategy | JQL `project = CLOUDP AND description ~ '<url>'` | JQL `project = CLOUDP AND description ~ '<url>'` |
+
+Automata uses comment scanning instead of JQL (controls what it posts) — equivalent outcome.
+
+`mongodb-atlas-local`, `cobra2snooty`, and all other repos have no issue→Jira automation in GHA.
+
+#### All other repos — Jira field values inferred from existing issues
+
+All repos belong to the same team. `customfield_12751 id: "22223"` = display name **"APIx DevTools"** — consistent across all repos. `fixVersions` for issue-sync should always be `Not Applicable` (no version target for a general GitHub issue).
+
+| Repo | project | component | customfield_12751 | fixVersions | Notes |
+|---|---|---|---|---|---|
+| `mongodb/mongodb-atlas-local` | `CLOUDP` | `local-atlas-experience` | `22223` | `Not Applicable` | Already in lifecycle; no issue sync in GHA |
+| `mongodb/atlas-local-lib` | `CLOUDP` | `local-atlas-experience` | `22223` | `Not Applicable` | CLOUDP-397846 uses both AtlasCLI + local-atlas-experience; primary is local |
+| `mongodb/atlas-local-cli` | `CLOUDP` | `local-atlas-experience` | `22223` | `Not Applicable` | Same pattern as atlas-local-lib |
+| `mongodb-js/atlas-local-lib-js` | `CLOUDP` | `local-atlas-experience` | `22223` | `Not Applicable` | CLOUDP-362273 shows APIx DevTools; component inferred from sibling repos |
+| `mongodb/atlas-cli-core` | `CLOUDP` | `AtlasCLI` | `22223` | `Not Applicable` | CLOUDP-400902 uses AtlasCLI + `next-atlascli-release` but that's a feature ticket; issues use `Not Applicable` |
+| `mongodb-labs/cobra2snooty` | `CLOUDP` | `AtlasCLI` | `22223` | `Not Applicable` | CLOUDP-300844, CLOUDP-138384; already in lifecycle |
+| `mongodb-forks/chocolatey-packages` | `CLOUDP` | `AtlasCLI` | `22223` | `Not Applicable` | CLOUDP-318987; Windows packaging for AtlasCLI |
+| `mongodb/apix-action` | — | — | — | — | Action library — issues here are dev tasks, not user-facing; **not a candidate** |
+| `mongodb-forks/digest` | — | — | — | — | Upstream Go lib fork — no user-facing issues expected; **not a candidate** |
+
+> `atlas-local-*` repos use `local-atlas-experience` as their primary component (consistent with `mongodb-atlas-local` lifecycle config). Jira issues sometimes also carry `AtlasCLI` as a secondary component but automata's `jira.create_issue` takes a single component.
+
+**Cross-check with Dependabot PR creation:** the same component mapping applies to `jira-lifecycle-cloudp.yaml`. `atlas-local-lib`, `atlas-local-cli`, and `atlas-local-lib-js` are now explicit entries in both lookup tables — without them the default (`AtlasCLI`) would silently misclassify their tickets.
+
+| Repo | component | lookup table entry |
+|---|---|---|
+| `mongodb-atlas-cli` | `AtlasCLI` | explicit (`fix_version_name: next-atlascli-release`) |
+| `mongodb-atlas-local` | `local-atlas-experience` | explicit |
+| `atlas-local-lib` | `local-atlas-experience` | explicit |
+| `atlas-local-cli` | `local-atlas-experience` | explicit |
+| `atlas-local-lib-js` | `local-atlas-experience` | explicit |
+| `cobra2snooty` | `AtlasCLI` | explicit |
+| `atlas-cli-core` | `AtlasCLI` | covered by default |
+| `chocolatey-packages` | `AtlasCLI` | covered by default |
+| *(any new repo)* | `AtlasCLI` | covered by default |
+
+---
+
+### Known transition IDs in CLOUDP
+
+| ID | Meaning | Used for |
+|---|---|---|
+| `1381` | Resolved / Fixed | PR merged; issue closed |
+| `1371` | Close / Won't Fix | PR closed without merge only |
+| `1351` | Reopened | Issue reopened |
+
+---
+
+### Discrepancies fixed (2026-05-15)
+
+#### `jira-lifecycle-cloudp.yaml` (renamed from `jira-lifecycle-atlascli.yaml`)
+
+| Field | Old value | Fixed value | Note |
+|---|---|---|---|
+| `customfield_10257` | `id: "11861"` | `value: "Not Needed"` | Both formats valid; name confirmed via Jira API (`id: "11861"` = `"Not Needed"`) |
+| `fixVersions` (atlas-cli) | `id: "50180"` | `name: "next-atlascli-release"` | ID `50180` resolves to this name — standardised on names |
+| `fixVersions` (atlas-local) | `id: "17641"` | `name: "Not Applicable"` | ID `17641` resolves to `"Not Applicable"` |
+| `fixVersions` (cobra2snooty) | `id: "41805"` | `name: "Not Applicable"` | ID `41805` was `"atlascli-1.40.0"` — stale released version, corrected |
+| per-repo config | 3 separate pipeline steps | single `builtin.lookup` keyed on `payload.repository.name` | `component` + `fix_version_name` per repo; `default` covers unknown repos |
+| `jira-lifecycle-close.yaml` | existed as separate file | deleted | Duplicate of close/transition logic already in lifecycle file |
+
+#### `issue-sync-atlascli.yaml`
+
+| Field | Old value | Fixed value | Note |
+|---|---|---|---|
+| `fixVersions` | `id: "50180"` | `name: "Not Applicable"` | Issues use "Not Applicable"; `50180` is the Dependabot rolling version |
+| Transition — closed | `"1371"` (Won't Fix) | `"1381"` (Resolved) | GHA uses 1381 for issue close; 1371 is for unmerged PRs only |
+| Transition — reopened | `"3"` (unknown) | `"1351"` (Reopened) | Confirmed from atlas-cli `issues.yml` |
+
+---
+
+### Automata automation coverage per repo (current state)
+
+| Repo | `jira-lifecycle-cloudp` | `issue-sync-atlascli` | `dependabot-approve/automerge` |
+|---|---|---|---|
+| `mongodb/mongodb-atlas-cli` | commented (ready) | commented (ready) | commented (ready) |
+| `mongodb/mongodb-atlas-local` | commented (ready) | — not applicable | commented (ready) |
+| `mongodb/atlas-github-action` | — not applicable | commented (ready) | — not applicable |
+| `mongodb-labs/cobra2snooty` | commented (ready) | — not applicable | not in list yet |
+| `mongodb-js/mongodb-mcp-server` | **excluded** | **excluded** | **excluded** |
+| `mongodb/atlas-local-lib` | — | — | commented (ready) |
+| `mongodb/atlas-local-cli` | — | — | — not in list |
+| `mongodb-js/atlas-local-lib-js` | — | — | commented (ready) |
+| `mongodb/apix-action` | — | — | commented (ready) |
+| `mongodb/atlas-cli-core` | — | — | — not in list |
+| `mongodb/atlas-cli-plugin-example` | — | — | — |
+| `mongodb-forks/chocolatey-packages` | — | — | — |
+| `mongodb-forks/digest` | — | — | — |
