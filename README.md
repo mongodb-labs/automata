@@ -127,7 +127,7 @@ then:
 
 #### `id:`
 
-Names the step output so later steps can reference it via `{id.field}`.
+Names the step output so later steps can reference it via `{id.output.field}`. Every step wraps its return value under an `output` key — so a step that produces `{"key": "CLOUDP-1"}` is stored as `{"output": {"key": "CLOUDP-1"}}` and referenced as `{ticket.output.key}`.
 
 #### Interpolation
 
@@ -137,7 +137,7 @@ Any string value in a step's inputs can embed `{path}` expressions:
 |---|---|
 | `{payload.repository.name}` | field from the GitHub webhook payload |
 | `{payload.pull_request.number}` | nested payload field |
-| `{step-id.field}` | named output from a previous step |
+| `{step-id.output.field}` | named output from a previous step |
 | `{env.AUTOMATA_MY_SECRET}` | env var `AUTOMATA_MY_SECRET` (must be prefixed with `AUTOMATA_`) |
 
 Secret values are injected via environment variables. Only vars prefixed with `AUTOMATA_` are accessible. To use a secret in a step:
@@ -162,7 +162,10 @@ Creates a Jira issue and exposes its key and URL as step outputs.
 | `component` | | Jira component name |
 | `custom_fields` | | Map of custom field IDs to values |
 
-Outputs: `key` (e.g. `CLOUDP-1234`), `url` (full Jira URL).
+| Output | Description |
+|---|---|
+| `output.key` | Jira issue key, e.g. `CLOUDP-1234` |
+| `output.url` | Full Jira issue URL |
 
 ### `jira.transition`
 
@@ -184,7 +187,9 @@ Posts a comment on a PR or issue.
 | `number` | ✅ | PR or issue number |
 | `body` | ✅ | Comment body; supports interpolation |
 
-Outputs: `comment_id`.
+| Output | Description |
+|---|---|
+| `output.comment_id` | ID of the newly created comment |
 
 ### `github.add_label`
 
@@ -218,7 +223,9 @@ Submits an approving review on a PR.
 | `repo` | ✅ | |
 | `number` | ✅ | |
 
-Outputs: `review_id`.
+| Output | Description |
+|---|---|
+| `output.review_id` | ID of the submitted review |
 
 ### `github.enable_auto_merge`
 
@@ -241,7 +248,28 @@ Fetches all comments on a PR or issue.
 | `repo` | ✅ | |
 | `number` | ✅ | |
 
-Outputs: `comments` — an array of comment objects with `body`, `id`, `user.login`, etc.
+| Output | Description |
+|---|---|
+| `output.comments` | Array of comment objects; each has `body`, `id`, `user.login`, etc. Access inside `builtin.jq` via `.output.comments[]`. |
+
+### `github.get_commit`
+
+Fetches a commit object from GitHub.
+
+| Input | Required | Description |
+|---|---|---|
+| `owner` | ✅ | |
+| `repo` | ✅ | |
+| `sha` | ✅ | Full or abbreviated commit SHA |
+
+| Output | Description |
+|---|---|
+| `output.commit.author.email` | Author email of the commit |
+| `output.commit.author.name` | Author name of the commit |
+| `output.commit.message` | Commit message |
+| `output.sha` | Full commit SHA |
+
+Full GitHub [commit object](https://docs.github.com/en/rest/commits/commits#get-a-commit) is available under `output`; use `builtin.jq` to extract any subfield.
 
 ### `builtin.jq`
 
@@ -252,21 +280,25 @@ Runs a [jq](https://jqlang.github.io/jq/) expression against a previous step's o
 | `input` | ✅ | Step id whose output is the jq input |
 | `expr` | ✅ | jq expression |
 
-If the expression returns a JSON object, its fields become the step's named outputs directly. Otherwise the result is available as `result`.
+| Output | Description |
+|---|---|
+| `output` | The full jq result. For object results, access fields as `{id.output.field}`. For scalar results, wrap in an object: `\| {result: .}` and access as `{id.output.result}`. |
 
 ```yaml
-# scalar output → {find.result}
+# scalar output → {find.output.result}
 - builtin.jq:
     id: find
     input: comments
-    expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+"))'
+    expr: 'first(.output.comments[].body | scan("CLOUDP-[0-9]+")) | {result: .}'
 
-# object output → {find.key}, {find.url}
+# object output → {find.output.key}
 - builtin.jq:
     id: find
     input: comments
-    expr: 'first(.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
+    expr: 'first(.output.comments[].body | scan("CLOUDP-[0-9]+")) | {key: .}'
 ```
+
+Note: the `input` step's data is accessed via `.output.*` inside the jq expression (e.g. `.output.comments[]` for a `github.list_pr_comments` result).
 
 ### `builtin.lookup`
 
@@ -278,7 +310,11 @@ Looks up a value from a static table using a dynamic key. Useful for mapping a r
 | `table` | ✅ | YAML mapping of key → value |
 | `default` | | Value to return when the key is not in the table. Omitting this makes a missing key an error. |
 
-The matched value is available as `{id.output}`. Since interpolation only resolves scalar leaf fields, store per-repo config as flat key/value pairs and reference them with `{id.output.field}`.
+| Output | Description |
+|---|---|
+| `output` | The matched table value. For object values, access leaf fields as `{id.output.field}`. |
+
+Since interpolation only resolves scalar leaf fields, store per-repo config as flat key/value pairs and reference them with `{id.output.field}`.
 
 ```yaml
 - builtin.lookup:
