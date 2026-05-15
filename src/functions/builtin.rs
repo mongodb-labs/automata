@@ -19,12 +19,12 @@ pub async fn lookup(
             .map(|(_, v)| v.clone())
     });
     match result {
-        Some(v) => Ok(json!({ "value": v })),
+        Some(v) => Ok(json!({"output": v})),
         None => {
             if let Some(default_yaml) = inputs.get("default") {
                 let default_json: Value = serde_json::to_value(default_yaml)?;
                 let default_val = interpolate_value(&default_json, ctx)?;
-                Ok(json!({ "value": default_val }))
+                Ok(json!({"output": default_val}))
             } else {
                 anyhow::bail!("lookup: input {input:?} not found in table and no default provided")
             }
@@ -44,10 +44,7 @@ pub async fn jq(
     let expr = interpolate(expr_tpl, ctx)?;
     let input_val = ctx.outputs.get(&input_id).cloned().unwrap_or(Value::Null);
     let result = run_jq(&expr, input_val)?;
-    match result {
-        Value::Object(_) => Ok(result),
-        other => Ok(json!({ "result": other })),
-    }
+    Ok(json!({"output": result}))
 }
 
 fn run_jq(expr: &str, input: Value) -> anyhow::Result<Value> {
@@ -133,8 +130,11 @@ table:
 "#,
         );
         let result = lookup(&inputs, &empty_ctx()).await.unwrap();
-        assert_eq!(result["value"]["component"], "AtlasCLI");
-        assert_eq!(result["value"]["fix_version_name"], "next-atlascli-release");
+        assert_eq!(result["output"]["component"], "AtlasCLI");
+        assert_eq!(
+            result["output"]["fix_version_name"],
+            "next-atlascli-release"
+        );
     }
 
     #[tokio::test]
@@ -151,8 +151,8 @@ default:
 "#,
         );
         let result = lookup(&inputs, &empty_ctx()).await.unwrap();
-        assert_eq!(result["value"]["component"], "DefaultComponent");
-        assert_eq!(result["value"]["fix_version_name"], "default-release");
+        assert_eq!(result["output"]["component"], "DefaultComponent");
+        assert_eq!(result["output"]["fix_version_name"], "default-release");
     }
 
     #[tokio::test]

@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn load_automations_from_dir() {
         let autos = load_automations("automations/").unwrap();
-        assert_eq!(autos.len(), 5);
+        assert_eq!(autos.len(), 4);
     }
 
     #[test]

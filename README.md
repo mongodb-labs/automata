@@ -278,7 +278,7 @@ Looks up a value from a static table using a dynamic key. Useful for mapping a r
 | `table` | ✅ | YAML mapping of key → value |
 | `default` | | Value to return when the key is not in the table. Omitting this makes a missing key an error. |
 
-The matched value is available as `{id.value}`. Since interpolation only resolves scalar leaf fields, store per-repo config as flat key/value pairs and reference them with `{id.value.field}`.
+The matched value is available as `{id.output}`. Since interpolation only resolves scalar leaf fields, store per-repo config as flat key/value pairs and reference them with `{id.output.field}`.
 
 ```yaml
 - builtin.lookup:
@@ -296,10 +296,10 @@ The matched value is available as `{id.value}`. Since interpolation only resolve
       fix_version_name: next-atlascli-release
 
 - jira.create_issue:
-    component: "{repo_config.value.component}"
+    component: "{repo_config.output.component}"
     custom_fields:
       fixVersions:
-        - name: "{repo_config.value.fix_version_name}"
+        - name: "{repo_config.output.fix_version_name}"
 ```
 
 ---

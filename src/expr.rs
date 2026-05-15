@@ -141,9 +141,9 @@ mod tests {
         let mut c = ctx();
         c.outputs.insert(
             "ticket".to_string(),
-            json!({"url": "https://jira.mongodb.org/browse/CLOUDP-123", "key": "CLOUDP-123"}),
+            json!({"output": {"url": "https://jira.mongodb.org/browse/CLOUDP-123", "key": "CLOUDP-123"}}),
         );
-        let result = interpolate("Jira ticket: {ticket.url}", &c).unwrap();
+        let result = interpolate("Jira ticket: {ticket.output.url}", &c).unwrap();
         assert_eq!(
             result,
             "Jira ticket: https://jira.mongodb.org/browse/CLOUDP-123"
@@ -230,8 +230,8 @@ mod tests {
     fn interpolate_value_nested_object() {
         let mut c = ctx();
         c.outputs
-            .insert("find".to_string(), json!({"key": "CLOUDP-123"}));
-        let v = json!({"resolution": {"name": "Fixed"}, "key": "{find.key}"});
+            .insert("find".to_string(), json!({"output": {"key": "CLOUDP-123"}}));
+        let v = json!({"resolution": {"name": "Fixed"}, "key": "{find.output.key}"});
         let result = interpolate_value(&v, &c).unwrap();
         assert_eq!(
             result,

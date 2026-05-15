@@ -61,7 +61,7 @@ pub async fn create_issue(
             custom_fields: &custom_fields,
         })
         .await?;
-    Ok(json!({"key": key, "url": url}))
+    Ok(json!({"output": {"key": key, "url": url}}))
 }
 
 pub async fn transition(
@@ -84,5 +84,5 @@ pub async fn transition(
     client
         .transition(&key, &transition_id, fields.as_ref())
         .await?;
-    Ok(json!({}))
+    Ok(json!({"output": {}}))
 }

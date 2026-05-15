@@ -30,7 +30,7 @@ pub async fn post_comment(
         ctx,
     )?;
     let comment_id = client.post_comment(&owner, &repo, number, &body).await?;
-    Ok(json!({"comment_id": comment_id}))
+    Ok(json!({"output": {"comment_id": comment_id}}))
 }
 
 pub async fn add_label(
@@ -58,7 +58,7 @@ pub async fn add_label(
         ctx,
     )?;
     client.add_label(&owner, &repo, number, &label).await?;
-    Ok(json!({}))
+    Ok(json!({"output": {}}))
 }
 
 pub async fn remove_label(
@@ -86,7 +86,7 @@ pub async fn remove_label(
         ctx,
     )?;
     client.remove_label(&owner, &repo, number, &label).await?;
-    Ok(json!({}))
+    Ok(json!({"output": {}}))
 }
 
 pub async fn approve_pr(
@@ -110,7 +110,7 @@ pub async fn approve_pr(
     )?
     .parse()?;
     let review_id = client.approve_pr(&owner, &repo, number).await?;
-    Ok(json!({"review_id": review_id}))
+    Ok(json!({"output": {"review_id": review_id}}))
 }
 
 pub async fn list_pr_comments(
@@ -134,7 +134,7 @@ pub async fn list_pr_comments(
     )?
     .parse()?;
     let comments = client.list_comments(&owner, &repo, number).await?;
-    Ok(json!({ "comments": comments }))
+    Ok(json!({"output": {"comments": comments}}))
 }
 
 pub async fn get_commit(
@@ -151,7 +151,8 @@ pub async fn get_commit(
         ctx,
     )?;
     let sha = interpolate(inputs["sha"].as_str().context("sha must be a string")?, ctx)?;
-    client.get_commit(&owner, &repo, &sha).await
+    let commit = client.get_commit(&owner, &repo, &sha).await?;
+    Ok(json!({"output": commit}))
 }
 
 pub async fn enable_auto_merge(
@@ -182,5 +183,5 @@ pub async fn enable_auto_merge(
     client
         .enable_auto_merge(&owner, &repo, number, &strategy)
         .await?;
-    Ok(json!({}))
+    Ok(json!({"output": {}}))
 }

@@ -38,7 +38,7 @@ pipeline:
           id: ticket
           issue_type: Story
           project: CLOUDP
-          component: "{repo_config.value.component}"
+          component: "{repo_config.output.component}"
           assignee: "cloud-atlascli-escalation"
           custom_fields:
             customfield_12751:
@@ -46,14 +46,14 @@ pipeline:
             customfield_10257:
               value: "Not Needed"
             fixVersions:
-              - name: "{repo_config.value.fix_version_name}"
+              - name: "{repo_config.output.fix_version_name}"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
           description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.pull_request.number}"
-          body: "The ticket [{ticket.key}]({ticket.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
+          body: "The ticket [{ticket.output.key}]({ticket.output.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
       - github.add_label:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
@@ -79,7 +79,7 @@ pipeline:
       - builtin.jq:
           id: author
           input: head_commit
-          expr: '.commit.author.email | if . != null and test("@mongodb\\.com$") then {{name: .}} else {{name: "cloud-atlascli-escalation"}} end'
+          expr: '.output.commit.author.email | if . != null and test("@mongodb\\.com$") then {{name: .}} else {{name: "cloud-atlascli-escalation"}} end'
       - builtin.lookup:
           id: repo_config
           input: "{payload.repository.name}"
@@ -109,22 +109,22 @@ pipeline:
           id: ticket
           issue_type: Story
           project: CLOUDP
-          component: "{repo_config.value.component}"
-          assignee: "{author.name}"
+          component: "{repo_config.output.component}"
+          assignee: "{author.output.name}"
           custom_fields:
             customfield_12751:
               - id: "22223"
             customfield_10257:
               value: "Not Needed"
             fixVersions:
-              - name: "{repo_config.value.fix_version_name}"
+              - name: "{repo_config.output.fix_version_name}"
           summary: "[{payload.repository.name}] {payload.pull_request.title}"
           description: "This ticket tracks the following GitHub pull request: {payload.pull_request.html_url}"
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
           number: "{payload.pull_request.number}"
-          body: "The ticket [{ticket.key}]({ticket.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
+          body: "The ticket [{ticket.output.key}]({ticket.output.url}) was created for internal tracking.\n\nNote: Jira ticket will be closed automatically when this PR is merged."
       - github.add_label:
           owner: "{payload.repository.owner.login}"
           repo: "{payload.repository.name}"
@@ -157,9 +157,9 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
+          expr: 'first(.output.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
       - jira.transition:
-          key: "{find.key}"
+          key: "{find.output.key}"
           transition_id: "1381"
           fields:
             resolution:
@@ -185,7 +185,7 @@ pipeline:
       - builtin.jq:
           id: find
           input: comments
-          expr: 'first(.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
+          expr: 'first(.output.comments[] | select(.body | test("was created for internal tracking")) | .body | scan("CLOUDP-[0-9]+")) | {{key: .}}'
       - jira.transition:
-          key: "{find.key}"
+          key: "{find.output.key}"
           transition_id: "1371"

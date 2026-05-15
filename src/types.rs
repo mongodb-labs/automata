@@ -122,19 +122,19 @@ mod tests {
 
     #[test]
     fn parse_jira_lifecycle_atlascli() {
-        let a = load("automations/jira-lifecycle-atlascli.yaml");
-        assert_eq!(a.name, "jira-lifecycle-atlascli");
+        let a = load("automations/jira-lifecycle-cloudp.yaml");
+        assert_eq!(a.name, "jira-lifecycle-cloudp");
         assert_eq!(a.pipeline.len(), 4);
         // Entry 0: dependabot actor trigger
         let e0 = &a.pipeline[0];
         assert_eq!(e0.given.trigger, "github");
         assert!(matches!(&e0.when[0].core.event, StringFilter::One(ev) if ev == "pull_request"));
         assert_eq!(e0.when[0].core.actor.as_deref(), Some("dependabot[bot]"));
-        assert_eq!(e0.then.len(), 3);
+        assert_eq!(e0.then.len(), 4);
         // Entry 1: create_jira label trigger
         let e1 = &a.pipeline[1];
         assert!(matches!(&e1.when[0].core.label, Some(StringFilter::One(l)) if l == "create_jira"));
-        assert_eq!(e1.then.len(), 6);
+        assert_eq!(e1.then.len(), 7);
         // Entry 2: auto_close_jira merged close trigger
         let e2 = &a.pipeline[2];
         assert!(
@@ -149,15 +149,6 @@ mod tests {
         );
         assert_eq!(e3.when[0].core.merged, Some(false));
         assert_eq!(e3.then.len(), 3);
-    }
-
-    #[test]
-    fn parse_jira_lifecycle_close() {
-        let a = load("automations/jira-lifecycle-close.yaml");
-        assert_eq!(a.name, "jira-lifecycle-close");
-        let w = &a.pipeline[0].when[0].core;
-        assert!(w.merged == Some(true));
-        assert!(matches!(&w.label, Some(StringFilter::One(l)) if l == "auto_close_jira"));
     }
 
     #[test]
