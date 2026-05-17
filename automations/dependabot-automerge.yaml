@@ -4,11 +4,11 @@ pipeline:
       trigger: github
       repos:
         - mongodb-labs/automata
-        # - mongodb/mongodb-atlas-cli
-        # - mongodb/mongodb-atlas-local
-        # - mongodb/apix-action
-        # - mongodb/atlas-local-lib
-        # - mongodb-js/atlas-local-lib-js
+        # - mongodb/mongodb-atlas-cli    # covered by GHA: https://github.com/mongodb/mongodb-atlas-cli/blob/930d652c327f4486f53eaa632b399ddc5ce224f7/.github/workflows/dependabot-create-jira-issue.yml
+        # - mongodb/mongodb-atlas-local  # covered by GHA: https://github.com/mongodb/mongodb-atlas-local/blob/db40db9b08f266cf7ec8f110bce7d8a837d13dc5/.github/workflows/dependabot-jira.yml
+        # - mongodb/apix-action          # covered by GHA: https://github.com/mongodb/apix-action/blob/d6eef98f01353c90d02f1612789cc6ad8631a8b7/.github/workflows/dependabot-auto-merge.yaml
+        # - mongodb/atlas-local-lib      # covered by GHA: https://github.com/mongodb/atlas-local-lib/blob/4c737bac502cf27f32c92e74f5ac40070d2e5274/.github/workflows/dependabot-auto-approve.yml
+        # - mongodb-js/atlas-local-lib-js  # covered by GHA: https://github.com/mongodb-js/atlas-local-lib-js/blob/9808d082eb3bdb3aa9b5223a667a1f41705c6010/.github/workflows/dependabot-auto-approve.yml
     when:
       - event: pull_request
         action: opened
