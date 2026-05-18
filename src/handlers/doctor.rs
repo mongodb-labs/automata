@@ -447,4 +447,55 @@ mod tests {
         let repos = collect_repos(&[]);
         assert!(repos.is_empty());
     }
+
+    fn all_perms() -> Vec<(String, String)> {
+        vec![
+            ("actions".to_string(), "write".to_string()),
+            ("contents".to_string(), "read".to_string()),
+            ("issues".to_string(), "write".to_string()),
+            ("metadata".to_string(), "read".to_string()),
+            ("pull_requests".to_string(), "write".to_string()),
+            ("repository_hooks".to_string(), "write".to_string()),
+        ]
+    }
+
+    #[test]
+    fn permissions_icon_all_required_ok() {
+        let result = permissions_icon(&all_perms());
+        assert!(result.contains("✅"), "expected ✅ in: {result}");
+    }
+
+    #[test]
+    fn permissions_icon_missing_permission_shows_warning() {
+        let perms: Vec<_> = all_perms()
+            .into_iter()
+            .filter(|(k, _)| k != "repository_hooks")
+            .collect();
+        let result = permissions_icon(&perms);
+        assert!(result.contains("⚠️"), "expected ⚠️ in: {result}");
+        assert!(result.contains("repository_hooks: missing"), "{result}");
+    }
+
+    #[test]
+    fn permissions_icon_wrong_level_shows_warning() {
+        let perms: Vec<_> = all_perms()
+            .into_iter()
+            .map(|(k, v)| {
+                if k == "actions" {
+                    (k, "read".to_string())
+                } else {
+                    (k, v)
+                }
+            })
+            .collect();
+        let result = permissions_icon(&perms);
+        assert!(result.contains("⚠️"), "expected ⚠️ in: {result}");
+        assert!(result.contains("actions: got read, want write"), "{result}");
+    }
+
+    #[test]
+    fn permissions_icon_empty_perms_shows_warning() {
+        let result = permissions_icon(&[]);
+        assert!(result.contains("⚠️"), "expected ⚠️ for empty perms");
+    }
 }

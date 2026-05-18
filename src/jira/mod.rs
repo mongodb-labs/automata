@@ -104,3 +104,121 @@ impl JiraClient {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::collections::HashMap;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    fn client(server: &MockServer) -> JiraClient {
+        JiraClient::new(&server.uri(), "token")
+    }
+
+    fn minimal_params<'a>(custom_fields: &'a HashMap<String, Value>) -> CreateIssueParams<'a> {
+        CreateIssueParams {
+            project: "CLOUDP",
+            issue_type: "Story",
+            component: "AtlasCLI",
+            summary: "Test issue",
+            description: None,
+            assignee: None,
+            custom_fields,
+        }
+    }
+
+    #[tokio::test]
+    async fn create_issue_returns_key_and_url() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-123"})))
+            .mount(&server)
+            .await;
+        let cf = HashMap::new();
+        let (key, url) = client(&server)
+            .create_issue(minimal_params(&cf))
+            .await
+            .unwrap();
+        assert_eq!(key, "CLOUDP-123");
+        assert!(url.contains("CLOUDP-123"), "url should contain key: {url}");
+    }
+
+    #[tokio::test]
+    async fn create_issue_with_description_and_assignee() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-456"})))
+            .mount(&server)
+            .await;
+        let cf = HashMap::new();
+        let (key, _) = client(&server)
+            .create_issue(CreateIssueParams {
+                description: Some("A description"),
+                assignee: Some("cloud-atlascli-escalation"),
+                ..minimal_params(&cf)
+            })
+            .await
+            .unwrap();
+        assert_eq!(key, "CLOUDP-456");
+    }
+
+    #[tokio::test]
+    async fn create_issue_propagates_http_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(400).set_body_string("bad request"))
+            .mount(&server)
+            .await;
+        let cf = HashMap::new();
+        let result = client(&server).create_issue(minimal_params(&cf)).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("400"));
+    }
+
+    #[tokio::test]
+    async fn transition_ok() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue/CLOUDP-123/transitions"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&server)
+            .await;
+        client(&server)
+            .transition("CLOUDP-123", "1381", None)
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn transition_with_fields() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue/CLOUDP-999/transitions"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&server)
+            .await;
+        let fields = json!({"resolution": {"name": "Fixed"}});
+        client(&server)
+            .transition("CLOUDP-999", "1381", Some(&fields))
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn transition_propagates_http_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue/CLOUDP-1/transitions"))
+            .respond_with(ResponseTemplate::new(404).set_body_string("not found"))
+            .mount(&server)
+            .await;
+        let result = client(&server).transition("CLOUDP-1", "999", None).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("404"));
+    }
+}

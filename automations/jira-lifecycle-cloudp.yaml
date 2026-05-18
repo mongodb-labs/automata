@@ -63,12 +63,18 @@ pipeline:
           number: "{payload.pull_request.number}"
           label: auto_close_jira
 
-  # Manual trigger for testing: add the `create_jira` label to any PR in this repo
+  # Manual trigger for testing: add the `create_jira` label to any PR in these repos
   # to fire ticket creation. The label is removed after the ticket is posted.
   - given:
       trigger: github
       repos:
         - mongodb-labs/automata
+        - mongodb/atlas-local-lib
+        - mongodb/atlas-local-cli
+        - mongodb-js/atlas-local-lib-js
+        # - mongodb/mongodb-atlas-cli    # covered by GHA: https://github.com/mongodb/mongodb-atlas-cli/blob/930d652c327f4486f53eaa632b399ddc5ce224f7/.github/workflows/dependabot-create-jira-issue.yml
+        # - mongodb/mongodb-atlas-local  # covered by GHA: https://github.com/mongodb/mongodb-atlas-local/blob/db40db9b08f266cf7ec8f110bce7d8a837d13dc5/.github/workflows/dependabot-jira.yml
+        # - mongodb-labs/cobra2snooty    # covered by GHA: https://github.com/mongodb-labs/cobra2snooty/blob/bd5445cb1e72dfceeb8987e22afab30ad8561938/.github/workflows/dependabot.yml
     when:
       - event: pull_request
         action: labeled

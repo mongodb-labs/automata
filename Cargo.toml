@@ -30,4 +30,5 @@ jaq-json = "2"
 tower = { version = "0.5", features = ["util"] }
 cargo-husky = { version = "1", default-features = false, features = ["user-hooks"] }
 rsa = "0.9"
+wiremock = "0.6"
 

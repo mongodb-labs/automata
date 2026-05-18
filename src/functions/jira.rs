@@ -86,3 +86,109 @@ pub async fn transition(
         .await?;
     Ok(json!({"output": {}}))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::context::ExecutionContext;
+    use crate::jira::JiraClient;
+    use serde_json::json;
+    use std::collections::HashMap;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    fn ctx() -> ExecutionContext {
+        ExecutionContext::new(json!({}))
+    }
+
+    fn sv(s: &str) -> serde_yaml::Value {
+        serde_yaml::Value::String(s.to_string())
+    }
+
+    fn base_inputs() -> HashMap<String, serde_yaml::Value> {
+        let mut m = HashMap::new();
+        m.insert("project".to_string(), sv("CLOUDP"));
+        m.insert("issue_type".to_string(), sv("Story"));
+        m.insert("component".to_string(), sv("AtlasCLI"));
+        m.insert("summary".to_string(), sv("Test PR"));
+        m
+    }
+
+    #[tokio::test]
+    async fn create_issue_returns_key_and_url() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-1"})))
+            .mount(&server)
+            .await;
+        let client = JiraClient::new(&server.uri(), "token");
+        let result = create_issue(&client, &base_inputs(), &ctx()).await.unwrap();
+        assert_eq!(result["output"]["key"], "CLOUDP-1");
+        assert!(result["output"]["url"]
+            .as_str()
+            .unwrap()
+            .contains("CLOUDP-1"));
+    }
+
+    #[tokio::test]
+    async fn null_string_assignee_is_filtered_out() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-2"})))
+            .mount(&server)
+            .await;
+        let client = JiraClient::new(&server.uri(), "token");
+        let mut inputs = base_inputs();
+        inputs.insert("assignee".to_string(), sv("null"));
+        let result = create_issue(&client, &inputs, &ctx()).await.unwrap();
+        assert_eq!(result["output"]["key"], "CLOUDP-2");
+    }
+
+    #[tokio::test]
+    async fn empty_string_assignee_is_filtered_out() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-3"})))
+            .mount(&server)
+            .await;
+        let client = JiraClient::new(&server.uri(), "token");
+        let mut inputs = base_inputs();
+        inputs.insert("assignee".to_string(), sv(""));
+        let result = create_issue(&client, &inputs, &ctx()).await.unwrap();
+        assert_eq!(result["output"]["key"], "CLOUDP-3");
+    }
+
+    #[tokio::test]
+    async fn real_assignee_is_passed_through() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-4"})))
+            .mount(&server)
+            .await;
+        let client = JiraClient::new(&server.uri(), "token");
+        let mut inputs = base_inputs();
+        inputs.insert("assignee".to_string(), sv("cloud-atlascli-escalation"));
+        let result = create_issue(&client, &inputs, &ctx()).await.unwrap();
+        assert_eq!(result["output"]["key"], "CLOUDP-4");
+    }
+
+    #[tokio::test]
+    async fn transition_returns_empty_output() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue/CLOUDP-10/transitions"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&server)
+            .await;
+        let client = JiraClient::new(&server.uri(), "token");
+        let mut inputs = HashMap::new();
+        inputs.insert("key".to_string(), sv("CLOUDP-10"));
+        inputs.insert("transition_id".to_string(), sv("1381"));
+        let result = transition(&client, &inputs, &ctx()).await.unwrap();
+        assert_eq!(result, json!({"output": {}}));
+    }
+}
