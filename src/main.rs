@@ -38,6 +38,7 @@ fn init_tracer(endpoint: &str) -> anyhow::Result<opentelemetry_sdk::trace::Trace
         ))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
+    opentelemetry::global::set_tracer_provider(provider.clone());
     Ok(provider)
 }
 
