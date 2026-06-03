@@ -16,7 +16,7 @@ mesh:
 env:
   RUST_LOG: info,automata::handlers=debug
   WEBHOOK_URL: https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger-operator-jaeger-collector.monitoring.svc:4317
 
 envSecrets:
   GITHUB_APP_ID: automata-secrets
