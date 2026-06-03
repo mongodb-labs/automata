@@ -4,15 +4,24 @@ services:
     env_file: .env
     environment:
       RUST_LOG: debug
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
     volumes:
       - ./automations:/automations:ro
     ports:
       - "8081:8080"
+    depends_on:
+      - jaeger
     develop:
       watch:
         - path: ./automations
           action: sync+restart
           target: /automations
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
 
   ngrok:
     image: ngrok/ngrok:latest
