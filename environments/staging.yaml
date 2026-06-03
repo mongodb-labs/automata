@@ -26,8 +26,9 @@ envSecrets:
   JIRA_BASE_URL: automata-secrets
   JIRA_API_TOKEN: automata-secrets
 
-podAnnotations:
-  sidecar.jaegertracing.io/inject: jaeger-operator-jaeger
+deployment:
+  annotations:
+    sidecar.jaegertracing.io/inject: jaeger-operator-jaeger
 
 resources:
   requests:
