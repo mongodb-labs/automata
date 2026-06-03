@@ -15,7 +15,7 @@ use axum::{
     Router,
 };
 use std::sync::Arc;
-use tower_http::trace::{DefaultMakeSpan, TraceLayer};
+use tower_http::trace::TraceLayer;
 use tracing::info;
 
 use app_state::AppState;
@@ -91,8 +91,15 @@ async fn main() -> anyhow::Result<()> {
             post(handlers::doctor::install_webhook),
         )
         .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO)),
+            TraceLayer::new_for_http().make_span_with(|request: &axum::http::Request<_>| {
+                tracing::info_span!(
+                    "http_request",
+                    method = %request.method(),
+                    uri = %request.uri(),
+                    github.event = tracing::field::Empty,
+                    github.delivery_id = tracing::field::Empty,
+                )
+            }),
         )
         .with_state(state);
 
