@@ -15,7 +15,7 @@ use axum::{
     Router,
 };
 use std::sync::Arc;
-use tower_http::trace::TraceLayer;
+use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 use tracing::info;
 
 use app_state::AppState;
@@ -90,7 +90,10 @@ async fn main() -> anyhow::Result<()> {
             "/doctor/install-webhook",
             post(handlers::doctor::install_webhook),
         )
-        .layer(TraceLayer::new_for_http())
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO)),
+        )
         .with_state(state);
 
     let addr = format!("0.0.0.0:{port}");
