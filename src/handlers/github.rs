@@ -30,19 +30,28 @@ pub async fn handle(
         return StatusCode::UNAUTHORIZED;
     }
 
-    // Parse the Sensor-wrapped envelope: {"github_event": "...", "body": {...}}
-    let envelope: serde_json::Value = match serde_json::from_slice(&body) {
-        Ok(v) => v,
-        Err(e) => {
-            error!(%e, "invalid JSON envelope");
+    let event_type = match headers.get("X-GitHub-Event").and_then(|v| v.to_str().ok()) {
+        Some(e) => e.to_string(),
+        None => {
+            warn!("missing X-GitHub-Event header");
             return StatusCode::BAD_REQUEST;
         }
     };
 
-    let event_type = match envelope.get("github_event").and_then(|v| v.as_str()) {
-        Some(e) => e.to_string(),
-        None => {
-            warn!("missing github_event in envelope");
+    let delivery_id = headers
+        .get("X-GitHub-Delivery")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("-")
+        .to_string();
+
+    tracing::Span::current().record("github.event", &event_type as &str);
+    tracing::Span::current().record("github.delivery_id", &delivery_id as &str);
+
+    // Parse the Sensor-wrapped envelope: {"body": {...}}
+    let envelope: serde_json::Value = match serde_json::from_slice(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            error!(%e, "invalid JSON envelope");
             return StatusCode::BAD_REQUEST;
         }
     };
@@ -109,9 +118,8 @@ mod tests {
             .with_state(test_state())
     }
 
-    fn valid_envelope() -> Vec<u8> {
+    fn valid_body() -> Vec<u8> {
         serde_json::to_vec(&serde_json::json!({
-            "github_event": "ping",
             "body": { "zen": "keep it simple" }
         }))
         .unwrap()
@@ -124,8 +132,9 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/webhook/github/argo")
+                    .header("X-GitHub-Event", "ping")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_envelope()))
+                    .body(Body::from(valid_body()))
                     .unwrap(),
             )
             .await
@@ -141,8 +150,9 @@ mod tests {
                     .method("POST")
                     .uri("/webhook/github/argo")
                     .header("X-Automata-Token", "wrong-token")
+                    .header("X-GitHub-Event", "ping")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_envelope()))
+                    .body(Body::from(valid_body()))
                     .unwrap(),
             )
             .await
@@ -151,11 +161,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn missing_github_event_in_body_returns_400() {
-        let body = serde_json::to_vec(&serde_json::json!({
-            "body": { "zen": "keep it simple" }
-        }))
-        .unwrap();
+    async fn missing_github_event_header_returns_400() {
         let response = app()
             .oneshot(
                 Request::builder()
@@ -163,7 +169,7 @@ mod tests {
                     .uri("/webhook/github/argo")
                     .header("X-Automata-Token", "test-sensor-token")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(body))
+                    .body(Body::from(valid_body()))
                     .unwrap(),
             )
             .await
@@ -173,15 +179,15 @@ mod tests {
 
     #[tokio::test]
     async fn valid_ping_event_returns_200() {
-        // Uses empty automations in test_state() so no matching automations path
         let response = app()
             .oneshot(
                 Request::builder()
                     .method("POST")
                     .uri("/webhook/github/argo")
                     .header("X-Automata-Token", "test-sensor-token")
+                    .header("X-GitHub-Event", "ping")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_envelope()))
+                    .body(Body::from(valid_body()))
                     .unwrap(),
             )
             .await
