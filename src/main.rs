@@ -23,21 +23,22 @@ use app_state::AppState;
 fn init_tracer(endpoint: &str) -> anyhow::Result<opentelemetry_sdk::trace::TracerProvider> {
     use opentelemetry_otlp::WithExportConfig;
 
-    let provider = opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_endpoint(endpoint),
-        )
-        .with_trace_config(opentelemetry_sdk::trace::Config::default().with_resource(
+    let exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_endpoint(endpoint)
+        .build_span_exporter()?;
+
+    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        .with_simple_exporter(exporter)
+        .with_config(opentelemetry_sdk::trace::Config::default().with_resource(
             opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
                 "service.name",
                 "automata",
             )]),
         ))
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+        .build();
 
+    opentelemetry::global::set_tracer_provider(provider.clone());
     Ok(provider)
 }
 
@@ -54,10 +55,15 @@ async fn main() -> anyhow::Result<()> {
                     .ok()
             });
 
+    let otel_layer = tracer_provider.as_ref().map(|p| {
+        use opentelemetry::trace::TracerProvider as _;
+        tracing_opentelemetry::layer().with_tracer(p.tracer("automata"))
+    });
+
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .with(tracing_subscriber::fmt::layer().json())
-        .with(tracing_opentelemetry::layer())
+        .with(otel_layer)
         .init();
 
     let config = config::Config::from_env()?;

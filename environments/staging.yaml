@@ -16,7 +16,7 @@ mesh:
 env:
   RUST_LOG: info,automata::handlers=debug
   WEBHOOK_URL: https://webhooks.staging.corp.mongodb.com/skunkworks/automata-github/github
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger-operator-jaeger-collector.monitoring.svc:4317
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger-operator-jaeger-collector.monitoring.svc:4318
 
 envSecrets:
   GITHUB_APP_ID: automata-secrets
@@ -25,10 +25,6 @@ envSecrets:
   SENSOR_TOKEN: automata-secrets
   JIRA_BASE_URL: automata-secrets
   JIRA_API_TOKEN: automata-secrets
-
-deployment:
-  annotations:
-    sidecar.jaegertracing.io/inject: jaeger-operator-jaeger
 
 resources:
   requests:
