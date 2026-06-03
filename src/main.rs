@@ -15,15 +15,49 @@ use axum::{
     Router,
 };
 use std::sync::Arc;
+use tower_http::trace::TraceLayer;
 use tracing::info;
 
 use app_state::AppState;
 
+fn init_tracer(endpoint: &str) -> anyhow::Result<opentelemetry_sdk::trace::TracerProvider> {
+    use opentelemetry_otlp::WithExportConfig;
+
+    let provider = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint(endpoint),
+        )
+        .with_trace_config(opentelemetry_sdk::trace::Config::default().with_resource(
+            opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
+                "service.name",
+                "automata",
+            )]),
+        ))
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+
+    Ok(provider)
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .json()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+    use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+    let tracer_provider: Option<opentelemetry_sdk::trace::TracerProvider> =
+        std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
+            .ok()
+            .and_then(|endpoint| {
+                init_tracer(&endpoint)
+                    .map_err(|e| eprintln!("failed to init OTel tracer: {e}"))
+                    .ok()
+            });
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .with(tracing_subscriber::fmt::layer().json())
+        .with(tracing_opentelemetry::layer())
         .init();
 
     let config = config::Config::from_env()?;
@@ -50,11 +84,19 @@ async fn main() -> anyhow::Result<()> {
             "/doctor/install-webhook",
             post(handlers::doctor::install_webhook),
         )
+        .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     let addr = format!("0.0.0.0:{port}");
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!(addr, "listening");
     axum::serve(listener, app).await?;
+
+    if let Some(provider) = tracer_provider {
+        if let Err(e) = provider.shutdown() {
+            tracing::warn!(%e, "failed to flush OTel traces on shutdown");
+        }
+    }
+
     Ok(())
 }
