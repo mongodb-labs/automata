@@ -33,6 +33,15 @@ pub async fn handle(
         }
     };
 
+    let delivery_id = headers
+        .get("X-GitHub-Delivery")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("-")
+        .to_string();
+
+    tracing::Span::current().record("github.event", &event_type as &str);
+    tracing::Span::current().record("github.delivery_id", &delivery_id as &str);
+
     let payload: serde_json::Value = match serde_json::from_slice(&body) {
         Ok(v) => v,
         Err(e) => {
@@ -41,7 +50,7 @@ pub async fn handle(
         }
     };
 
-    super::dispatch(&state, &event_type, payload).await
+    super::dispatch(&state, &event_type, &delivery_id, payload).await
 }
 
 fn verify_signature(secret: &str, body: &[u8], sig_header: &str) -> bool {

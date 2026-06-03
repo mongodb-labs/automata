@@ -79,7 +79,7 @@ pub async fn handle(
         body_value
     };
 
-    super::dispatch(&state, &event_type, payload).await
+    super::dispatch(&state, &event_type, &delivery_id, payload).await
 }
 
 #[cfg(test)]

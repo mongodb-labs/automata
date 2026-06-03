@@ -15,6 +15,7 @@ use crate::jira::JiraClient;
 pub async fn dispatch(
     state: &AppState,
     event_type: &str,
+    delivery_id: &str,
     payload: serde_json::Value,
 ) -> StatusCode {
     let repo = payload
@@ -23,7 +24,7 @@ pub async fn dispatch(
         .unwrap_or("")
         .to_string();
 
-    info!(event_type, repo, "received github event");
+    info!(event_type, delivery_id, repo, "received github event");
 
     let matched: Vec<(&str, &crate::types::PipelineEntry)> = state
         .automations
