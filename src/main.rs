@@ -29,7 +29,7 @@ fn init_tracer(endpoint: &str) -> anyhow::Result<opentelemetry_sdk::trace::Trace
         .build_span_exporter()?;
 
     let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-        .with_simple_exporter(exporter)
+        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
         .with_config(opentelemetry_sdk::trace::Config::default().with_resource(
             opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
                 "service.name",
