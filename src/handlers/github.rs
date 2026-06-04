@@ -30,24 +30,7 @@ pub async fn handle(
         return StatusCode::UNAUTHORIZED;
     }
 
-    let event_type = match headers.get("X-GitHub-Event").and_then(|v| v.to_str().ok()) {
-        Some(e) => e.to_string(),
-        None => {
-            warn!("missing X-GitHub-Event header");
-            return StatusCode::BAD_REQUEST;
-        }
-    };
-
-    let delivery_id = headers
-        .get("X-GitHub-Delivery")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("-")
-        .to_string();
-
-    tracing::Span::current().record("github.event", &event_type as &str);
-    tracing::Span::current().record("github.delivery_id", &delivery_id as &str);
-
-    // Parse the Sensor-wrapped envelope: {"body": {...}}
+    // Parse the Sensor-wrapped envelope: {"github_event":"…","delivery_id":"…","body":{…}}
     let envelope: serde_json::Value = match serde_json::from_slice(&body) {
         Ok(v) => v,
         Err(e) => {
@@ -55,6 +38,23 @@ pub async fn handle(
             return StatusCode::BAD_REQUEST;
         }
     };
+
+    let event_type = match envelope.get("github_event").and_then(|v| v.as_str()) {
+        Some(e) => e.to_string(),
+        None => {
+            warn!("missing github_event in envelope");
+            return StatusCode::BAD_REQUEST;
+        }
+    };
+
+    let delivery_id = envelope
+        .get("delivery_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("-")
+        .to_string();
+
+    tracing::Span::current().record("github.event", &event_type as &str);
+    tracing::Span::current().record("github.delivery_id", &delivery_id as &str);
 
     let body_value = match envelope.get("body") {
         Some(p) => p.clone(),
@@ -118,8 +118,10 @@ mod tests {
             .with_state(test_state())
     }
 
-    fn valid_body() -> Vec<u8> {
+    fn valid_envelope() -> Vec<u8> {
         serde_json::to_vec(&serde_json::json!({
+            "github_event": "ping",
+            "delivery_id": "abc-123",
             "body": { "zen": "keep it simple" }
         }))
         .unwrap()
@@ -132,9 +134,8 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/webhook/github/argo")
-                    .header("X-GitHub-Event", "ping")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_body()))
+                    .body(Body::from(valid_envelope()))
                     .unwrap(),
             )
             .await
@@ -150,9 +151,8 @@ mod tests {
                     .method("POST")
                     .uri("/webhook/github/argo")
                     .header("X-Automata-Token", "wrong-token")
-                    .header("X-GitHub-Event", "ping")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_body()))
+                    .body(Body::from(valid_envelope()))
                     .unwrap(),
             )
             .await
@@ -161,7 +161,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn missing_github_event_header_returns_400() {
+    async fn missing_github_event_in_envelope_returns_400() {
+        let body = serde_json::to_vec(&serde_json::json!({
+            "body": { "zen": "keep it simple" }
+        }))
+        .unwrap();
         let response = app()
             .oneshot(
                 Request::builder()
@@ -169,7 +173,7 @@ mod tests {
                     .uri("/webhook/github/argo")
                     .header("X-Automata-Token", "test-sensor-token")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_body()))
+                    .body(Body::from(body))
                     .unwrap(),
             )
             .await
@@ -185,9 +189,8 @@ mod tests {
                     .method("POST")
                     .uri("/webhook/github/argo")
                     .header("X-Automata-Token", "test-sensor-token")
-                    .header("X-GitHub-Event", "ping")
                     .header("Content-Type", "application/json")
-                    .body(Body::from(valid_body()))
+                    .body(Body::from(valid_envelope()))
                     .unwrap(),
             )
             .await
