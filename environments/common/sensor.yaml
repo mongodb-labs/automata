@@ -21,16 +21,15 @@ spec:
           method: POST
           headers:
             Content-Type: application/json
-          parameters:
+          payload:
             - src:
                 dependencyName: github-dep
                 dataKey: headers.X-Github-Event.0
-              dest: http.headers.X-GitHub-Event
+              dest: github_event
             - src:
                 dependencyName: github-dep
                 dataKey: headers.X-Github-Delivery.0
-              dest: http.headers.X-GitHub-Delivery
-          payload:
+              dest: delivery_id
             - src:
                 dependencyName: github-dep
                 dataKey: body
