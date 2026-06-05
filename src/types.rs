@@ -12,6 +12,8 @@ pub struct PipelineEntry {
     pub given: Given,
     pub when: Vec<WhenGroup>,
     pub then: Vec<serde_yaml::Value>,
+    #[serde(default)]
+    pub on_error: Option<Vec<serde_yaml::Value>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -167,6 +169,9 @@ mod tests {
             a.pipeline[2].when[0].core.action,
             StringFilter::One(_)
         ));
+        assert!(a.pipeline[0].on_error.is_some());
+        assert!(a.pipeline[1].on_error.is_some());
+        assert!(a.pipeline[2].on_error.is_some());
     }
 
     #[test]
@@ -189,6 +194,26 @@ mod tests {
             Some("dependabot[bot]")
         );
         assert_eq!(a.pipeline[0].then.len(), 1);
+    }
+
+    #[test]
+    fn parse_on_error_steps() {
+        let a: Automation = serde_yaml::from_str(
+            "name: test\npipeline:\n  - given:\n      trigger: github\n      repos: [org/repo]\n    when:\n      - event: issues\n        action: opened\n    then: []\n    on_error:\n      - github.post_comment:\n          owner: org\n          repo: repo\n          number: \"1\"\n          body: failed at {error.step}\n"
+        ).unwrap();
+        assert!(a.pipeline[0].on_error.is_some());
+        let error_steps = a.pipeline[0].on_error.as_ref().unwrap();
+        assert_eq!(error_steps.len(), 1);
+        let step = Step::from_yaml(&error_steps[0]).unwrap();
+        assert_eq!(step.func, "github.post_comment");
+    }
+
+    #[test]
+    fn on_error_absent_defaults_to_none() {
+        let a: Automation = serde_yaml::from_str(
+            "name: test\npipeline:\n  - given:\n      trigger: github\n      repos: [org/repo]\n    when:\n      - event: issues\n        action: opened\n    then: []\n"
+        ).unwrap();
+        assert!(a.pipeline[0].on_error.is_none());
     }
 
     #[test]

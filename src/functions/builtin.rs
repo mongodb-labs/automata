@@ -104,11 +104,7 @@ mod tests {
     use serde_json::json;
 
     fn empty_ctx() -> ExecutionContext {
-        ExecutionContext {
-            payload: json!({"repository": {"name": "mongodb-atlas-cli"}}),
-            outputs: std::collections::HashMap::new(),
-            inputs: std::collections::HashMap::new(),
-        }
+        ExecutionContext::new(json!({"repository": {"name": "mongodb-atlas-cli"}}))
     }
 
     fn yaml_inputs(s: &str) -> HashMap<String, serde_yaml::Value> {
