@@ -48,6 +48,12 @@ pipeline:
           repo: "{payload.repository.name}"
           number: "{payload.issue.number}"
           body: "Thanks for opening this issue. The ticket [{ticket.output.key}]({ticket.output.url}) was created for internal tracking."
+    on_error:
+      - github.post_comment:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.issue.number}"
+          body: "We were unable to automatically create a Jira ticket for this issue (failed at step `{error.step}`: {error.message}). Please create one manually."
 
   - given:
       trigger: github
@@ -76,6 +82,12 @@ pipeline:
       - jira.transition:
           key: "{find.output.key}"
           transition_id: "1381"
+    on_error:
+      - github.post_comment:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.issue.number}"
+          body: "We were unable to automatically close the Jira ticket for this issue (failed at step `{error.step}`: {error.message}). Please close it manually."
 
   - given:
       trigger: github
@@ -104,3 +116,9 @@ pipeline:
       - jira.transition:
           key: "{find.output.key}"
           transition_id: "1351"
+    on_error:
+      - github.post_comment:
+          owner: "{payload.repository.owner.login}"
+          repo: "{payload.repository.name}"
+          number: "{payload.issue.number}"
+          body: "We were unable to automatically reopen the Jira ticket for this issue (failed at step `{error.step}`: {error.message}). Please reopen it manually."

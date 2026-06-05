@@ -70,6 +70,19 @@ pub fn resolve(path: &str, ctx: &ExecutionContext) -> anyhow::Result<String> {
             );
             return std::env::var(rest).map_err(|_| anyhow::anyhow!("env var not set: {rest}"));
         }
+        "error" => {
+            return match rest {
+                "step" => ctx
+                    .error_step
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("error.step is not set")),
+                "message" => ctx
+                    .error_message
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("error.message is not set")),
+                other => Err(anyhow::anyhow!("unknown error field: {other}")),
+            };
+        }
         step_id => {
             let outputs = ctx
                 .outputs
@@ -104,20 +117,16 @@ mod tests {
     use serde_json::json;
 
     fn ctx() -> ExecutionContext {
-        ExecutionContext {
-            payload: json!({
-                "repository": { "name": "mongodb-atlas-cli" },
-                "pull_request": {
-                    "title": "Fix bug",
-                    "head": { "ref": "fix/my-branch" },
-                    "comments_url": "https://api.github.com/repos/mongodb/mongodb-atlas-cli/issues/1/comments"
-                },
-                "action": "opened",
-                "sender": { "login": "alice" }
-            }),
-            outputs: std::collections::HashMap::new(),
-            inputs: std::collections::HashMap::new(),
-        }
+        ExecutionContext::new(json!({
+            "repository": { "name": "mongodb-atlas-cli" },
+            "pull_request": {
+                "title": "Fix bug",
+                "head": { "ref": "fix/my-branch" },
+                "comments_url": "https://api.github.com/repos/mongodb/mongodb-atlas-cli/issues/1/comments"
+            },
+            "action": "opened",
+            "sender": { "login": "alice" }
+        }))
     }
 
     #[test]
@@ -246,6 +255,31 @@ mod tests {
         let v = json!([{"id": "{item.id}"}]);
         let result = interpolate_value(&v, &c).unwrap();
         assert_eq!(result, json!([{"id": "99"}]));
+    }
+
+    #[test]
+    fn error_step_resolves_in_error_context() {
+        let mut c = ctx();
+        c.set_error(
+            "jira.create_issue".to_string(),
+            "connection refused".to_string(),
+        );
+        assert_eq!(resolve("error.step", &c).unwrap(), "jira.create_issue");
+        assert_eq!(resolve("error.message", &c).unwrap(), "connection refused");
+    }
+
+    #[test]
+    fn error_step_missing_outside_error_context() {
+        let c = ctx();
+        assert!(resolve("error.step", &c).is_err());
+        assert!(resolve("error.message", &c).is_err());
+    }
+
+    #[test]
+    fn error_unknown_field_returns_error() {
+        let mut c = ctx();
+        c.set_error("step".to_string(), "msg".to_string());
+        assert!(resolve("error.unknown", &c).is_err());
     }
 
     #[test]

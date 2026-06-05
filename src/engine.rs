@@ -108,7 +108,25 @@ pub async fn run_automation(
     let mut ctx = ExecutionContext::new(payload.clone());
     for raw_step in &entry.then {
         let step = crate::types::Step::from_yaml(raw_step)?;
-        crate::functions::execute_step(&step, &mut ctx, clients).await?;
+        if let Err(e) = crate::functions::execute_step(&step, &mut ctx, clients).await {
+            if let Some(error_steps) = &entry.on_error {
+                let step_name = step.id.as_deref().unwrap_or(&step.func).to_string();
+                ctx.set_error(step_name, e.to_string());
+                for raw_error_step in error_steps {
+                    match crate::types::Step::from_yaml(raw_error_step) {
+                        Ok(error_step) => {
+                            if let Err(e2) =
+                                crate::functions::execute_step(&error_step, &mut ctx, clients).await
+                            {
+                                tracing::error!(error = %e2, "on_error step failed");
+                            }
+                        }
+                        Err(e2) => tracing::error!(error = %e2, "failed to parse on_error step"),
+                    }
+                }
+            }
+            return Err(e);
+        }
     }
     Ok(())
 }
