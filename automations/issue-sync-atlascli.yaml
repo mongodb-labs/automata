@@ -86,10 +86,6 @@ pipeline:
           fields:
             resolution:
               name: Done
-            fixVersions:
-              - name: "Not Applicable"
-            customfield_10257:
-              value: "Not Needed"
     on_error:
       - github.post_comment:
           owner: "{payload.repository.owner.login}"

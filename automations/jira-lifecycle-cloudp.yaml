@@ -176,10 +176,6 @@ pipeline:
           fields:
             resolution:
               name: Fixed
-            fixVersions:
-              - name: "Not Applicable"
-            customfield_10257:
-              value: "Not Needed"
 
   - given:
       trigger: github
@@ -211,7 +207,3 @@ pipeline:
           fields:
             resolution:
               name: "Won't Fix"
-            fixVersions:
-              - name: "Not Applicable"
-            customfield_10257:
-              value: "Not Needed"
