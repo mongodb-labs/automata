@@ -34,6 +34,7 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: "{repo_config.output.component}"
+          assignee: "cloud-atlascli-escalation"
           custom_fields:
             customfield_12751:
               - id: "22223"
@@ -82,6 +83,9 @@ pipeline:
       - jira.transition:
           key: "{find.output.key}"
           transition_id: "1381"
+          fields:
+            resolution:
+              name: Done
     on_error:
       - github.post_comment:
           owner: "{payload.repository.owner.login}"

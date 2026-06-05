@@ -43,8 +43,8 @@ pub async fn create_issue(
     if let Some(cf) = inputs.get("custom_fields").and_then(|v| v.as_mapping()) {
         for (k, v) in cf {
             if let Some(k) = k.as_str() {
-                let json_val: serde_json::Value =
-                    serde_json::to_value(v).unwrap_or(serde_json::Value::Null);
+                let json_val: serde_json::Value = serde_json::to_value(v)
+                    .with_context(|| format!("failed to convert custom field {k} to JSON"))?;
                 custom_fields.insert(k.to_string(), interpolate_value(&json_val, ctx)?);
             }
         }
@@ -174,6 +174,34 @@ mod tests {
         inputs.insert("assignee".to_string(), sv("cloud-atlascli-escalation"));
         let result = create_issue(&client, &inputs, &ctx()).await.unwrap();
         assert_eq!(result["output"]["key"], "CLOUDP-4");
+    }
+
+    #[tokio::test]
+    async fn custom_fields_fix_versions_and_doc_changes_are_sent() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/api/2/issue"))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({"key": "CLOUDP-5"})))
+            .mount(&server)
+            .await;
+        let client = JiraClient::new(&server.uri(), "token");
+        let mut inputs = base_inputs();
+        let custom_fields: serde_yaml::Value = serde_yaml::from_str(
+            "fixVersions:\n  - name: \"Not Applicable\"\ncustomfield_10257:\n  value: \"Not Needed\"\n",
+        )
+        .unwrap();
+        inputs.insert("custom_fields".to_string(), custom_fields);
+        create_issue(&client, &inputs, &ctx()).await.unwrap();
+        let req = server.received_requests().await.unwrap().remove(0);
+        let body: serde_json::Value = serde_json::from_slice(&req.body).unwrap();
+        assert_eq!(
+            body["fields"]["fixVersions"],
+            json!([{"name": "Not Applicable"}])
+        );
+        assert_eq!(
+            body["fields"]["customfield_10257"],
+            json!({"value": "Not Needed"})
+        );
     }
 
     #[tokio::test]
