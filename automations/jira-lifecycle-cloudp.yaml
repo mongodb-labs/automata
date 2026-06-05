@@ -176,6 +176,8 @@ pipeline:
           fields:
             resolution:
               name: Fixed
+            fixVersions:
+              - name: "Not Applicable"
 
   - given:
       trigger: github
@@ -204,3 +206,6 @@ pipeline:
       - jira.transition:
           key: "{find.output.key}"
           transition_id: "1371"
+          fields:
+            fixVersions:
+              - name: "Not Applicable"

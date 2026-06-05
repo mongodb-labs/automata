@@ -82,6 +82,9 @@ pipeline:
       - jira.transition:
           key: "{find.output.key}"
           transition_id: "1381"
+          fields:
+            fixVersions:
+              - name: "Not Applicable"
     on_error:
       - github.post_comment:
           owner: "{payload.repository.owner.login}"
