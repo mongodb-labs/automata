@@ -83,8 +83,12 @@ pipeline:
           key: "{find.output.key}"
           transition_id: "1381"
           fields:
+            resolution:
+              name: Done
             fixVersions:
               - name: "Not Applicable"
+            customfield_10257:
+              value: "Not Needed"
     on_error:
       - github.post_comment:
           owner: "{payload.repository.owner.login}"

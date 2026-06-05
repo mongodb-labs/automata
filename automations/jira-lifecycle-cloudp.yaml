@@ -178,6 +178,8 @@ pipeline:
               name: Fixed
             fixVersions:
               - name: "Not Applicable"
+            customfield_10257:
+              value: "Not Needed"
 
   - given:
       trigger: github
@@ -207,5 +209,9 @@ pipeline:
           key: "{find.output.key}"
           transition_id: "1371"
           fields:
+            resolution:
+              name: "Won't Fix"
             fixVersions:
               - name: "Not Applicable"
+            customfield_10257:
+              value: "Not Needed"
