@@ -34,6 +34,7 @@ pipeline:
           issue_type: Story
           project: CLOUDP
           component: "{repo_config.output.component}"
+          assignee: "cloud-atlascli-escalation"
           custom_fields:
             customfield_12751:
               - id: "22223"
