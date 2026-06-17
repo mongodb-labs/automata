@@ -20,22 +20,31 @@ use tracing::info;
 
 use app_state::AppState;
 
-fn init_tracer(endpoint: &str) -> anyhow::Result<opentelemetry_sdk::trace::TracerProvider> {
-    use opentelemetry_otlp::WithExportConfig;
+fn init_tracer() -> anyhow::Result<opentelemetry_sdk::trace::SdkTracerProvider> {
+    use opentelemetry_sdk::trace::span_processor_with_async_runtime::BatchSpanProcessor;
 
-    let exporter = opentelemetry_otlp::new_exporter()
-        .http()
-        .with_endpoint(endpoint)
-        .build_span_exporter()?;
+    // Let the exporter resolve OTEL_EXPORTER_OTLP_ENDPOINT itself so the spec
+    // /v1/traces suffix (and other OTEL_* settings) are applied. As of 0.32 a
+    // programmatic with_endpoint() takes precedence over the env var and is used
+    // verbatim with no path appended, so passing it by hand would POST to the
+    // bare host instead of the collector's /v1/traces route.
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_http()
+        .build()?;
 
-    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
-        .with_config(opentelemetry_sdk::trace::Config::default().with_resource(
-            opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
-                "service.name",
-                "automata",
-            )]),
-        ))
+    // The default BatchSpanProcessor drives the exporter with block_on on a
+    // dedicated thread, which can't run an async HTTP client like reqwest-client.
+    // Use the tokio-runtime processor so spans export on our existing runtime.
+    let processor =
+        BatchSpanProcessor::builder(exporter, opentelemetry_sdk::runtime::Tokio).build();
+
+    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_span_processor(processor)
+        .with_resource(
+            opentelemetry_sdk::Resource::builder()
+                .with_service_name("automata")
+                .build(),
+        )
         .build();
 
     opentelemetry::global::set_tracer_provider(provider.clone());
@@ -46,14 +55,14 @@ fn init_tracer(endpoint: &str) -> anyhow::Result<opentelemetry_sdk::trace::Trace
 async fn main() -> anyhow::Result<()> {
     use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-    let tracer_provider: Option<opentelemetry_sdk::trace::TracerProvider> =
-        std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-            .ok()
-            .and_then(|endpoint| {
-                init_tracer(&endpoint)
-                    .map_err(|e| eprintln!("failed to init OTel tracer: {e}"))
-                    .ok()
-            });
+    let tracer_provider: Option<opentelemetry_sdk::trace::SdkTracerProvider> =
+        if std::env::var_os("OTEL_EXPORTER_OTLP_ENDPOINT").is_some() {
+            init_tracer()
+                .map_err(|e| eprintln!("failed to init OTel tracer: {e}"))
+                .ok()
+        } else {
+            None
+        };
 
     let otel_layer = tracer_provider.as_ref().map(|p| {
         use opentelemetry::trace::TracerProvider as _;
@@ -115,4 +124,55 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use opentelemetry::trace::{Tracer, TracerProvider as _};
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    // Emits a span and flushes it through the OTLP HTTP exporter to a mock
+    // collector. Guards two regressions from the 0.32 bump:
+    //   1. the async reqwest-client must be driven by the async-runtime
+    //      BatchSpanProcessor (the default thread-based one cannot run it), and
+    //   2. the base OTEL_EXPORTER_OTLP_ENDPOINT must get the spec /v1/traces
+    //      suffix appended, which only happens when the crate resolves the env
+    //      var itself rather than us passing it programmatically.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn init_tracer_exports_spans_to_otlp_traces_path() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/v1/traces"))
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1..)
+            .mount(&server)
+            .await;
+
+        // Single-threaded mutation before the exporter reads the var; no other
+        // test touches OTEL_EXPORTER_OTLP_ENDPOINT.
+        std::env::set_var("OTEL_EXPORTER_OTLP_ENDPOINT", server.uri());
+
+        let provider = init_tracer().expect("tracer init should succeed");
+        provider.tracer("test").in_span("unit-test-span", |_| {});
+
+        // shutdown() blocks while flushing; run it off the runtime worker so the
+        // async export task can make progress.
+        let p = provider.clone();
+        tokio::task::spawn_blocking(move || p.shutdown())
+            .await
+            .unwrap()
+            .expect("shutdown should flush spans to the collector");
+
+        let requests = server.received_requests().await.unwrap();
+        assert!(
+            requests.iter().any(|r| r.url.path() == "/v1/traces"),
+            "expected POST to /v1/traces, got: {:?}",
+            requests
+                .iter()
+                .map(|r| r.url.path().to_string())
+                .collect::<Vec<_>>()
+        );
+    }
 }
