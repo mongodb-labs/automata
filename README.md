@@ -1,3 +1,8 @@
+# ⚠️ this repository is now archived ⚠️
+
+> [!NOTE]
+> We shifted efforts into https://github.com/mongodb/apix-action/pull/154
+
 # automata
 
 Declarative CI automation hub for the MongoDB APIx DevTools org. Receives GitHub App webhooks via [Argo Events](https://argoproj.github.io/argo-events/) and executes automation rules defined in YAML — no Rust required for common cases.

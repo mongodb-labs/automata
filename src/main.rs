@@ -90,6 +90,10 @@ async fn main() -> anyhow::Result<()> {
             "/doctor/install-webhook",
             post(handlers::doctor::install_webhook),
         )
+        .route(
+            "/doctor/uninstall-webhook",
+            post(handlers::doctor::uninstall_webhook),
+        )
         .layer(
             TraceLayer::new_for_http().make_span_with(|request: &axum::http::Request<_>| {
                 tracing::info_span!(

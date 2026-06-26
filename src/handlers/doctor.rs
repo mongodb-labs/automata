@@ -14,6 +14,11 @@ pub struct InstallWebhookForm {
     pub repo: String,
 }
 
+#[derive(serde::Deserialize)]
+pub struct UninstallWebhookForm {
+    pub repo: String,
+}
+
 enum WebhookStatus {
     Ok,
     WrongUrl,
@@ -57,6 +62,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
         has_automations: bool,
         permissions: Vec<(String, String)>,
         can_install: bool,
+        can_uninstall: bool,
     }
 
     let mut rows: Vec<Row> = Vec::new();
@@ -77,6 +83,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 has_automations,
                 permissions: vec![],
                 can_install: false,
+                can_uninstall: false,
             },
             Some(app_repo) => {
                 let can_check_hooks = app_repo
@@ -99,6 +106,8 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 let can_install = can_check_hooks
                     && state.config.webhook_url.is_some()
                     && matches!(webhook, WebhookStatus::Missing | WebhookStatus::WrongUrl);
+                let can_uninstall =
+                    can_check_hooks && matches!(webhook, WebhookStatus::Ok);
                 let permissions = app_repo
                     .permissions
                     .iter()
@@ -111,6 +120,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                     has_automations,
                     permissions,
                     can_install,
+                    can_uninstall,
                 }
             }
         };
@@ -128,7 +138,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                  <td class='center'>{}</td>\
                  <td class='center'>{}</td></tr>",
                 icon(r.app_installed),
-                webhook_cell(&r.webhook, &r.repo, r.can_install),
+                webhook_cell(&r.webhook, &r.repo, r.can_install, r.can_uninstall),
                 icon(r.has_automations),
                 permissions_icon(&r.permissions),
                 repo = r.repo,
@@ -156,6 +166,8 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
   .empty {{ color: #999; font-style: italic; padding: 20px 0; }}
   .btn-install {{ font-size: .75rem; padding: 2px 8px; border: 1px solid #0366d6; background: none; color: #0366d6; border-radius: 3px; cursor: pointer; vertical-align: middle; margin-left: 6px; }}
   .btn-install:hover {{ background: #0366d6; color: #fff; }}
+  .btn-uninstall {{ font-size: .75rem; padding: 2px 8px; border: 1px solid #cb2431; background: none; color: #cb2431; border-radius: 3px; cursor: pointer; vertical-align: middle; margin-left: 6px; }}
+  .btn-uninstall:hover {{ background: #cb2431; color: #fff; }}
 </style>
 </head>
 <body>
@@ -252,13 +264,19 @@ fn webhook_icon(status: &WebhookStatus) -> &'static str {
     }
 }
 
-fn webhook_cell(status: &WebhookStatus, repo: &str, can_install: bool) -> String {
+fn webhook_cell(status: &WebhookStatus, repo: &str, can_install: bool, can_uninstall: bool) -> String {
     let icon = webhook_icon(status);
     if can_install {
         format!(
             "{icon}<form method='post' action='/doctor/install-webhook' style='display:inline'>\
             <input type='hidden' name='repo' value='{repo}'>\
             <button type='submit' class='btn-install'>Install</button></form>"
+        )
+    } else if can_uninstall {
+        format!(
+            "{icon}<form method='post' action='/doctor/uninstall-webhook' style='display:inline'>\
+            <input type='hidden' name='repo' value='{repo}'>\
+            <button type='submit' class='btn-uninstall'>Uninstall</button></form>"
         )
     } else {
         icon.to_string()
@@ -363,6 +381,78 @@ async fn do_install_webhook(state: &AppState, repo: &str) -> anyhow::Result<()> 
                 .await?
         }
     };
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        anyhow::bail!("GitHub {status}: {body}");
+    }
+
+    Ok(())
+}
+
+pub async fn uninstall_webhook(
+    State(state): State<AppState>,
+    axum::extract::Form(params): axum::extract::Form<UninstallWebhookForm>,
+) -> impl IntoResponse {
+    match do_uninstall_webhook(&state, &params.repo).await {
+        Ok(()) => Redirect::to("/doctor").into_response(),
+        Err(e) => Html(error_page(&format!(
+            "Failed to uninstall webhook for {}: {e}",
+            params.repo
+        )))
+        .into_response(),
+    }
+}
+
+async fn do_uninstall_webhook(state: &AppState, repo: &str) -> anyhow::Result<()> {
+    let parts: Vec<&str> = repo.splitn(2, '/').collect();
+    anyhow::ensure!(parts.len() == 2, "invalid repo: {repo}");
+    let (owner, name) = (parts[0], parts[1]);
+
+    let webhook_url = state
+        .config
+        .webhook_url
+        .as_deref()
+        .ok_or_else(|| anyhow::anyhow!("WEBHOOK_URL not configured"))?;
+
+    let jwt = app_jwt(
+        state.config.github_app_id,
+        &state.config.github_app_private_key,
+    )?;
+    let token = installation_token(&state.http, &jwt, owner, name).await?;
+
+    let hooks: Vec<Value> = state
+        .http
+        .get(format!("https://api.github.com/repos/{owner}/{name}/hooks"))
+        .bearer_auth(&token)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    let hook = hooks
+        .iter()
+        .find(|h| h["config"]["url"].as_str() == Some(webhook_url))
+        .ok_or_else(|| anyhow::anyhow!("webhook not found for {repo}"))?;
+
+    let id = hook["id"]
+        .as_u64()
+        .ok_or_else(|| anyhow::anyhow!("hook missing id"))?;
+
+    let resp = state
+        .http
+        .delete(format!(
+            "https://api.github.com/repos/{owner}/{name}/hooks/{id}"
+        ))
+        .bearer_auth(&token)
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "automata/1.0")
+        .send()
+        .await?;
 
     if !resp.status().is_success() {
         let status = resp.status();
