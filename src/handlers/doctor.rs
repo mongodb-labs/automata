@@ -106,8 +106,7 @@ pub async fn handle(State(state): State<AppState>) -> impl IntoResponse {
                 let can_install = can_check_hooks
                     && state.config.webhook_url.is_some()
                     && matches!(webhook, WebhookStatus::Missing | WebhookStatus::WrongUrl);
-                let can_uninstall =
-                    can_check_hooks && matches!(webhook, WebhookStatus::Ok);
+                let can_uninstall = can_check_hooks && matches!(webhook, WebhookStatus::Ok);
                 let permissions = app_repo
                     .permissions
                     .iter()
@@ -264,7 +263,12 @@ fn webhook_icon(status: &WebhookStatus) -> &'static str {
     }
 }
 
-fn webhook_cell(status: &WebhookStatus, repo: &str, can_install: bool, can_uninstall: bool) -> String {
+fn webhook_cell(
+    status: &WebhookStatus,
+    repo: &str,
+    can_install: bool,
+    can_uninstall: bool,
+) -> String {
     let icon = webhook_icon(status);
     if can_install {
         format!(
